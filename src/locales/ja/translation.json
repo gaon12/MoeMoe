@@ -1,0 +1,132 @@
+{
+  "app": {
+    "title": "モエモエ - アニメ壁紙時計"
+  },
+  "clock": {
+    "days": {
+      "sunday": "日曜日",
+      "monday": "月曜日",
+      "tuesday": "火曜日",
+      "wednesday": "水曜日",
+      "thursday": "木曜日",
+      "friday": "金曜日",
+      "saturday": "土曜日"
+    }
+  },
+  "settings": {
+    "title": "設定",
+    "close": "閉じる",
+    "save": "保存",
+    "language": {
+      "title": "言語",
+      "korean": "한국어",
+      "english": "English",
+      "japanese": "日本語"
+    },
+    "theme": {
+      "title": "テーマ",
+      "light": "ライトモード",
+      "dark": "ダークモード",
+      "auto": "システム設定"
+    },
+    "imageSource": {
+      "title": "画像ソース",
+      "description": "有効にする画像ソースを選択（複数選択可）",
+      "nekosBest": "Nekos.best",
+      "waifuPics": "Waifu.pics",
+      "nekosia": "Nekosia",
+      "waifuIm": "Waifu.im",
+      "nekosMoe": "Nekos.moe",
+      "danbooru": "Donmai.us (Danbooru)",
+      "waifuIt": "Waifu.it",
+      "picRe": "Pic.re",
+      "neoksapi": "Neoksapi.com",
+      "random": "ランダム",
+      "selectAll": "すべて選択",
+      "deselectAll": "すべて解除",
+      "atLeastOne": "少なくとも1つのソースを選択してください。"
+    },
+    "image": {
+      "title": "画像設定",
+      "allowNSFW": "NSFWコンテンツを許可",
+      "nsfwWarning": "成人向けコンテンツが含まれる場合があります。慎重に選択してください。",
+      "fitMode": "画像フィットモード",
+      "fitCover": "カバー（横幅基準）",
+      "fitContain": "コンテイン（縦幅基準）",
+      "letterboxFill": "レターボックス塗りつぶし",
+      "letterboxBlur": "ぼかし効果",
+      "letterboxEdgeColor": "エッジカラー",
+      "letterboxCustom": "カスタムカラー",
+      "letterboxSolid": "単色（黒）",
+      "customColor": "カスタムカラー",
+      "autoRefresh": "自動更新",
+      "autoRefreshInterval": "更新間隔",
+      "autoRefreshDisabled": "無効"
+    },
+    "widgets": {
+      "title": "ウィジェット",
+      "clock": "時計",
+      "date": "日付",
+      "weather": "天気",
+      "quote": "名言",
+      "customText": "カスタムテキスト"
+    },
+    "appearance": {
+      "title": "外観",
+      "fontSize": "フォントサイズ",
+      "clockPosition": "時計の位置",
+      "showSeconds": "秒を表示",
+      "use24Hour": "24時間表示",
+      "showAmPm": "AM/PMを表示",
+      "amPmStyle": {
+        "title": "AM/PM 表記",
+        "locale": "言語別表記（午前/午後）",
+        "latin": "AM/PM",
+        "desc": "英語以外の言語で、AM/PMではなく言語別表記を使用するか選択"
+      },
+      "amPmPosition": "AM/PM の位置",
+      "before": "時刻の前",
+      "after": "時刻の後"
+    },
+    "time": {
+      "title": "時刻ソース",
+      "useServerTime": "サーバー時刻を使用",
+      "useServerTimeDesc": "サーバーAPIから現在時刻を取得し、ネットワーク遅延を補正します。",
+      "updateInterval": "更新間隔"
+    }
+  },
+  "buttons": {
+    "refresh": "更新",
+    "settings": "設定",
+    "fullscreen": "フルスクリーン"
+  },
+  "keyboard": {
+    "refresh": "RまたはSpace: 更新",
+    "fullscreen": "F: フルスクリーン",
+    "settings": "S: 設定"
+  },
+  "loading": {
+    "image": "画像を読み込み中...",
+    "settings": "設定を読み込み中..."
+  },
+  "error": {
+    "imageLoad": "画像の読み込みに失敗しました",
+    "retry": "再試行",
+    "general": "エラーが発生しました"
+  },
+  "widgets": {
+    "weather": {
+      "title": "天気",
+      "loading": "天気情報を読み込み中...",
+      "error": "天気情報を読み込めません"
+    },
+    "quote": {
+      "title": "今日の名言",
+      "loading": "名言を読み込み中..."
+    },
+    "customText": {
+      "placeholder": "ここにテキストを入力...",
+      "edit": "編集"
+    }
+  }
+}

@@ -1,0 +1,137 @@
+.download-button-container {
+  position: fixed;
+  bottom: 5rem;
+  right: 1rem;
+  z-index: 100;
+}
+
+.download-button {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  padding: 0;
+}
+
+.download-button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.download-button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.download-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.download-icon {
+  width: 28px;
+  height: 28px;
+  transition: transform 0.3s ease;
+}
+
+.downloading-icon {
+  animation: pulse 1s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.download-menu {
+  position: absolute;
+  bottom: 70px;
+  right: 0;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.5rem;
+  min-width: 120px;
+  box-shadow: 0 8px 24px var(--shadow);
+  backdrop-filter: blur(10px);
+  animation: slideUp 0.2s ease;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.download-menu-header {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  padding: 0.5rem 0.75rem;
+  font-weight: 500;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0.25rem;
+}
+
+.download-menu-item {
+  display: block;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-radius: 6px;
+  text-align: left;
+  font-family: inherit;
+}
+
+.download-menu-item:hover {
+  background: var(--overlay);
+  color: var(--accent);
+}
+
+.download-menu-item:active {
+  transform: scale(0.98);
+}
+
+@media (max-width: 768px) {
+  .download-button-container {
+    bottom: 4.25rem;
+    right: 0.75rem;
+  }
+
+  .download-button {
+    width: 50px;
+    height: 50px;
+  }
+
+  .download-icon {
+    width: 24px;
+    height: 24px;
+  }
+
+  .download-menu {
+    bottom: 60px;
+  }
+}

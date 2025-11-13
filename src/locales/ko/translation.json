@@ -1,0 +1,133 @@
+{
+  "app": {
+    "title": "모에모에 - 애니메이션 배경화면 시계"
+  },
+  "clock": {
+    "days": {
+      "sunday": "일요일",
+      "monday": "월요일",
+      "tuesday": "화요일",
+      "wednesday": "수요일",
+      "thursday": "목요일",
+      "friday": "금요일",
+      "saturday": "토요일"
+    }
+  },
+  "settings": {
+    "title": "설정",
+    "close": "닫기",
+    "save": "저장",
+    "language": {
+      "title": "언어",
+      "korean": "한국어",
+      "english": "English",
+      "japanese": "日本語"
+    },
+    "theme": {
+      "title": "테마",
+      "light": "라이트 모드",
+      "dark": "다크 모드",
+      "auto": "시스템 설정"
+    },
+    "imageSource": {
+      "title": "이미지 소스",
+      "description": "활성화할 이미지 소스를 선택하세요 (여러 개 선택 가능)",
+      "nekosBest": "Nekos.best",
+      "waifuPics": "Waifu.pics",
+      "nekosia": "Nekosia",
+      "waifuIm": "Waifu.im",
+      "nekosMoe": "Nekos.moe",
+      "danbooru": "Donmai.us (Danbooru)",
+      "waifuIt": "Waifu.it",
+      "picRe": "Pic.re",
+      "neoksapi": "Neoksapi.com",
+      "random": "랜덤",
+      "selectAll": "전체 선택",
+      "deselectAll": "전체 해제",
+      "atLeastOne": "최소 한 개 이상의 소스를 선택하세요."
+    },
+    "image": {
+      "title": "이미지 설정",
+      "allowNSFW": "NSFW 콘텐츠 허용",
+      "nsfwWarning": "성인 콘텐츠가 포함될 수 있습니다. 신중하게 선택하세요.",
+      "fitMode": "이미지 맞춤 모드",
+      "fitCover": "가로 꽉 채움 (잘림)",
+      "fitContain": "세로 꽉 채움 (여백)",
+      "letterboxFill": "레터박스 채우기",
+      "letterboxBlur": "흐림 효과",
+      "letterboxEdgeColor": "가장자리 색상",
+      "letterboxCustom": "사용자 지정 색상",
+      "letterboxSolid": "단색 (검정)",
+      "customColor": "사용자 지정 색상",
+      "autoRefresh": "자동 새로고침",
+      "autoRefreshInterval": "새로고침 간격",
+      "autoRefreshDisabled": "비활성화"
+    },
+    
+    "widgets": {
+      "title": "위젯",
+      "clock": "시계",
+      "date": "날짜",
+      "weather": "날씨",
+      "quote": "명언",
+      "customText": "사용자 텍스트"
+    },
+    "appearance": {
+      "title": "외관",
+      "fontSize": "글자 크기",
+      "clockPosition": "시계 위치",
+      "showSeconds": "초 표시",
+      "use24Hour": "24시간 형식",
+      "showAmPm": "AM/PM 표시",
+      "amPmStyle": {
+        "title": "AM/PM 표기",
+        "locale": "언어별 표기(오전/오후 등)",
+        "latin": "AM/PM",
+        "desc": "영어 이외의 언어에서 AM/PM 대신 언어별 표기를 사용할지 선택"
+      },
+      "amPmPosition": "AM/PM 위치",
+      "before": "시계 앞",
+      "after": "시계 뒤"
+    },
+    "time": {
+      "title": "시간 소스",
+      "useServerTime": "서버 시간 사용",
+      "useServerTimeDesc": "서버 시간 API에서 현재 시간을 받아 약간의 네트워크 지연을 보정합니다.",
+      "updateInterval": "업데이트 주기"
+    }
+  },
+  "buttons": {
+    "refresh": "새로고침",
+    "settings": "설정",
+    "fullscreen": "전체화면"
+  },
+  "keyboard": {
+    "refresh": "R 또는 스페이스: 새로고침",
+    "fullscreen": "F: 전체화면",
+    "settings": "S: 설정"
+  },
+  "loading": {
+    "image": "이미지 로딩 중...",
+    "settings": "설정 불러오는 중..."
+  },
+  "error": {
+    "imageLoad": "이미지를 불러오지 못했습니다",
+    "retry": "다시 시도",
+    "general": "오류가 발생했습니다"
+  },
+  "widgets": {
+    "weather": {
+      "title": "날씨",
+      "loading": "날씨 정보 로딩 중...",
+      "error": "날씨 정보를 불러올 수 없습니다"
+    },
+    "quote": {
+      "title": "오늘의 명언",
+      "loading": "명언 로딩 중..."
+    },
+    "customText": {
+      "placeholder": "여기에 텍스트를 입력하세요...",
+      "edit": "편집"
+    }
+  }
+}

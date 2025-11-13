@@ -1,0 +1,132 @@
+{
+  "app": {
+    "title": "MoeMoe - Anime Wallpaper Clock"
+  },
+  "clock": {
+    "days": {
+      "sunday": "Sunday",
+      "monday": "Monday",
+      "tuesday": "Tuesday",
+      "wednesday": "Wednesday",
+      "thursday": "Thursday",
+      "friday": "Friday",
+      "saturday": "Saturday"
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "close": "Close",
+    "save": "Save",
+    "language": {
+      "title": "Language",
+      "korean": "한국어",
+      "english": "English",
+      "japanese": "日本語"
+    },
+    "theme": {
+      "title": "Theme",
+      "light": "Light Mode",
+      "dark": "Dark Mode",
+      "auto": "System Default"
+    },
+    "imageSource": {
+      "title": "Image Sources",
+      "description": "Select image sources to enable (multiple selection)",
+      "nekosBest": "Nekos.best",
+      "waifuPics": "Waifu.pics",
+      "nekosia": "Nekosia",
+      "waifuIm": "Waifu.im",
+      "nekosMoe": "Nekos.moe",
+      "danbooru": "Donmai.us (Danbooru)",
+      "waifuIt": "Waifu.it",
+      "picRe": "Pic.re",
+      "neoksapi": "Neoksapi.com",
+      "random": "Random",
+      "selectAll": "Select All",
+      "deselectAll": "Deselect All",
+      "atLeastOne": "Select at least one source."
+    },
+    "image": {
+      "title": "Image Settings",
+      "allowNSFW": "Allow NSFW Content",
+      "nsfwWarning": "May contain adult content. Choose carefully.",
+      "fitMode": "Image Fit Mode",
+      "fitCover": "Cover (Horizontal Fill)",
+      "fitContain": "Contain (Vertical Fill)",
+      "letterboxFill": "Letterbox Fill",
+      "letterboxBlur": "Blur Effect",
+      "letterboxEdgeColor": "Edge Color",
+      "letterboxCustom": "Custom Color",
+      "letterboxSolid": "Solid (Black)",
+      "customColor": "Custom Color",
+      "autoRefresh": "Auto Refresh",
+      "autoRefreshInterval": "Refresh Interval",
+      "autoRefreshDisabled": "Disabled"
+    },
+    "widgets": {
+      "title": "Widgets",
+      "clock": "Clock",
+      "date": "Date",
+      "weather": "Weather",
+      "quote": "Quote",
+      "customText": "Custom Text"
+    },
+    "appearance": {
+      "title": "Appearance",
+      "fontSize": "Font Size",
+      "clockPosition": "Clock Position",
+      "showSeconds": "Show Seconds",
+      "use24Hour": "24-Hour Format",
+      "showAmPm": "Show AM/PM",
+      "amPmStyle": {
+        "title": "AM/PM Style",
+        "locale": "Locale words (e.g., 오전/午後)",
+        "latin": "AM/PM",
+        "desc": "For non-English languages, choose between locale words or AM/PM"
+      },
+      "amPmPosition": "AM/PM Position",
+      "before": "Before time",
+      "after": "After time"
+    },
+    "time": {
+      "title": "Time Source",
+      "useServerTime": "Use Server Time",
+      "useServerTimeDesc": "Fetch current time from a server API and compensate for network delay.",
+      "updateInterval": "Update Interval"
+    }
+  },
+  "buttons": {
+    "refresh": "Refresh",
+    "settings": "Settings",
+    "fullscreen": "Fullscreen"
+  },
+  "keyboard": {
+    "refresh": "R or Space: Refresh",
+    "fullscreen": "F: Fullscreen",
+    "settings": "S: Settings"
+  },
+  "loading": {
+    "image": "Loading image...",
+    "settings": "Loading settings..."
+  },
+  "error": {
+    "imageLoad": "Failed to load image",
+    "retry": "Retry",
+    "general": "An error occurred"
+  },
+  "widgets": {
+    "weather": {
+      "title": "Weather",
+      "loading": "Loading weather...",
+      "error": "Unable to load weather information"
+    },
+    "quote": {
+      "title": "Quote of the Day",
+      "loading": "Loading quote..."
+    },
+    "customText": {
+      "placeholder": "Enter your text here...",
+      "edit": "Edit"
+    }
+  }
+}

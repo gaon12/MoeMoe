@@ -1,0 +1,47 @@
+.settings-button-wrapper {
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  z-index: 100;
+}
+
+.settings-fab {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px var(--shadow);
+  color: var(--text-primary);
+  font-size: 1.5rem;
+}
+
+.settings-fab:hover {
+  transform: scale(1.1) rotate(90deg);
+  background: var(--accent);
+  color: white;
+  box-shadow: 0 6px 20px rgba(255, 107, 157, 0.4);
+}
+
+.settings-fab:active {
+  transform: scale(0.95) rotate(90deg);
+}
+
+@media (max-width: 768px) {
+  .settings-button-wrapper {
+    top: 0.75rem;
+    left: 0.75rem;
+  }
+
+  .settings-fab {
+    width: 48px;
+    height: 48px;
+    font-size: 1.25rem;
+  }
+}

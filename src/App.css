@@ -1,0 +1,97 @@
+.app {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+}
+
+.content {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  height: 100%;
+  padding: 6rem 2rem 2rem;
+  gap: 2rem;
+  /* Allow clicks to pass through so bottom-left attribution links remain clickable */
+  pointer-events: none;
+}
+
+.image-info {
+  margin-top: 1rem;
+  text-align: center;
+}
+
+.anime-name {
+  font-size: 1.2rem;
+  color: white;
+  opacity: 0.9;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  font-weight: 300;
+  margin: 0;
+}
+
+.keyboard-hints {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1.25rem;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  backdrop-filter: blur(10px);
+  color: white;
+  font-size: 0.875rem;
+  opacity: 0.6;
+  transition: opacity 0.3s ease;
+  z-index: 50;
+  user-select: none;
+}
+
+.keyboard-hints:hover {
+  opacity: 1;
+}
+
+.keyboard-hints span:nth-child(2) {
+  opacity: 0.5;
+}
+
+@media (max-width: 768px) {
+  .keyboard-hints {
+    top: 0.75rem;
+    right: 0.75rem;
+    font-size: 0.75rem;
+    padding: 0.5rem 1rem;
+    flex-wrap: wrap;
+    max-width: calc(100% - 1.5rem);
+  }
+
+  .anime-name {
+    font-size: 1rem;
+  }
+
+  .content {
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .keyboard-hints span:nth-child(2) {
+    display: none;
+  }
+
+  .keyboard-hints {
+    flex-direction: column;
+    gap: 0.25rem;
+    align-items: flex-end;
+  }
+}
