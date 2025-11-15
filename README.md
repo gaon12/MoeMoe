@@ -97,8 +97,8 @@ npm run preview
 Copy `.env.sample` to `.env` and adjust as needed:
 
 ```
-VITE_FIX_CORS_API_URL=https://your-cors-proxy.example.com/?url=
-VITE_SERVER_TIME_API_URL=https://api.rasca99.dev/time/api.php?tz=
+VITE_FIX_CORS_API_URL=https://test.com/?url=
+VITE_SERVER_TIME_API_URL=https://test.com/?tz=
 ```
 
 - CORS proxy is optional; when set, image URLs are proxied automatically.

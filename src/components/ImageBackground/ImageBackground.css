@@ -182,6 +182,145 @@
   cursor: pointer;
 }
 
+.error-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--overlay-strong);
+  backdrop-filter: blur(10px);
+  z-index: 1001;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.2s ease;
+}
+
+.error-modal {
+  background: var(--bg-secondary);
+  border-radius: 16px;
+  width: 90%;
+  max-width: 520px;
+  max-height: 80vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px var(--shadow);
+  border: 1px solid var(--border);
+  padding: 1.5rem 1.75rem;
+}
+
+.error-modal-title {
+  margin: 0 0 0.75rem 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.error-modal-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.error-modal-text {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+}
+
+.error-modal-message {
+  width: 100%;
+  min-height: 120px;
+  max-height: 240px;
+  resize: vertical;
+  background: var(--bg-tertiary);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  padding: 0.75rem 1rem;
+  color: var(--text-primary);
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace);
+  font-size: 0.85rem;
+  box-sizing: border-box;
+}
+
+.error-modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.error-modal-button {
+  padding: 0.6rem 1rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.error-modal-button:hover {
+  background: var(--overlay);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.error-modal-button.secondary {
+  align-self: flex-end;
+  margin-top: 1rem;
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #ffffff;
+}
+
+.error-modal-button.secondary:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+.error-modal-link {
+  text-decoration: none;
+}
+
+.error-modal-copy-hint {
+  margin: 0.5rem 0 0 0;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.error-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+}
+
+@media (max-width: 768px) {
+  .error-modal {
+    width: 95%;
+    padding: 1.25rem 1.25rem;
+  }
+
+  .error-modal-actions {
+    flex-direction: column;
+  }
+
+  .error-modal-button {
+    width: 100%;
+  }
+
+  .error-modal-button.secondary {
+    width: auto;
+  }
+}
+
 @media (max-width: 768px) {
   .image-attribution {
     font-size: 0.75rem;

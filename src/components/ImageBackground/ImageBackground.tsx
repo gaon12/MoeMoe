@@ -33,6 +33,11 @@ export const ImageBackground: React.FC<ImageBackgroundProps> = ({
   const [thumbhashDataUrl, setThumbhashDataUrl] = useState<string | null>(null);
   const [showThumbhash, setShowThumbhash] = useState(false);
   const [letterboxColor, setLetterboxColor] = useState<string>('#1a1a1a');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>('idle');
+  const [demoThumbhashDataUrl, setDemoThumbhashDataUrl] = useState<string | null>(null);
+  const [showDemoThumbhash, setShowDemoThumbhash] = useState(false);
+  const [showDemoImage, setShowDemoImage] = useState(false);
   const imageRef = useRef<HTMLImageElement>(null);
 
   // Generate thumbhash from image
@@ -60,8 +65,48 @@ export const ImageBackground: React.FC<ImageBackgroundProps> = ({
     }
   }, []);
 
+  // Pre-generate thumbhash for local demo image
+  useEffect(() => {
+    let isMounted = true;
+    let timeoutId: number | null = null;
+
+    const demoImg = new Image();
+    demoImg.crossOrigin = 'anonymous';
+    demoImg.onload = () => {
+      if (!isMounted) return;
+      const thumb = generateThumbhash(demoImg);
+      if (thumb) {
+        setDemoThumbhashDataUrl(thumb);
+        setShowDemoThumbhash(true);
+        setShowDemoImage(false);
+        timeoutId = window.setTimeout(() => {
+          if (!isMounted) return;
+          setShowDemoThumbhash(false);
+          setShowDemoImage(true);
+        }, 500);
+      } else {
+        setShowDemoImage(true);
+      }
+    };
+    demoImg.onerror = () => {
+      if (!isMounted) return;
+      // If thumbhash generation fails, fall back to showing demo image directly
+      setShowDemoImage(true);
+    };
+    demoImg.src = '/demo/demo.png';
+
+    return () => {
+      isMounted = false;
+      if (timeoutId !== null) {
+        window.clearTimeout(timeoutId);
+      }
+    };
+  }, [generateThumbhash]);
+
   const loadNewImage = useCallback(async () => {
     setHasError(false);
+    setErrorMessage(null);
+    setCopyState('idle');
 
     try {
       // Step 1: Start transition - blur current image if one exists
@@ -107,6 +152,9 @@ export const ImageBackground: React.FC<ImageBackgroundProps> = ({
 
     } catch (error) {
       console.error('Failed to load image:', error);
+      const message =
+        error instanceof Error ? error.message : 'Unknown error while loading image';
+      setErrorMessage(message);
       setIsLoading(false);
       setHasError(true);
       setIsTransitioning(false);
@@ -187,20 +235,115 @@ export const ImageBackground: React.FC<ImageBackgroundProps> = ({
   const handleImageError = () => {
     setIsLoading(false);
     setHasError(true);
-    onImageError?.(new Error('Failed to display image'));
+    const error = new Error('Failed to display image');
+    setErrorMessage(error.message);
+    onImageError?.(error);
   };
+
+  const handleCopyError = async () => {
+    if (!errorMessage) return;
+    try {
+      await navigator.clipboard.writeText(errorMessage);
+      setCopyState('copied');
+      setTimeout(() => setCopyState('idle'), 2000);
+    } catch {
+      setCopyState('failed');
+    }
+  };
+
+  const githubRepoUrl = import.meta.env.VITE_GITHUB_REPO_URL as string | undefined;
+  const normalizedRepoUrl = githubRepoUrl?.replace(/\/$/, '');
+  const githubIssueUrl = normalizedRepoUrl
+    ? `${normalizedRepoUrl}/issues/new?title=${encodeURIComponent(
+        'Image load error',
+      )}&body=${encodeURIComponent(
+        `오류 메시지:\n\n${errorMessage ?? '알 수 없는 오류입니다.'}`,
+      )}`
+    : null;
 
   return (
     <div className="image-background">
       {/* Background overlay - rendered first with pointer-events: none */}
       <div className="background-overlay"></div>
 
+      {/* Initial demo image from public/demo while API image loads */}
+      {!currentImage && (
+        <>
+          {showDemoThumbhash && demoThumbhashDataUrl && (
+            <img
+              src={demoThumbhashDataUrl}
+              alt="Demo preview"
+              className="thumbhash-preview"
+              style={{ objectFit: imageFitMode }}
+            />
+          )}
+          <picture>
+            <source srcSet="/demo/demo.avif" type="image/avif" />
+            <source srcSet="/demo/demo.webp" type="image/webp" />
+            <source srcSet="/demo/demo.jpg" type="image/jpeg" />
+            <source srcSet="/demo/demo.png" type="image/png" />
+            <img
+              src="/demo/demo.png"
+              alt="Demo background"
+              className="background-image"
+              style={{
+                objectFit: imageFitMode,
+                opacity: showDemoImage ? 1 : 0,
+                transition: 'opacity 0.3s ease-in-out',
+              }}
+            />
+          </picture>
+        </>
+      )}
+
       {hasError && (
-        <div className="image-error">
-          <p>Failed to load image</p>
-          <button onClick={loadNewImage} className="retry-button">
-            Retry
-          </button>
+        <div className="error-modal-overlay">
+          <div className="error-modal">
+            <h2 className="error-modal-title">이미지 로딩 중 오류가 발생했어요</h2>
+            <div className="error-modal-content">
+              <p className="error-modal-text">
+                아래 오류 메시지를 첨부해서 깃허브 이슈를 등록해 주세요.
+              </p>
+              <textarea
+                className="error-modal-message"
+                value={errorMessage ?? '알 수 없는 오류입니다.'}
+                readOnly
+              />
+              <div className="error-modal-actions">
+                <button
+                  type="button"
+                  className="error-modal-button"
+                  onClick={handleCopyError}
+                >
+                  {copyState === 'copied' ? '복사됨' : '오류 메시지 복사'}
+                </button>
+                {githubIssueUrl && (
+                  <a
+                    href={githubIssueUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="error-modal-button error-modal-link"
+                  >
+                    깃허브 이슈 열기
+                  </a>
+                )}
+              </div>
+              {copyState === 'failed' && (
+                <p className="error-modal-copy-hint">
+                  클립보드 복사에 실패했어요. 직접 선택해서 복사해 주세요.
+                </p>
+              )}
+            </div>
+            <div className="error-modal-footer">
+              <button
+                type="button"
+                className="error-modal-button secondary"
+                onClick={loadNewImage}
+              >
+                다시 시도
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
