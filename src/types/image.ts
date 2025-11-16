@@ -3,6 +3,11 @@
  */
 export interface AnimeImage {
   url: string;
+  /**
+   * Optional URL routed through a CORS proxy.
+   * Used as a fallback only when the direct URL fails.
+   */
+  proxiedUrl?: string;
   animeName?: string;
   artistName?: string;
   artistHref?: string;

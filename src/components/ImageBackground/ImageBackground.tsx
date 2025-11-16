@@ -147,8 +147,42 @@ export const ImageBackground = forwardRef<ImageBackgroundHandle, ImageBackground
       const img = new Image();
       img.crossOrigin = 'anonymous';
       await new Promise<void>((resolve, reject) => {
-        img.onload = () => resolve();
-        img.onerror = () => reject(new Error('Failed to preload image'));
+        let triedProxy = false;
+        img.onload = () => {
+          // If we successfully loaded via proxy, keep that URL on the image object
+          if (image && img.src && img.src !== image.url) {
+            image.url = img.src;
+          }
+          resolve();
+        };
+        img.onerror = () => {
+          if (!triedProxy && 'proxiedUrl' in image && image.proxiedUrl && image.proxiedUrl !== image.url) {
+            triedProxy = true;
+            console.warn('Direct image load failed, retrying via CORS proxy', {
+              directUrl: image.url,
+              proxiedUrl: image.proxiedUrl,
+              source: randomSource,
+            });
+            img.src = image.proxiedUrl;
+            return;
+          }
+
+          const lines: string[] = [
+            'Failed to preload image.',
+            `source: ${randomSource}`,
+            `directUrl: ${image.url}`,
+          ];
+          if ('proxiedUrl' in image && image.proxiedUrl) {
+            lines.push(`proxiedUrl: ${image.proxiedUrl}`);
+          }
+          if (image.sourceUrl) {
+            lines.push(`sourceUrl: ${image.sourceUrl}`);
+          }
+          if (image.animeName) {
+            lines.push(`animeName: ${image.animeName}`);
+          }
+          reject(new Error(lines.join('\n')));
+        };
         img.src = image.url;
       });
 
@@ -171,9 +205,15 @@ export const ImageBackground = forwardRef<ImageBackgroundHandle, ImageBackground
 
     } catch (error) {
       console.error('Failed to load image:', error);
-      const message =
-        error instanceof Error ? error.message : 'Unknown error while loading image';
-      setErrorMessage(message);
+      const lines: string[] = [
+        'Failed to load image.',
+        `imageSources: ${imageSources.join(', ')}`,
+        `allowNSFW: ${allowNSFW}`,
+      ];
+      if (error instanceof Error && error.message) {
+        lines.push('--- inner error ---', error.message);
+      }
+      setErrorMessage(lines.join('\n'));
       setIsLoading(false);
       setHasError(true);
       setIsTransitioning(false);
@@ -259,7 +299,17 @@ export const ImageBackground = forwardRef<ImageBackgroundHandle, ImageBackground
   const handleImageError = () => {
     setIsLoading(false);
     setHasError(true);
-    const error = new Error('Failed to display image');
+    const lines: string[] = ['Failed to display image element.'];
+    if (currentImage) {
+      lines.push(`imageUrl: ${currentImage.url}`);
+      if (currentImage.sourceUrl) {
+        lines.push(`sourceUrl: ${currentImage.sourceUrl}`);
+      }
+      if (currentImage.animeName) {
+        lines.push(`animeName: ${currentImage.animeName}`);
+      }
+    }
+    const error = new Error(lines.join('\n'));
     setErrorMessage(error.message);
     onImageError?.(error);
   };

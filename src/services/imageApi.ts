@@ -3,6 +3,74 @@ import {
   type ImageSource,
 } from '../types/image';
 
+const MAX_ERROR_BODY_LENGTH = 1000;
+
+const safeJsonStringify = (value: unknown): string | undefined => {
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return undefined;
+  }
+};
+
+const buildDataError = (
+  sourceName: string,
+  requestUrl: string,
+  detail: string,
+  data?: unknown,
+): Error => {
+  const lines: string[] = [
+    `${sourceName} API error`,
+    `requestUrl: ${requestUrl}`,
+    detail,
+  ];
+
+  if (data !== undefined) {
+    const json = safeJsonStringify(data);
+    if (json) {
+      lines.push(
+        'responseDataSnippet:',
+        json.length > MAX_ERROR_BODY_LENGTH
+          ? `${json.slice(0, MAX_ERROR_BODY_LENGTH)}…`
+          : json,
+      );
+    }
+  }
+
+  return new Error(lines.join('\n'));
+};
+
+const buildResponseError = async (
+  sourceName: string,
+  requestUrl: string,
+  response: Response,
+): Promise<Error> => {
+  let bodySnippet: string | undefined;
+  try {
+    const text = await response.text();
+    if (text) {
+      bodySnippet =
+        text.length > MAX_ERROR_BODY_LENGTH
+          ? `${text.slice(0, MAX_ERROR_BODY_LENGTH)}…`
+          : text;
+    }
+  } catch {
+    // ignore body read errors
+  }
+
+  const lines: string[] = [
+    `${sourceName} API error`,
+    `requestUrl: ${requestUrl}`,
+    `status: ${response.status} ${response.statusText}`,
+  ];
+
+  if (bodySnippet) {
+    lines.push('responseBodySnippet:', bodySnippet);
+  }
+
+  return new Error(lines.join('\n'));
+};
+
 /**
  * Get CORS proxy URL from environment variable
  */
@@ -11,14 +79,15 @@ const getCorsProxyUrl = (): string | undefined => {
 };
 
 /**
- * Apply CORS proxy to image URL if proxy is configured
+ * Build a CORS-proxied image URL if proxy is configured.
+ * Returns undefined when no proxy is configured.
  */
-const proxifyImageUrl = (url: string): string => {
+const getProxiedImageUrl = (url: string): string | undefined => {
   const proxyUrl = getCorsProxyUrl();
   if (proxyUrl && url) {
     return `${proxyUrl}${encodeURIComponent(url)}`;
   }
-  return url;
+  return undefined;
 };
 
 /**
@@ -90,19 +159,36 @@ async function fetchFromNekosBest(): Promise<AnimeImage> {
   });
 
   if (!response.ok) {
-    throw new Error(`nekos.best API error: ${response.status} ${response.statusText}`);
+    throw await buildResponseError('nekos.best', url, response);
   }
 
-  const data: NekosBestResponse = await response.json();
+  let data: NekosBestResponse;
+  try {
+    data = await response.json();
+  } catch (error) {
+    throw buildDataError(
+      'nekos.best',
+      url,
+      'Failed to parse JSON response',
+    );
+  }
 
   if (!data.results || data.results.length === 0) {
-    throw new Error('No images returned from nekos.best API');
+    throw buildDataError(
+      'nekos.best',
+      url,
+      'No images returned from nekos.best API',
+      data,
+    );
   }
 
   const result = data.results[0];
 
+  const directUrl = result.url;
+
   return {
-    url: proxifyImageUrl(result.url),
+    url: directUrl,
+    proxiedUrl: getProxiedImageUrl(directUrl),
     animeName: result.anime_name,
     artistName: result.artist_name,
     artistHref: result.artist_href,
@@ -125,17 +211,34 @@ async function fetchFromWaifuPics(allowNSFW = false): Promise<AnimeImage> {
   });
 
   if (!response.ok) {
-    throw new Error(`waifu.pics API error: ${response.status} ${response.statusText}`);
+    throw await buildResponseError('waifu.pics', url, response);
   }
 
-  const data: WaifuPicsResponse = await response.json();
+  let data: WaifuPicsResponse;
+  try {
+    data = await response.json();
+  } catch {
+    throw buildDataError(
+      'waifu.pics',
+      url,
+      'Failed to parse JSON response',
+    );
+  }
 
   if (!data.url) {
-    throw new Error('No image URL returned from waifu.pics API');
+    throw buildDataError(
+      'waifu.pics',
+      url,
+      'No image URL returned from waifu.pics API',
+      data,
+    );
   }
 
+  const directUrl = data.url;
+
   return {
-    url: proxifyImageUrl(data.url),
+    url: directUrl,
+    proxiedUrl: getProxiedImageUrl(directUrl),
   };
 }
 
@@ -153,17 +256,34 @@ async function fetchFromNekosia(): Promise<AnimeImage> {
   });
 
   if (!response.ok) {
-    throw new Error(`Nekosia API error: ${response.status} ${response.statusText}`);
+    throw await buildResponseError('Nekosia', url, response);
   }
 
-  const data = await response.json();
+  let data: any;
+  try {
+    data = await response.json();
+  } catch {
+    throw buildDataError(
+      'Nekosia',
+      url,
+      'Failed to parse JSON response',
+    );
+  }
 
   if (!data.image || !data.image.original || !data.image.original.url) {
-    throw new Error('No image URL returned from Nekosia API');
+    throw buildDataError(
+      'Nekosia',
+      url,
+      'No image URL returned from Nekosia API',
+      data,
+    );
   }
 
+  const directUrl = data.image.original.url;
+
   return {
-    url: proxifyImageUrl(data.image.original.url),
+    url: directUrl,
+    proxiedUrl: getProxiedImageUrl(directUrl),
   };
 }
 
@@ -182,19 +302,36 @@ async function fetchFromWaifuIm(allowNSFW = false): Promise<AnimeImage> {
   });
 
   if (!response.ok) {
-    throw new Error(`waifu.im API error: ${response.status} ${response.statusText}`);
+    throw await buildResponseError('waifu.im', url, response);
   }
 
-  const data = await response.json();
+  let data: any;
+  try {
+    data = await response.json();
+  } catch {
+    throw buildDataError(
+      'waifu.im',
+      url,
+      'Failed to parse JSON response',
+    );
+  }
 
   if (!data.images || data.images.length === 0) {
-    throw new Error('No images returned from waifu.im API');
+    throw buildDataError(
+      'waifu.im',
+      url,
+      'No images returned from waifu.im API',
+      data,
+    );
   }
 
   const image = data.images[0];
 
+  const directUrl = image.url;
+
   return {
-    url: proxifyImageUrl(image.url),
+    url: directUrl,
+    proxiedUrl: getProxiedImageUrl(directUrl),
     artistName: image.artist?.name,
     artistHref: image.artist?.pixiv,
     sourceUrl: image.source,
@@ -213,16 +350,31 @@ async function fetchFromNekosMoe(allowNSFW = false): Promise<AnimeImage> {
     headers: { 'Accept': 'application/json' },
   });
   if (!response.ok) {
-    throw new Error(`nekos.moe API error: ${response.status} ${response.statusText}`);
+    throw await buildResponseError('nekos.moe', url, response);
   }
-  const data: NekosMoeRandomResponse = await response.json();
+  let data: NekosMoeRandomResponse;
+  try {
+    data = await response.json();
+  } catch {
+    throw buildDataError(
+      'nekos.moe',
+      url,
+      'Failed to parse JSON response',
+    );
+  }
   const img = data.images?.[0];
   if (!img || !img.id) {
-    throw new Error('No images returned from nekos.moe API');
+    throw buildDataError(
+      'nekos.moe',
+      url,
+      'No images returned from nekos.moe API',
+      data,
+    );
   }
   const imageUrl = `https://nekos.moe/image/${img.id}`;
   return {
-    url: proxifyImageUrl(imageUrl),
+    url: imageUrl,
+    proxiedUrl: getProxiedImageUrl(imageUrl),
     artistName: img.artist,
     sourceUrl: `https://nekos.moe/post/${img.id}`,
   };
@@ -238,16 +390,32 @@ async function fetchFromDanbooru(allowNSFW = false): Promise<AnimeImage> {
   const apiUrl = `https://danbooru.donmai.us/posts.json?limit=1&random=true&tags=${encodeURIComponent(rating)}`;
   const response = await fetch(apiUrl, { headers: { 'Accept': 'application/json' } });
   if (!response.ok) {
-    throw new Error(`danbooru API error: ${response.status} ${response.statusText}`);
+    throw await buildResponseError('danbooru', apiUrl, response);
   }
-  const posts: DanbooruPost[] = await response.json();
+
+  let posts: DanbooruPost[];
+  try {
+    posts = await response.json();
+  } catch {
+    throw buildDataError(
+      'danbooru',
+      apiUrl,
+      'Failed to parse JSON response',
+    );
+  }
   const post = posts?.[0];
   const url = post?.large_file_url || post?.file_url || post?.preview_file_url;
   if (!url) {
-    throw new Error('No image URL returned from danbooru API');
+    throw buildDataError(
+      'danbooru',
+      apiUrl,
+      'No image URL returned from danbooru API',
+      posts,
+    );
   }
   return {
-    url: proxifyImageUrl(url),
+    url,
+    proxiedUrl: getProxiedImageUrl(url),
     artistName: post?.tag_string_artist,
     sourceUrl: post?.source,
   };
@@ -261,7 +429,8 @@ async function fetchFromPicRe(): Promise<AnimeImage> {
   // Pic.re serves a random safe-for-work anime image at this URL.
   const imageUrl = 'https://pic.re/image';
   return {
-    url: proxifyImageUrl(imageUrl),
+    url: imageUrl,
+    proxiedUrl: getProxiedImageUrl(imageUrl),
   };
 }
 
@@ -297,19 +466,36 @@ async function fetchFromNekosApi(allowNSFW = false): Promise<AnimeImage> {
   });
 
   if (!response.ok) {
-    throw new Error(`Nekos API error: ${response.status} ${response.statusText}`);
+    throw await buildResponseError('Nekos', url, response);
   }
 
-  const data = await response.json();
+  let data: any;
+  try {
+    data = await response.json();
+  } catch {
+    throw buildDataError(
+      'Nekos',
+      url,
+      'Failed to parse JSON response',
+    );
+  }
   const images: NekosApiImage[] = Array.isArray(data) ? data : data?.items ?? [];
   const image = images[0];
 
   if (!image || !image.url) {
-    throw new Error('No image URL returned from Nekos API');
+    throw buildDataError(
+      'Nekos',
+      url,
+      'No image URL returned from Nekos API',
+      data,
+    );
   }
 
+  const directUrl = image.url;
+
   return {
-    url: proxifyImageUrl(image.url),
+    url: directUrl,
+    proxiedUrl: getProxiedImageUrl(directUrl),
     artistName: image.artist_name ?? undefined,
     sourceUrl: image.source_url ?? undefined,
   };
@@ -322,7 +508,8 @@ function getFallbackImage(): AnimeImage {
   // Using a reliable placeholder service
   const fallbackUrl = `https://picsum.photos/1920/1080?random=${Date.now()}`;
   return {
-    url: proxifyImageUrl(fallbackUrl),
+    url: fallbackUrl,
+    proxiedUrl: getProxiedImageUrl(fallbackUrl),
   };
 }
 

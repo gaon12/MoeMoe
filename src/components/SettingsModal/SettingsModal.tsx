@@ -399,31 +399,33 @@ export const SettingsModal = () => {
 
                 {!localSettings.use24Hour && localSettings.showAmPm && (
                   <>
-                    <div className="settings-option">
-                      <label className="settings-label">
-                        {t('settings.appearance.amPmStyle.title')}
-                      </label>
-                      <select
-                        className="settings-select"
-                        value={localSettings.amPmStyle}
-                        onChange={(e) =>
-                          setLocalSettings({
-                            ...localSettings,
-                            amPmStyle: e.target.value as any,
-                          })
-                        }
-                      >
-                        <option value="locale">
-                          {t('settings.appearance.amPmStyle.locale')}
-                        </option>
-                        <option value="latin">
-                          {t('settings.appearance.amPmStyle.latin')}
-                        </option>
-                      </select>
-                      <p className="settings-description">
-                        {t('settings.appearance.amPmStyle.desc')}
-                      </p>
-                    </div>
+                    {(i18n.language === 'ko' || i18n.language === 'ja') && (
+                      <div className="settings-option">
+                        <label className="settings-label">
+                          {t('settings.appearance.amPmStyle.title')}
+                        </label>
+                        <select
+                          className="settings-select"
+                          value={localSettings.amPmStyle}
+                          onChange={(e) =>
+                            setLocalSettings({
+                              ...localSettings,
+                              amPmStyle: e.target.value as any,
+                            })
+                          }
+                        >
+                          <option value="locale">
+                            {t('settings.appearance.amPmStyle.locale')}
+                          </option>
+                          <option value="latin">
+                            {t('settings.appearance.amPmStyle.latin')}
+                          </option>
+                        </select>
+                        <p className="settings-description">
+                          {t('settings.appearance.amPmStyle.desc')}
+                        </p>
+                      </div>
+                    )}
 
                     <div className="settings-option">
                       <label className="settings-label">

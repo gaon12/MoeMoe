@@ -30,10 +30,30 @@ export const Clock: React.FC<ClockProps> = ({ className = '' }) => {
       const baseUrl = import.meta.env.VITE_SERVER_TIME_API_URL as string | undefined;
       if (!baseUrl) return; // no API configured
       const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+      const requestUrl = `${baseUrl}${encodeURIComponent(tz)}`;
       const t0 = Date.now();
-      const res = await fetch(`${baseUrl}${encodeURIComponent(tz)}`, { cache: 'no-store' });
+      const res = await fetch(requestUrl, { cache: 'no-store' });
       const t3 = Date.now();
-      if (!res.ok) throw new Error('Failed to fetch server time');
+      if (!res.ok) {
+        let bodySnippet: string | undefined;
+        try {
+          const text = await res.text();
+          if (text) {
+            bodySnippet = text.length > 500 ? `${text.slice(0, 500)}…` : text;
+          }
+        } catch {
+          // ignore
+        }
+        const lines = [
+          'Failed to fetch server time',
+          `requestUrl: ${requestUrl}`,
+          `status: ${res.status} ${res.statusText}`,
+        ];
+        if (bodySnippet) {
+          lines.push('responseBodySnippet:', bodySnippet);
+        }
+        throw new Error(lines.join('\n'));
+      }
       const data = await res.json();
       // Prefer timestamp (seconds with fraction), else iso8601, else datetime
       let serverMs: number | null = null;
