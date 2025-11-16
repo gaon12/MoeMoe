@@ -205,7 +205,8 @@ export const ImageBackground = forwardRef<ImageBackgroundHandle, ImageBackground
       const samples: number[][] = [];
 
       // Top and bottom edges
-      for (let x = 0; x < canvas.width; x += Math.floor(canvas.width / sampleSize)) {
+      const stepX = Math.max(1, Math.floor(canvas.width / sampleSize));
+      for (let x = 0; x < canvas.width; x += stepX) {
         const topPixel = ctx.getImageData(x, 0, 1, 1).data;
         const bottomPixel = ctx.getImageData(x, canvas.height - 1, 1, 1).data;
         samples.push([topPixel[0], topPixel[1], topPixel[2]]);
@@ -213,11 +214,16 @@ export const ImageBackground = forwardRef<ImageBackgroundHandle, ImageBackground
       }
 
       // Left and right edges
-      for (let y = 0; y < canvas.height; y += Math.floor(canvas.height / sampleSize)) {
+      const stepY = Math.max(1, Math.floor(canvas.height / sampleSize));
+      for (let y = 0; y < canvas.height; y += stepY) {
         const leftPixel = ctx.getImageData(0, y, 1, 1).data;
         const rightPixel = ctx.getImageData(canvas.width - 1, y, 1, 1).data;
         samples.push([leftPixel[0], leftPixel[1], leftPixel[2]]);
         samples.push([rightPixel[0], rightPixel[1], rightPixel[2]]);
+      }
+
+      if (samples.length === 0) {
+        return '#1a1a1a';
       }
 
       // Calculate average color
