@@ -19,9 +19,8 @@ export type ImageSource =
   | 'waifu_im'
   | 'nekos_moe'
   | 'danbooru' // donmai.us
-  | 'waifu_it'
   | 'pic_re'
-  | 'neoksapi'
+  | 'nekosapi'
   | 'random'
   | 'fallback';
 
@@ -35,9 +34,8 @@ export const ALL_IMAGE_SOURCES: ImageSource[] = [
   'waifu_im',
   'nekos_moe',
   'danbooru',
-  'waifu_it',
   'pic_re',
-  'neoksapi',
+  'nekosapi',
 ];
 
 /**

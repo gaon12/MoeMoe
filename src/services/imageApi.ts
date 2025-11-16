@@ -254,6 +254,68 @@ async function fetchFromDanbooru(allowNSFW = false): Promise<AnimeImage> {
 }
 
 /**
+ * Fetches a random SFW anime image from Pic.re
+ * Docs: https://doc.pic.re/anime-api-jie-shao
+ */
+async function fetchFromPicRe(): Promise<AnimeImage> {
+  // Pic.re serves a random safe-for-work anime image at this URL.
+  const imageUrl = 'https://pic.re/image';
+  return {
+    url: proxifyImageUrl(imageUrl),
+  };
+}
+
+/**
+ * Response structure for Nekos API image
+ * Docs: https://github.com/Nekos-API/Nekos-API
+ */
+interface NekosApiImage {
+  id: number;
+  url: string;
+  rating?: string;
+  artist_name?: string | null;
+  source_url?: string | null;
+}
+
+/**
+ * Fetches a random anime image from Nekos API
+ * Base URL: https://api.nekosapi.com/v4
+ */
+async function fetchFromNekosApi(allowNSFW = false): Promise<AnimeImage> {
+  const params = new URLSearchParams();
+  params.set('limit', '1');
+  if (!allowNSFW) {
+    params.set('rating', 'safe');
+  }
+  const url = `https://api.nekosapi.com/v4/images/random?${params.toString()}`;
+
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Accept': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Nekos API error: ${response.status} ${response.statusText}`);
+  }
+
+  const data = await response.json();
+  const images: NekosApiImage[] = Array.isArray(data) ? data : data?.items ?? [];
+  const image = images[0];
+
+  if (!image || !image.url) {
+    throw new Error('No image URL returned from Nekos API');
+  }
+
+  return {
+    url: proxifyImageUrl(image.url),
+    artistName: image.artist_name ?? undefined,
+    sourceUrl: image.source_url ?? undefined,
+  };
+}
+
+/**
  * Returns a fallback placeholder image
  */
 function getFallbackImage(): AnimeImage {
@@ -274,7 +336,7 @@ export async function fetchRandomImage(
 
   // If RANDOM is selected, randomly choose an API
   if (source === 'random') {
-    const sources: ImageSource[] = ['nekos_best', 'waifu_pics', 'nekosia', 'waifu_im', 'nekos_moe', 'danbooru'];
+    const sources: ImageSource[] = ['nekos_best', 'waifu_pics', 'nekosia', 'waifu_im', 'nekos_moe', 'danbooru', 'pic_re', 'nekosapi'];
     source = sources[Math.floor(Math.random() * sources.length)];
     console.log(`Random source selected: ${source}`);
   }
@@ -299,10 +361,11 @@ export async function fetchRandomImage(
       case 'danbooru':
         return await fetchFromDanbooru(allowNSFW);
 
-      case 'waifu_it':
       case 'pic_re':
-      case 'neoksapi':
-        throw new Error(`Source not yet implemented: ${source}`);
+        return await fetchFromPicRe();
+
+      case 'nekosapi':
+        return await fetchFromNekosApi(allowNSFW);
 
       case 'fallback':
         return getFallbackImage();

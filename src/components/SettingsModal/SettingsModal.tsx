@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '../../contexts/AppContext';
 import { type ThemeMode, type Language, type ImageFitMode, type LetterboxFillMode } from '../../types/settings';
-import { type ImageSource } from '../../types/image';
+import { type ImageSource, ALL_IMAGE_SOURCES } from '../../types/image';
 import './SettingsModal.css';
 
 export const SettingsModal = () => {
@@ -42,32 +42,29 @@ export const SettingsModal = () => {
     setLocalSettings({ ...localSettings, imageSources: newSources });
   };
 
-  const allSourceValues = [
-    'nekos_best',
-    'waifu_pics',
-    'nekosia',
-    'waifu_im',
-    'nekos_moe',
-    'danbooru',
-    'waifu_it',
-    'pic_re',
-    'neoksapi',
-  ] as ImageSource[];
+  const allSourceValues = ALL_IMAGE_SOURCES;
 
-  const selectAllSources = () => setLocalSettings({ ...localSettings, imageSources: allSourceValues });
+  const selectAllSources = () =>
+    setLocalSettings({ ...localSettings, imageSources: allSourceValues });
   const deselectAllSources = () => setLocalSettings({ ...localSettings, imageSources: [] });
 
-  const availableSources: Array<{ value: ImageSource; label: string }> = [
-    { value: 'nekos_best', label: t('settings.imageSource.nekosBest') },
-    { value: 'waifu_pics', label: t('settings.imageSource.waifuPics') },
-    { value: 'nekosia', label: t('settings.imageSource.nekosia') },
-    { value: 'waifu_im', label: t('settings.imageSource.waifuIm') },
-    { value: 'nekos_moe', label: t('settings.imageSource.nekosMoe') },
-    { value: 'danbooru', label: t('settings.imageSource.danbooru') },
-    { value: 'waifu_it', label: t('settings.imageSource.waifuIt') },
-    { value: 'pic_re', label: t('settings.imageSource.picRe') },
-    { value: 'neoksapi', label: t('settings.imageSource.neoksapi') },
-  ];
+  const sourceLabelKeyMap: Record<string, string> = {
+    nekos_best: 'settings.imageSource.nekosBest',
+    waifu_pics: 'settings.imageSource.waifuPics',
+    nekosia: 'settings.imageSource.nekosia',
+    waifu_im: 'settings.imageSource.waifuIm',
+    nekos_moe: 'settings.imageSource.nekosMoe',
+    danbooru: 'settings.imageSource.danbooru',
+    pic_re: 'settings.imageSource.picRe',
+    nekosapi: 'settings.imageSource.nekosapi',
+  };
+
+  const availableSources: Array<{ value: ImageSource; label: string }> = allSourceValues.map(
+    (value) => ({
+      value,
+      label: t(sourceLabelKeyMap[value] ?? value),
+    }),
+  );
 
   return (
     <div className="settings-modal-overlay" onClick={handleOverlayClick}>
