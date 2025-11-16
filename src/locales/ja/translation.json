@@ -17,6 +17,13 @@
     "title": "設定",
     "close": "閉じる",
     "save": "保存",
+    "tabs": {
+      "general": "一般",
+      "image": "画像",
+      "clock": "時計・時間",
+      "widgets": "ウィジェット",
+      "info": "情報"
+    },
     "language": {
       "title": "言語",
       "korean": "한국어",
@@ -93,6 +100,12 @@
       "useServerTime": "サーバー時刻を使用",
       "useServerTimeDesc": "サーバーAPIから現在時刻を取得し、ネットワーク遅延を補正します。",
       "updateInterval": "更新間隔"
+    },
+    "info": {
+      "title": "プロジェクト情報",
+      "projectName": "プロジェクト名",
+      "version": "バージョン",
+      "github": "GitHub"
     }
   },
   "buttons": {

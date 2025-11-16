@@ -9,9 +9,12 @@ export const SettingsModal = () => {
   const { t, i18n } = useTranslation();
   const { settings, updateSettings, isSettingsOpen, setIsSettingsOpen } = useApp();
   const [localSettings, setLocalSettings] = useState(settings);
-  const [activeTab, setActiveTab] = useState<'general' | 'image' | 'clock' | 'widgets'>('general');
+  const [activeTab, setActiveTab] = useState<'general' | 'image' | 'clock' | 'widgets' | 'info'>(
+    'general',
+  );
 
   const secondsLabel = (n: number) => `${n}${i18n.language === 'ko' ? '초' : i18n.language === 'ja' ? '秒' : 's'}`;
+  const githubUrl = 'https://github.com/gaon12/MoeMoe';
 
   useEffect(() => {
     setLocalSettings(settings);
@@ -116,6 +119,15 @@ export const SettingsModal = () => {
               aria-selected={activeTab === 'widgets'}
             >
               {t('settings.tabs.widgets')}
+            </button>
+            <button
+              type="button"
+              className={`settings-tab${activeTab === 'info' ? ' settings-tab-active' : ''}`}
+              onClick={() => setActiveTab('info')}
+              role="tab"
+              aria-selected={activeTab === 'info'}
+            >
+              {t('settings.tabs.info')}
             </button>
           </div>
 
@@ -508,6 +520,33 @@ export const SettingsModal = () => {
                       />
                     </div>
                   ))}
+                </div>
+              </div>
+            </>
+          )}
+
+          {activeTab === 'info' && (
+            <>
+              <div className="settings-section">
+                <h3 className="settings-section-title">{t('settings.info.title')}</h3>
+
+                <div className="settings-option">
+                  <label className="settings-label">{t('settings.info.projectName')}</label>
+                  <p className="settings-description">{t('app.title')}</p>
+                </div>
+
+                <div className="settings-option">
+                  <label className="settings-label">{t('settings.info.version')}</label>
+                  <p className="settings-description">{__APP_VERSION__}</p>
+                </div>
+
+                <div className="settings-option">
+                  <label className="settings-label">{t('settings.info.github')}</label>
+                  <p className="settings-description">
+                    <a href={githubUrl} target="_blank" rel="noreferrer">
+                      {githubUrl}
+                    </a>
+                  </p>
                 </div>
               </div>
             </>

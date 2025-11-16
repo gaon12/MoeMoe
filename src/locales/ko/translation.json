@@ -21,7 +21,8 @@
       "general": "일반",
       "image": "이미지",
       "clock": "시계/시간",
-      "widgets": "위젯"
+      "widgets": "위젯",
+      "info": "정보"
     },
     "language": {
       "title": "언어",
@@ -100,6 +101,12 @@
       "useServerTime": "서버 시간 사용",
       "useServerTimeDesc": "서버 시간 API에서 현재 시간을 받아 약간의 네트워크 지연을 보정합니다.",
       "updateInterval": "업데이트 주기"
+    },
+    "info": {
+      "title": "프로젝트 정보",
+      "projectName": "프로젝트 이름",
+      "version": "버전",
+      "github": "GitHub"
     }
   },
   "buttons": {

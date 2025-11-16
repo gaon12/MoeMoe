@@ -21,7 +21,8 @@
       "general": "General",
       "image": "Images",
       "clock": "Clock & Time",
-      "widgets": "Widgets"
+      "widgets": "Widgets",
+      "info": "Info"
     },
     "language": {
       "title": "Language",
@@ -99,6 +100,12 @@
       "useServerTime": "Use Server Time",
       "useServerTimeDesc": "Fetch current time from a server API and compensate for network delay.",
       "updateInterval": "Update Interval"
+    },
+    "info": {
+      "title": "Project Info",
+      "projectName": "Project Name",
+      "version": "Version",
+      "github": "GitHub"
     }
   },
   "buttons": {
