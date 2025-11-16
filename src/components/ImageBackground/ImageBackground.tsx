@@ -175,11 +175,10 @@ export const ImageBackground = forwardRef<ImageBackgroundHandle, ImageBackground
     }
   }, [imageSources, allowNSFW, onImageLoad, onImageError, generateThumbhash]);
 
-  // Load initial image on mount only
+  // Load image on mount and when dependencies change (e.g. sources, NSFW)
   useEffect(() => {
     loadNewImage();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [loadNewImage]);
 
   useImperativeHandle(
     ref,
