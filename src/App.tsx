@@ -9,6 +9,7 @@ import { RefreshButton } from './components/RefreshButton/RefreshButton';
 import { DownloadButton } from './components/DownloadButton/DownloadButton';
 import { SettingsButton } from './components/SettingsButton/SettingsButton';
 import { SettingsModal } from './components/SettingsModal/SettingsModal';
+import { FullscreenButton } from './components/FullscreenButton/FullscreenButton';
 import { type AnimeImage } from './types/image';
 import { useApp } from './contexts/AppContext';
 import './App.css';
@@ -88,6 +89,16 @@ function App() {
     }
   }, [settings.imageChangeInterval, scheduleAutoRefresh, lastRefreshTime]);
 
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch((err) => {
+        console.error('Failed to enter fullscreen:', err);
+      });
+    } else {
+      document.exitFullscreen();
+    }
+  };
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -105,10 +116,10 @@ function App() {
         handleRefresh();
       }
 
-      // F key to toggle fullscreen
-      if (event.key === 'f' || event.key === 'F') {
-        event.preventDefault();
-        toggleFullscreen();
+	      // F key to toggle fullscreen
+  	      if (event.key === 'f' || event.key === 'F') {
+  	        event.preventDefault();
+  	        toggleFullscreen();
       }
 
       // S key to open settings
@@ -118,22 +129,12 @@ function App() {
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
+	    window.addEventListener('keydown', handleKeyDown);
 
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [handleRefresh, setIsSettingsOpen]);
-
-  const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch((err) => {
-        console.error('Failed to enter fullscreen:', err);
-      });
-    } else {
-      document.exitFullscreen();
-    }
-  };
+	    return () => {
+	      window.removeEventListener('keydown', handleKeyDown);
+	    };
+	  }, [handleRefresh, toggleFullscreen, setIsSettingsOpen]);
 
   return (
     <div className="app">
@@ -156,9 +157,10 @@ function App() {
         )}
       </div>
 
-      <SettingsButton />
-      <RefreshButton
-        onRefresh={handleRefresh}
+	      <SettingsButton />
+	      <FullscreenButton onToggle={toggleFullscreen} />
+	      <RefreshButton
+	        onRefresh={handleRefresh}
         isLoading={isLoadingImage}
         lastRefreshTime={lastRefreshTime}
       />
