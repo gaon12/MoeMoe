@@ -1,4 +1,11 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import {
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  forwardRef,
+  useImperativeHandle,
+} from 'react';
 import { rgbaToThumbHash, thumbHashToDataURL } from 'thumbhash';
 import { fetchRandomImage } from '../../services/imageApi';
 import { type AnimeImage, type ImageSource } from '../../types/image';
@@ -13,19 +20,24 @@ interface ImageBackgroundProps {
   letterboxCustomColor?: string;
   onImageLoad?: (image: AnimeImage) => void;
   onImageError?: (error: Error) => void;
-  onRefreshRequest?: () => void;
 }
 
-export const ImageBackground: React.FC<ImageBackgroundProps> = ({
-  imageSources = ['nekos_best'],
-  allowNSFW = false,
-  imageFitMode = 'cover',
-  letterboxFillMode = 'blur',
-  letterboxCustomColor = '#1a1a1a',
-  onImageLoad,
-  onImageError,
-  onRefreshRequest,
-}) => {
+export interface ImageBackgroundHandle {
+  refresh: () => void;
+}
+
+export const ImageBackground = forwardRef<ImageBackgroundHandle, ImageBackgroundProps>((
+  {
+    imageSources = ['nekos_best'],
+    allowNSFW = false,
+    imageFitMode = 'cover',
+    letterboxFillMode = 'blur',
+    letterboxCustomColor = '#1a1a1a',
+    onImageLoad,
+    onImageError,
+  },
+  ref,
+) => {
   const [currentImage, setCurrentImage] = useState<AnimeImage | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
@@ -169,13 +181,13 @@ export const ImageBackground: React.FC<ImageBackgroundProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Expose refresh function to parent via callback
-  useEffect(() => {
-    if (onRefreshRequest) {
-      // Store the refresh function reference
-      (window as any).__imageBackgroundRefresh = loadNewImage;
-    }
-  }, [loadNewImage, onRefreshRequest]);
+  useImperativeHandle(
+    ref,
+    () => ({
+      refresh: loadNewImage,
+    }),
+    [loadNewImage],
+  );
 
   // Extract edge color from image
   const extractEdgeColor = useCallback((img: HTMLImageElement) => {
@@ -434,4 +446,4 @@ export const ImageBackground: React.FC<ImageBackgroundProps> = ({
       )}
     </div>
   );
-};
+});

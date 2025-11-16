@@ -1,7 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Clock } from './components/Clock/Clock';
-import { ImageBackground } from './components/ImageBackground/ImageBackground';
+import {
+  ImageBackground,
+  type ImageBackgroundHandle,
+} from './components/ImageBackground/ImageBackground';
 import { RefreshButton } from './components/RefreshButton/RefreshButton';
 import { DownloadButton } from './components/DownloadButton/DownloadButton';
 import { SettingsButton } from './components/SettingsButton/SettingsButton';
@@ -17,6 +20,7 @@ function App() {
   const [currentImage, setCurrentImage] = useState<AnimeImage | null>(null);
   const [lastRefreshTime, setLastRefreshTime] = useState<number>(0);
   const autoRefreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const imageBackgroundRef = useRef<ImageBackgroundHandle | null>(null);
 
   const scheduleAutoRefresh = useCallback(() => {
     // Clear existing timer
@@ -65,10 +69,7 @@ function App() {
       clearTimeout(autoRefreshTimerRef.current);
       autoRefreshTimerRef.current = null;
     }
-    // Trigger refresh in ImageBackground component
-    if ((window as any).__imageBackgroundRefresh) {
-      (window as any).__imageBackgroundRefresh();
-    }
+    imageBackgroundRef.current?.refresh();
   }, [lastRefreshTime]);
 
   // Cleanup timer on unmount or interval change
@@ -137,6 +138,7 @@ function App() {
   return (
     <div className="app">
       <ImageBackground
+        ref={imageBackgroundRef}
         imageSources={settings.imageSources}
         allowNSFW={settings.allowNSFW}
         imageFitMode={settings.imageFitMode}
@@ -144,7 +146,6 @@ function App() {
         letterboxCustomColor={settings.letterboxCustomColor}
         onImageLoad={handleImageLoad}
         onImageError={handleImageError}
-        onRefreshRequest={() => {}}
       />
       <div className="content">
         <Clock />
