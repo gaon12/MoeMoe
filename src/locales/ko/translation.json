@@ -17,6 +17,12 @@
     "title": "설정",
     "close": "닫기",
     "save": "저장",
+    "tabs": {
+      "general": "일반",
+      "image": "이미지",
+      "clock": "시계/시간",
+      "widgets": "위젯"
+    },
     "language": {
       "title": "언어",
       "korean": "한국어",

@@ -26,6 +26,11 @@
   --border: rgba(255, 255, 255, 0.08);
   --accent: #ff85a8;
   --accent-hover: #ffa3bf;
+
+  /* Scrollbar (dark, default) */
+  --scrollbar-bg: rgba(0, 0, 0, 0.6);
+  --scrollbar-thumb: #00BCD4;
+  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.6);
 }
 
 :root[data-theme='light'] {
@@ -41,6 +46,36 @@
   --border: rgba(0, 0, 0, 0.1);
   --accent: #ff6b9d;
   --accent-hover: #ff8fb3;
+
+  /* Scrollbar (light) */
+  --scrollbar-bg: rgba(0, 0, 0, 0.06);
+  --scrollbar-thumb: rgba(0, 0, 0, 0.35);
+  --scrollbar-thumb-hover: rgba(0, 0, 0, 0.5);
+}
+
+/* Global scrollbar styling */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-bg);
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: var(--scrollbar-bg);
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb);
+  border-radius: 999px;
+  border: none;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scrollbar-thumb-hover);
 }
 
 body {

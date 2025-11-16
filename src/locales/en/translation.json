@@ -17,6 +17,12 @@
     "title": "Settings",
     "close": "Close",
     "save": "Save",
+    "tabs": {
+      "general": "General",
+      "image": "Images",
+      "clock": "Clock & Time",
+      "widgets": "Widgets"
+    },
     "language": {
       "title": "Language",
       "korean": "한국어",
