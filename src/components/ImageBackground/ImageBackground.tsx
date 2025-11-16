@@ -6,6 +6,7 @@ import {
   forwardRef,
   useImperativeHandle,
 } from 'react';
+import { createPortal } from 'react-dom';
 import { rgbaToThumbHash, thumbHashToDataURL } from 'thumbhash';
 import { fetchRandomImage } from '../../services/imageApi';
 import { type AnimeImage, type ImageSource } from '../../types/image';
@@ -47,6 +48,10 @@ export const ImageBackground = forwardRef<ImageBackgroundHandle, ImageBackground
   const [letterboxColor, setLetterboxColor] = useState<string>('#1a1a1a');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>('idle');
+  const [isMetadataOpen, setIsMetadataOpen] = useState(false);
+  const [metadataCopyState, setMetadataCopyState] = useState<'idle' | 'copied' | 'failed'>(
+    'idle',
+  );
   const [demoThumbhashDataUrl, setDemoThumbhashDataUrl] = useState<string | null>(null);
   const [showDemoThumbhash, setShowDemoThumbhash] = useState(false);
   const [showDemoImage, setShowDemoImage] = useState(false);
@@ -119,6 +124,8 @@ export const ImageBackground = forwardRef<ImageBackgroundHandle, ImageBackground
     setHasError(false);
     setErrorMessage(null);
     setCopyState('idle');
+    setIsMetadataOpen(false);
+    setMetadataCopyState('idle');
 
     try {
       // Step 1: Start transition - blur current image if one exists
@@ -268,6 +275,49 @@ export const ImageBackground = forwardRef<ImageBackgroundHandle, ImageBackground
     }
   };
 
+  const handleShowMetadata = () => {
+    if (!currentImage) return;
+    setMetadataCopyState('idle');
+    setIsMetadataOpen(true);
+  };
+
+  const buildMetadataText = (image: AnimeImage): string => {
+    const proxyUrl = import.meta.env.VITE_FIX_CORS_API_URL as string | undefined;
+    let displayUrl = image.url;
+    if (proxyUrl && displayUrl.startsWith(proxyUrl)) {
+      const encoded = displayUrl.slice(proxyUrl.length);
+      try {
+        const decoded = decodeURIComponent(encoded);
+        if (decoded) {
+          displayUrl = decoded;
+        }
+      } catch {
+        // If decode fails, fall back to original value
+      }
+    }
+
+    const lines: string[] = [
+      `url: ${displayUrl}`,
+      `animeName: ${image.animeName ?? 'N/A'}`,
+      `artistName: ${image.artistName ?? 'N/A'}`,
+      `artistHref: ${image.artistHref ?? 'N/A'}`,
+      `sourceUrl: ${image.sourceUrl ?? 'N/A'}`,
+    ];
+    return lines.join('\n');
+  };
+
+  const handleCopyMetadata = async () => {
+    if (!currentImage) return;
+    const text = buildMetadataText(currentImage);
+    try {
+      await navigator.clipboard.writeText(text);
+      setMetadataCopyState('copied');
+      setTimeout(() => setMetadataCopyState('idle'), 2000);
+    } catch {
+      setMetadataCopyState('failed');
+    }
+  };
+
   const githubRepoUrl = import.meta.env.VITE_GITHUB_REPO_URL as string | undefined;
   const normalizedRepoUrl = githubRepoUrl?.replace(/\/$/, '');
   const githubIssueUrl = normalizedRepoUrl
@@ -279,7 +329,8 @@ export const ImageBackground = forwardRef<ImageBackgroundHandle, ImageBackground
     : null;
 
   return (
-    <div className="image-background">
+    <>
+      <div className="image-background">
       {/* Background overlay - rendered first with pointer-events: none */}
       <div className="background-overlay"></div>
 
@@ -311,57 +362,6 @@ export const ImageBackground = forwardRef<ImageBackgroundHandle, ImageBackground
             />
           </picture>
         </>
-      )}
-
-      {hasError && (
-        <div className="error-modal-overlay">
-          <div className="error-modal">
-            <h2 className="error-modal-title">이미지 로딩 중 오류가 발생했어요</h2>
-            <div className="error-modal-content">
-              <p className="error-modal-text">
-                아래 오류 메시지를 첨부해서 깃허브 이슈를 등록해 주세요.
-              </p>
-              <textarea
-                className="error-modal-message"
-                value={errorMessage ?? '알 수 없는 오류입니다.'}
-                readOnly
-              />
-              <div className="error-modal-actions">
-                <button
-                  type="button"
-                  className="error-modal-button"
-                  onClick={handleCopyError}
-                >
-                  {copyState === 'copied' ? '복사됨' : '오류 메시지 복사'}
-                </button>
-                {githubIssueUrl && (
-                  <a
-                    href={githubIssueUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="error-modal-button error-modal-link"
-                  >
-                    깃허브 이슈 열기
-                  </a>
-                )}
-              </div>
-              {copyState === 'failed' && (
-                <p className="error-modal-copy-hint">
-                  클립보드 복사에 실패했어요. 직접 선택해서 복사해 주세요.
-                </p>
-              )}
-            </div>
-            <div className="error-modal-footer">
-              <button
-                type="button"
-                className="error-modal-button secondary"
-                onClick={loadNewImage}
-              >
-                다시 시도
-              </button>
-            </div>
-          </div>
-        </div>
       )}
 
       {currentImage && (
@@ -410,45 +410,151 @@ export const ImageBackground = forwardRef<ImageBackgroundHandle, ImageBackground
           )}
 
           {/* Artist attribution - always on top with z-index: 100 */}
-          {(currentImage.artistName || currentImage.animeName) && (
-            <div className="image-attribution">
-              {currentImage.artistName && (
-                <>
-                  <span>Art by: </span>
-                  {currentImage.artistHref ? (
-                    <a
-                      href={currentImage.artistHref}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="artist-link"
-                    >
-                      {currentImage.artistName}
-                    </a>
-                  ) : (
-                    <span>{currentImage.artistName}</span>
-                  )}
-                </>
-              )}
-              {currentImage.animeName && (
-                <span> • {currentImage.animeName}</span>
-              )}
-              {currentImage.sourceUrl && (
-                <>
-                  <span> • </span>
-                  <a
-                    href={currentImage.sourceUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="source-link"
-                  >
-                    Source
-                  </a>
-                </>
-              )}
-            </div>
-          )}
+          <div className="image-attribution">
+            <span>Art by: </span>
+            {currentImage.artistName ? (
+              currentImage.artistHref ? (
+                <a
+                  href={currentImage.artistHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="artist-link"
+                >
+                  {currentImage.artistName}
+                </a>
+              ) : (
+                <span>{currentImage.artistName}</span>
+              )
+            ) : (
+              <button
+                type="button"
+                className="artist-link"
+                onClick={handleShowMetadata}
+              >
+                N/A
+              </button>
+            )}
+            {currentImage.animeName && (
+              <span> • {currentImage.animeName}</span>
+            )}
+            {currentImage.sourceUrl && (
+              <>
+                <span> • </span>
+                <a
+                  href={currentImage.sourceUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="source-link"
+                >
+                  Source
+                </a>
+              </>
+            )}
+          </div>
         </>
       )}
-    </div>
+      </div>
+      {hasError &&
+        createPortal(
+          <div className="error-modal-overlay">
+            <div className="error-modal">
+              <h2 className="error-modal-title">이미지 로딩 중 오류가 발생했어요</h2>
+              <div className="error-modal-content">
+                <p className="error-modal-text">
+                  아래 오류 메시지를 첨부해서 깃허브 이슈를 등록해 주세요.
+                </p>
+                <textarea
+                  className="error-modal-message"
+                  value={errorMessage ?? '알 수 없는 오류입니다.'}
+                  readOnly
+                />
+                <div className="error-modal-actions">
+                  <button
+                    type="button"
+                    className="error-modal-button"
+                    onClick={handleCopyError}
+                  >
+                    {copyState === 'copied' ? '복사됨' : '오류 메시지 복사'}
+                  </button>
+                  {githubIssueUrl && (
+                    <a
+                      href={githubIssueUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="error-modal-button error-modal-link"
+                    >
+                      깃허브 이슈 열기
+                    </a>
+                  )}
+                </div>
+                {copyState === 'failed' && (
+                  <p className="error-modal-copy-hint">
+                    클립보드 복사에 실패했어요. 직접 선택해서 복사해 주세요.
+                  </p>
+                )}
+              </div>
+              <div className="error-modal-footer">
+                <button
+                  type="button"
+                  className="error-modal-button secondary"
+                  onClick={loadNewImage}
+                >
+                  다시 시도
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )}
+      {isMetadataOpen &&
+        currentImage &&
+        createPortal(
+          <div
+            className="error-modal-overlay"
+            onClick={() => setIsMetadataOpen(false)}
+          >
+            <div
+              className="error-modal"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2 className="error-modal-title">이미지 메타데이터</h2>
+              <div className="error-modal-content">
+                <p className="error-modal-text">
+                  현재 배경 이미지에 대해 API에서 받은 정보를 확인할 수 있어요.
+                </p>
+                <textarea
+                  className="error-modal-message"
+                  value={buildMetadataText(currentImage)}
+                  readOnly
+                />
+                <div className="error-modal-actions">
+                  <button
+                    type="button"
+                    className="error-modal-button"
+                    onClick={handleCopyMetadata}
+                  >
+                    {metadataCopyState === 'copied' ? '복사됨' : '메타데이터 복사'}
+                  </button>
+                </div>
+                {metadataCopyState === 'failed' && (
+                  <p className="error-modal-copy-hint">
+                    클립보드 복사에 실패했어요. 직접 선택해서 복사해 주세요.
+                  </p>
+                )}
+              </div>
+              <div className="error-modal-footer">
+                <button
+                  type="button"
+                  className="error-modal-button secondary"
+                  onClick={() => setIsMetadataOpen(false)}
+                >
+                  닫기
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )}
+    </>
   );
 });
