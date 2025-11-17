@@ -72,10 +72,28 @@
     },
     "widgets": {
       "title": "ウィジェット",
+      "description": "ページ下部に最大4枚のウィジェットカードを配置できます。モバイルでは重ねて上下スワイプで切り替えられます。",
+      "weatherApiKeyLabel": "WeatherAPI.com キー",
+      "weatherApiKeyDescription": "天気/現在地カードは WeatherAPI.com のデータを使用します。ご自身の API キーを入力してください。",
+      "weatherApiKeyPlaceholder": "WeatherAPI キーを貼り付け",
+      "add": "ウィジェットを追加",
+      "limit": "最大 {{count}} 枚",
+      "limitReached": "上限に達しました",
+      "empty": "追加されたウィジェットがありません。",
+      "cardLabel": "カード {{index}}",
+      "typeLabel": "ウィジェット種類",
+      "visible": "表示設定",
+      "enabled": "表示",
+      "disabled": "非表示",
+      "customTextLabel": "カスタムテキスト",
+      "customTextPlaceholder": "カードに表示するテキスト",
+      "remove": "削除",
+      "moveUp": "上へ移動",
+      "moveDown": "下へ移動",
       "clock": "時計",
-      "date": "日付",
       "weather": "天気",
-      "quote": "名言",
+      "location": "現在地",
+      "animeQuote": "アニメ名言",
       "customText": "カスタムテキスト"
     },
     "appearance": {
@@ -124,6 +142,7 @@
       "disabled": "自動更新は無効です",
       "paused": "自動更新を一時停止中",
       "next": "次の更新まで {{seconds}}秒",
+      "shortNext": "{{seconds}}秒後に更新",
       "refreshing": "更新中...",
       "waiting": "最初の画像を待機中..."
     },
@@ -142,14 +161,43 @@
     "general": "エラーが発生しました"
   },
   "widgets": {
+    "common": {
+      "live": "ライブ"
+    },
     "weather": {
       "title": "天気",
       "loading": "天気情報を読み込み中...",
-      "error": "天気情報を読み込めません"
+      "error": "天気情報を読み込めません",
+      "missingKey": "設定→ウィジェットで WeatherAPI キーを入力すると、このカードを利用できます。",
+      "conditions": {
+        "clear": "快晴",
+        "partlyCloudy": "晴れ時々曇り",
+        "cloudy": "曇り",
+        "fog": "霧",
+        "drizzle": "霧雨",
+        "rain": "雨",
+        "freezingRain": "凍雨",
+        "snow": "雪",
+        "thunderstorm": "雷雨",
+        "unknown": "天気情報なし"
+      }
     },
-    "quote": {
-      "title": "今日の名言",
-      "loading": "名言を読み込み中..."
+    "location": {
+      "title": "現在地",
+      "loading": "位置情報を取得中...",
+      "error": "位置情報を取得できません",
+      "missingKey": "WeatherAPI キーを入力すると現在地の詳細を表示できます。",
+      "coordsLabel": "座標",
+      "coords": "緯度 {{lat}}, 経度 {{lon}}",
+      "timezone": "タイムゾーン",
+      "localTime": "現地時間"
+    },
+    "animeQuote": {
+      "title": "アニメ名言",
+      "loading": "名言を読み込み中...",
+      "error": "名言を読み込めません",
+      "refresh": "別の名言",
+      "from": "作品：{{show}}"
     },
     "customText": {
       "placeholder": "ここにテキストを入力...",

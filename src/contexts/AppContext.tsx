@@ -1,6 +1,36 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { type AppSettings, defaultSettings, type ThemeMode } from '../types/settings';
+import { type AppSettings, defaultSettings, type ThemeMode, type Widget, type WidgetType } from '../types/settings';
+
+const VALID_WIDGET_TYPES: WidgetType[] = ['clock', 'weather', 'location', 'animeQuote', 'customText'];
+
+type LegacyWidgetType = WidgetType | 'date' | 'quote' | string | undefined;
+
+function normalizeWidgetType(type: LegacyWidgetType): WidgetType {
+  if (type === 'date') return 'clock';
+  if (type === 'quote') return 'animeQuote';
+  if (VALID_WIDGET_TYPES.includes(type as WidgetType)) {
+    return type as WidgetType;
+  }
+  return 'clock';
+}
+
+function sanitizeWidgets(widgets?: Widget[]): Widget[] {
+  const source = Array.isArray(widgets) ? widgets : defaultSettings.widgets;
+  return source
+    .filter((widget): widget is Widget => Boolean(widget))
+    .slice(0, 4)
+    .map((widget, index) => {
+      const sanitizedType = normalizeWidgetType(widget.type);
+      return {
+        ...widget,
+        id: widget.id || `widget-${index}`,
+        enabled: widget.enabled !== false,
+        position: widget.position ?? { x: 0, y: 0 },
+        type: sanitizedType,
+      };
+    });
+}
 
 interface AppContextType {
   settings: AppSettings;
@@ -17,24 +47,34 @@ const STORAGE_KEY = 'moemoe-settings';
 export function AppProvider({ children }: { children: ReactNode }) {
   const { i18n } = useTranslation();
   const [settings, setSettings] = useState<AppSettings>(() => {
+    let base: AppSettings | null = null;
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
-        return { ...defaultSettings, ...parsed };
+        base = { ...defaultSettings, ...parsed };
       }
     } catch (error) {
       console.error('Failed to load settings:', error);
     }
-    // No saved settings: derive language from browser, default to English
-    let lang: AppSettings['language'] = 'en';
-    try {
-      const navLang = (navigator.language || '').toLowerCase();
-      if (navLang.startsWith('ko')) lang = 'ko';
-      else if (navLang.startsWith('ja')) lang = 'ja';
-      else if (navLang.startsWith('en')) lang = 'en';
-    } catch { /* ignore */ }
-    return { ...defaultSettings, language: lang };
+    if (!base) {
+      // No saved settings: derive language from browser, default to English
+      let lang: AppSettings['language'] = 'en';
+      try {
+        const navLang = (navigator.language || '').toLowerCase();
+        if (navLang.startsWith('ko')) lang = 'ko';
+        else if (navLang.startsWith('ja')) lang = 'ja';
+        else if (navLang.startsWith('en')) lang = 'en';
+      } catch {
+        /* ignore */
+      }
+      base = { ...defaultSettings, language: lang };
+    }
+    return {
+      ...base,
+      widgets: sanitizeWidgets(base.widgets),
+      weatherApiKey: typeof base.weatherApiKey === 'string' ? base.weatherApiKey.trim() : '',
+    };
   });
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
@@ -86,11 +126,22 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [settings]);
 
   const updateSettings = (newSettings: Partial<AppSettings>) => {
-    setSettings((prev) => ({ ...prev, ...newSettings }));
+    setSettings((prev) => {
+      const merged = { ...prev, ...newSettings };
+      return {
+        ...merged,
+        widgets: sanitizeWidgets(newSettings.widgets ?? prev.widgets),
+        weatherApiKey: (newSettings.weatherApiKey ?? prev.weatherApiKey ?? '').trim(),
+      };
+    });
   };
 
   const resetSettings = () => {
-    setSettings(defaultSettings);
+    setSettings({
+      ...defaultSettings,
+      widgets: sanitizeWidgets(defaultSettings.widgets),
+      weatherApiKey: '',
+    });
     localStorage.removeItem(STORAGE_KEY);
   };
 

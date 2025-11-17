@@ -24,7 +24,7 @@ export type LetterboxFillMode = 'blur' | 'edge-color' | 'custom' | 'solid';
 /**
  * Widget types
  */
-export type WidgetType = 'clock' | 'date' | 'weather' | 'quote' | 'customText';
+export type WidgetType = 'clock' | 'weather' | 'location' | 'animeQuote' | 'customText';
 
 /**
  * Widget configuration
@@ -70,6 +70,7 @@ export interface AppSettings {
 
   // Widgets
   widgets: Widget[];
+  weatherApiKey: string;
 
   // Custom
   customText?: string;
@@ -102,11 +103,6 @@ export const defaultSettings: AppSettings = {
       enabled: true,
       position: { x: 0, y: 0 },
     },
-    {
-      id: 'date-widget',
-      type: 'date',
-      enabled: true,
-      position: { x: 0, y: 0 },
-    },
   ],
+  weatherApiKey: '',
 };

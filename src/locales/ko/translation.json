@@ -73,10 +73,28 @@
     
     "widgets": {
       "title": "위젯",
+      "description": "페이지 하단에 최대 4개의 위젯 카드를 배치할 수 있습니다. 모바일에서는 카드를 쌓고 위/아래로 슬라이드로 전환하세요.",
+      "weatherApiKeyLabel": "WeatherAPI.com 키",
+      "weatherApiKeyDescription": "날씨/위치 카드는 WeatherAPI.com 데이터를 사용합니다. 내 API 키를 입력해야 활성화됩니다.",
+      "weatherApiKeyPlaceholder": "WeatherAPI 키를 붙여넣기",
+      "add": "위젯 추가",
+      "limit": "최대 {{count}}개",
+      "limitReached": "최대 개수 도달",
+      "empty": "추가된 위젯이 없습니다.",
+      "cardLabel": "카드 {{index}}",
+      "typeLabel": "위젯 종류",
+      "visible": "표시 여부",
+      "enabled": "표시",
+      "disabled": "숨김",
+      "customTextLabel": "사용자 텍스트",
+      "customTextPlaceholder": "카드에 표시할 내용을 입력하세요",
+      "remove": "삭제",
+      "moveUp": "위로 이동",
+      "moveDown": "아래로 이동",
       "clock": "시계",
-      "date": "날짜",
       "weather": "날씨",
-      "quote": "명언",
+      "location": "위치 정보",
+      "animeQuote": "애니 명대사",
       "customText": "사용자 텍스트"
     },
     "appearance": {
@@ -125,6 +143,7 @@
       "disabled": "자동 새로고침 꺼짐",
       "paused": "자동 새로고침 일시정지됨",
       "next": "다음 새로고침까지 {{seconds}}초",
+      "shortNext": "{{seconds}}초 후 새로고침",
       "refreshing": "새로고침 중...",
       "waiting": "첫 이미지를 기다리는 중..."
     },
@@ -143,14 +162,43 @@
     "general": "오류가 발생했습니다"
   },
   "widgets": {
+    "common": {
+      "live": "실시간"
+    },
     "weather": {
       "title": "날씨",
       "loading": "날씨 정보 로딩 중...",
-      "error": "날씨 정보를 불러올 수 없습니다"
+      "error": "날씨 정보를 불러올 수 없습니다",
+      "missingKey": "설정 → 위젯에서 WeatherAPI 키를 입력하면 이 카드를 사용할 수 있습니다.",
+      "conditions": {
+        "clear": "맑음",
+        "partlyCloudy": "가끔 구름",
+        "cloudy": "흐림",
+        "fog": "안개",
+        "drizzle": "이슬비",
+        "rain": "비",
+        "freezingRain": "어는 비",
+        "snow": "눈",
+        "thunderstorm": "뇌우",
+        "unknown": "날씨 정보 없음"
+      }
     },
-    "quote": {
-      "title": "오늘의 명언",
-      "loading": "명언 로딩 중..."
+    "location": {
+      "title": "현재 위치",
+      "loading": "위치 정보를 불러오는 중...",
+      "error": "위치를 확인할 수 없습니다",
+      "missingKey": "WeatherAPI 키를 입력하면 위치 정보를 볼 수 있습니다.",
+      "coordsLabel": "좌표",
+      "coords": "위도 {{lat}}, 경도 {{lon}}",
+      "timezone": "시간대",
+      "localTime": "현지 시각"
+    },
+    "animeQuote": {
+      "title": "애니 명대사",
+      "loading": "명대사를 불러오는 중...",
+      "error": "명대사를 불러오지 못했습니다",
+      "refresh": "다른 문구",
+      "from": "작품: {{show}}"
     },
     "customText": {
       "placeholder": "여기에 텍스트를 입력하세요...",

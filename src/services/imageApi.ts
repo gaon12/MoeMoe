@@ -456,17 +456,53 @@ async function fetchFromNekosApi(allowNSFW = false): Promise<AnimeImage> {
   if (!allowNSFW) {
     params.set('rating', 'safe');
   }
-  const url = `https://api.nekosapi.com/v4/images/random?${params.toString()}`;
+  const baseUrl = `https://api.nekosapi.com/v4/images/random?${params.toString()}`;
 
-  const response = await fetch(url, {
+  const requestInit: RequestInit = {
     method: 'GET',
     headers: {
       'Accept': 'application/json',
     },
-  });
+  };
+
+  let requestUrl = baseUrl;
+  let response: Response;
+
+  try {
+    // 먼저 원본 URL로 직접 요청을 시도한다.
+    response = await fetch(requestUrl, requestInit);
+  } catch (directError) {
+    // CORS 우회 프록시가 설정되어 있다면, 프록시를 통해 다시 시도한다.
+    const corsProxy = getCorsProxyUrl();
+    if (!corsProxy) {
+      throw directError instanceof Error
+        ? directError
+        : new Error(`Nekos API request failed: ${String(directError)}`);
+    }
+
+    const proxiedUrl = `${corsProxy}${encodeURIComponent(baseUrl)}`;
+    requestUrl = proxiedUrl;
+
+    try {
+      response = await fetch(proxiedUrl, requestInit);
+    } catch (proxyError) {
+      const lines: string[] = [
+        'Nekos API request failed via direct and CORS proxy',
+        `directUrl: ${baseUrl}`,
+        `proxiedUrl: ${proxiedUrl}`,
+      ];
+      if (directError instanceof Error && directError.message) {
+        lines.push('directError:', directError.message);
+      }
+      if (proxyError instanceof Error && proxyError.message) {
+        lines.push('proxyError:', proxyError.message);
+      }
+      throw new Error(lines.join('\n'));
+    }
+  }
 
   if (!response.ok) {
-    throw await buildResponseError('Nekos', url, response);
+    throw await buildResponseError('Nekos', requestUrl, response);
   }
 
   let data: any;
@@ -475,7 +511,7 @@ async function fetchFromNekosApi(allowNSFW = false): Promise<AnimeImage> {
   } catch {
     throw buildDataError(
       'Nekos',
-      url,
+      requestUrl,
       'Failed to parse JSON response',
     );
   }
@@ -485,7 +521,7 @@ async function fetchFromNekosApi(allowNSFW = false): Promise<AnimeImage> {
   if (!image || !image.url) {
     throw buildDataError(
       'Nekos',
-      url,
+      requestUrl,
       'No image URL returned from Nekos API',
       data,
     );

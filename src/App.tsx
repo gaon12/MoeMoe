@@ -13,6 +13,8 @@ import { FullscreenButton } from './components/FullscreenButton/FullscreenButton
 import { AutoRefreshIndicator } from './components/AutoRefreshIndicator/AutoRefreshIndicator';
 import { type AnimeImage } from './types/image';
 import { useApp } from './contexts/AppContext';
+import { useSyncedTime } from './hooks/useSyncedTime';
+import { WidgetDock } from './components/WidgetDock/WidgetDock';
 import './App.css';
 
 function App() {
@@ -24,6 +26,7 @@ function App() {
   const [isAutoRefreshPaused, setIsAutoRefreshPaused] = useState(false);
   const autoRefreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const imageBackgroundRef = useRef<ImageBackgroundHandle | null>(null);
+  const currentTime = useSyncedTime(settings.useServerTime, settings.serverTimeUpdateIntervalSec);
 
   const handleRefresh = useCallback(() => {
     const now = Date.now();
@@ -94,12 +97,69 @@ function App() {
   }, []);
 
   const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch((err) => {
-        console.error('Failed to enter fullscreen:', err);
-      });
+    if (typeof document === 'undefined') return;
+
+    const doc = document as Document & {
+      webkitFullscreenElement?: Element | null;
+      mozFullScreenElement?: Element | null;
+      msFullscreenElement?: Element | null;
+      webkitExitFullscreen?: () => Promise<void> | void;
+      mozCancelFullScreen?: () => Promise<void> | void;
+      msExitFullscreen?: () => Promise<void> | void;
+    };
+
+    const docElement = document.documentElement as HTMLElement & {
+      webkitRequestFullscreen?: () => Promise<void> | void;
+      mozRequestFullScreen?: () => Promise<void> | void;
+      msRequestFullscreen?: () => Promise<void> | void;
+    };
+
+    const isFullscreenActive =
+      !!doc.fullscreenElement ||
+      !!doc.webkitFullscreenElement ||
+      !!doc.mozFullScreenElement ||
+      !!doc.msFullscreenElement;
+
+    if (!isFullscreenActive) {
+      const requestFullscreen =
+        docElement.requestFullscreen ||
+        docElement.webkitRequestFullscreen ||
+        docElement.mozRequestFullScreen ||
+        docElement.msRequestFullscreen;
+
+      if (requestFullscreen) {
+        try {
+          const result = requestFullscreen.call(docElement);
+          if (result && typeof (result as Promise<void>).catch === 'function') {
+            (result as Promise<void>).catch((err) => {
+              console.error('Failed to enter fullscreen:', err);
+            });
+          }
+        } catch (err) {
+          console.error('Failed to enter fullscreen:', err);
+        }
+      } else {
+        console.warn('Fullscreen API is not supported in this browser.');
+      }
     } else {
-      document.exitFullscreen();
+      const exitFullscreen =
+        doc.exitFullscreen ||
+        doc.webkitExitFullscreen ||
+        doc.mozCancelFullScreen ||
+        doc.msExitFullscreen;
+
+      if (exitFullscreen) {
+        try {
+          const result = exitFullscreen.call(doc);
+          if (result && typeof (result as Promise<void>).catch === 'function') {
+            (result as Promise<void>).catch((err) => {
+              console.error('Failed to exit fullscreen:', err);
+            });
+          }
+        } catch (err) {
+          console.error('Failed to exit fullscreen:', err);
+        }
+      }
     }
   };
 
@@ -161,7 +221,7 @@ function App() {
         onImageError={handleImageError}
       />
       <div className="content">
-        <Clock />
+        <Clock currentTime={currentTime} />
         {currentImage && currentImage.animeName && (
           <div className="image-info">
             <p className="anime-name">{currentImage.animeName}</p>
@@ -187,6 +247,7 @@ function App() {
         isLoading={isLoadingImage}
         onTogglePause={toggleAutoRefreshPause}
       />
+      <WidgetDock currentTime={currentTime} />
       <SettingsModal />
 
       <div className="keyboard-hints">

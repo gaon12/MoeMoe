@@ -1,0 +1,249 @@
+.widget-dock {
+  position: fixed;
+  left: 50%;
+  bottom: 3.5rem;
+  transform: translateX(-50%);
+  width: min(960px, calc(100% - 2rem));
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  pointer-events: none;
+}
+
+.widget-dock-mobile {
+  width: calc(100% - 1.5rem);
+  bottom: 3rem;
+}
+
+.widget-dock > * {
+  pointer-events: auto;
+}
+
+.widget-cards {
+  display: flex;
+  gap: 1rem;
+}
+
+.widget-card {
+  flex: 1;
+  min-width: 180px;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+  padding: 1rem 1.25rem;
+  color: #fff;
+  backdrop-filter: blur(16px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3);
+}
+
+.widget-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.widget-card-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.widget-card-chip {
+  font-size: 1.1rem;
+  padding: 0.1rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.widget-card-action {
+  border: none;
+  background: transparent;
+  color: #fff;
+  font-size: 0.8rem;
+  cursor: pointer;
+  opacity: 0.8;
+  transition: opacity 0.2s ease;
+}
+
+.widget-card-action:hover {
+  opacity: 1;
+}
+
+.widget-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.widget-card-subtext {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.85);
+  margin: 0;
+}
+
+.widget-card-muted {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0;
+}
+
+.widget-clock-time {
+  font-size: 2.25rem;
+  font-weight: 600;
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+}
+
+.widget-clock-ampm {
+  font-size: 0.9rem;
+  opacity: 0.85;
+  text-transform: uppercase;
+}
+
+.widget-weather-temp {
+  font-size: 2.5rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.widget-weather-unit {
+  font-size: 1rem;
+  margin-left: 0.25rem;
+}
+
+.widget-quote-text {
+  font-size: 0.95rem;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.widget-quote-author {
+  font-size: 0.8rem;
+  opacity: 0.8;
+  margin: 0;
+}
+
+.widget-anime-quote-character {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin: 0.2rem 0 0;
+}
+
+.widget-anime-quote-show {
+  font-size: 0.8rem;
+  opacity: 0.75;
+  margin: 0;
+}
+
+.widget-location-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.widget-location-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  align-items: baseline;
+}
+
+.widget-location-label {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.widget-location-value {
+  font-size: 0.95rem;
+  text-align: right;
+}
+
+.widget-custom-text {
+  font-size: 1rem;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.widget-custom-text.placeholder {
+  opacity: 0.7;
+  font-style: italic;
+}
+
+.widget-cards-stack {
+  position: relative;
+  height: 210px;
+  overflow: hidden;
+  gap: 0;
+}
+
+.widget-card-wrapper {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transform: translateY(20%) scale(0.95);
+  transition: transform 0.4s ease, opacity 0.4s ease;
+  pointer-events: none;
+}
+
+.widget-card-wrapper.active {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+  z-index: 3;
+}
+
+.widget-card-wrapper.above {
+  opacity: 0.4;
+  transform: translateY(-12%) scale(0.96);
+  z-index: 2;
+}
+
+.widget-card-wrapper.below {
+  opacity: 0.4;
+  transform: translateY(12%) scale(0.96);
+  z-index: 1;
+}
+
+.widget-pagination {
+  display: flex;
+  justify-content: center;
+  gap: 0.4rem;
+  pointer-events: auto;
+}
+
+.widget-pagination-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.widget-pagination-dot.active {
+  background: rgba(255, 255, 255, 0.9);
+  transform: scale(1.25);
+}
+
+@media (max-width: 1024px) {
+  .widget-card {
+    padding: 0.9rem 1rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .widget-dock {
+    width: calc(100% - 3rem);
+    bottom: 1rem;
+  }
+
+  .widget-cards {
+    flex-direction: column;
+  }
+}

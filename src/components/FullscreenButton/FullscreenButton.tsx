@@ -11,18 +11,51 @@ export const FullscreenButton: React.FC<FullscreenButtonProps> = ({
 }) => {
   const { t } = useTranslation();
   const [isFullscreen, setIsFullscreen] = useState(
-    typeof document !== 'undefined' ? !!document.fullscreenElement : false,
+    typeof document !== 'undefined'
+      ? Boolean(
+          (document as Document & {
+            webkitFullscreenElement?: Element | null;
+            mozFullScreenElement?: Element | null;
+            msFullscreenElement?: Element | null;
+          }).fullscreenElement ||
+            (document as Document & { webkitFullscreenElement?: Element | null })
+              .webkitFullscreenElement ||
+            (document as Document & { mozFullScreenElement?: Element | null }).mozFullScreenElement ||
+            (document as Document & { msFullscreenElement?: Element | null }).msFullscreenElement,
+        )
+      : false,
   );
 
   useEffect(() => {
     const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
+      const doc = document as Document & {
+        webkitFullscreenElement?: Element | null;
+        mozFullScreenElement?: Element | null;
+        msFullscreenElement?: Element | null;
+      };
+      setIsFullscreen(
+        Boolean(
+          doc.fullscreenElement ||
+            doc.webkitFullscreenElement ||
+            doc.mozFullScreenElement ||
+            doc.msFullscreenElement,
+        ),
+      );
     };
 
     document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange as EventListener);
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange as EventListener);
+    document.addEventListener('MSFullscreenChange', handleFullscreenChange as EventListener);
 
     return () => {
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener(
+        'webkitfullscreenchange',
+        handleFullscreenChange as EventListener,
+      );
+      document.removeEventListener('mozfullscreenchange', handleFullscreenChange as EventListener);
+      document.removeEventListener('MSFullscreenChange', handleFullscreenChange as EventListener);
     };
   }, []);
 

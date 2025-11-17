@@ -72,10 +72,28 @@
     },
     "widgets": {
       "title": "Widgets",
+      "description": "Choose up to four cards to display at the bottom. On mobile they stack, and you can swipe up/down to switch.",
+      "weatherApiKeyLabel": "WeatherAPI.com Key",
+      "weatherApiKeyDescription": "Weather and location cards use WeatherAPI.com data. Enter your personal API key to enable them.",
+      "weatherApiKeyPlaceholder": "Paste your WeatherAPI key",
+      "add": "Add Widget",
+      "limit": "Up to {{count}} cards",
+      "limitReached": "Limit reached",
+      "empty": "No widgets added yet.",
+      "cardLabel": "Card {{index}}",
+      "typeLabel": "Widget type",
+      "visible": "Visibility",
+      "enabled": "Visible",
+      "disabled": "Hidden",
+      "customTextLabel": "Custom text",
+      "customTextPlaceholder": "Text shown on the card",
+      "remove": "Remove",
+      "moveUp": "Move up",
+      "moveDown": "Move down",
       "clock": "Clock",
-      "date": "Date",
       "weather": "Weather",
-      "quote": "Quote",
+      "location": "Location",
+      "animeQuote": "Anime Quote",
       "customText": "Custom Text"
     },
     "appearance": {
@@ -124,6 +142,7 @@
       "disabled": "Auto refresh off",
       "paused": "Auto refresh paused",
       "next": "Next refresh in {{seconds}}s",
+      "shortNext": "Refresh in {{seconds}}s",
       "refreshing": "Refreshing...",
       "waiting": "Waiting for first image..."
     },
@@ -142,14 +161,43 @@
     "general": "An error occurred"
   },
   "widgets": {
+    "common": {
+      "live": "LIVE"
+    },
     "weather": {
       "title": "Weather",
       "loading": "Loading weather...",
-      "error": "Unable to load weather information"
+      "error": "Unable to load weather information",
+      "missingKey": "Add your WeatherAPI key in Settings → Widgets to enable this card.",
+      "conditions": {
+        "clear": "Clear skies",
+        "partlyCloudy": "Partly cloudy",
+        "cloudy": "Cloudy",
+        "fog": "Foggy",
+        "drizzle": "Light rain",
+        "rain": "Rain",
+        "freezingRain": "Freezing rain",
+        "snow": "Snow",
+        "thunderstorm": "Thunderstorm",
+        "unknown": "Weather unavailable"
+      }
     },
-    "quote": {
-      "title": "Quote of the Day",
-      "loading": "Loading quote..."
+    "location": {
+      "title": "Current Location",
+      "loading": "Fetching location...",
+      "error": "Unable to determine your location",
+      "missingKey": "Enter your WeatherAPI key to view your location details.",
+      "coordsLabel": "Coordinates",
+      "coords": "Lat {{lat}}, Lon {{lon}}",
+      "timezone": "Timezone",
+      "localTime": "Local time"
+    },
+    "animeQuote": {
+      "title": "Anime Quote",
+      "loading": "Loading anime quote...",
+      "error": "Unable to load anime quote",
+      "refresh": "New quote",
+      "from": "from {{show}}"
     },
     "customText": {
       "placeholder": "Enter your text here...",

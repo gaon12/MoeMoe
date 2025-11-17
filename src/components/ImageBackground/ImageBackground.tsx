@@ -476,13 +476,13 @@ export const ImageBackground = forwardRef<ImageBackgroundHandle, ImageBackground
                 <span>{currentImage.artistName}</span>
               )
             ) : (
-              <button
+              <a
                 type="button"
                 className="artist-link"
                 onClick={handleShowMetadata}
               >
                 N/A
-              </button>
+              </a>
             )}
             {currentImage.animeName && (
               <span> • {currentImage.animeName}</span>
