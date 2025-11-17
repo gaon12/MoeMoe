@@ -116,7 +116,21 @@
   "keyboard": {
     "refresh": "R or Space: Refresh",
     "fullscreen": "F: Fullscreen",
-    "settings": "S: Settings"
+    "settings": "S: Settings",
+    "autoRefresh": "P: Pause auto refresh"
+  },
+  "autoRefresh": {
+    "status": {
+      "disabled": "Auto refresh off",
+      "paused": "Auto refresh paused",
+      "next": "Next refresh in {{seconds}}s",
+      "refreshing": "Refreshing...",
+      "waiting": "Waiting for first image..."
+    },
+    "actions": {
+      "pause": "Pause",
+      "resume": "Resume"
+    }
   },
   "loading": {
     "image": "Loading image...",

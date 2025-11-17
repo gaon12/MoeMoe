@@ -117,7 +117,21 @@
   "keyboard": {
     "refresh": "R 또는 스페이스: 새로고침",
     "fullscreen": "F: 전체화면",
-    "settings": "S: 설정"
+    "settings": "S: 설정",
+    "autoRefresh": "P: 자동 새로고침 일시정지"
+  },
+  "autoRefresh": {
+    "status": {
+      "disabled": "자동 새로고침 꺼짐",
+      "paused": "자동 새로고침 일시정지됨",
+      "next": "다음 새로고침까지 {{seconds}}초",
+      "refreshing": "새로고침 중...",
+      "waiting": "첫 이미지를 기다리는 중..."
+    },
+    "actions": {
+      "pause": "일시정지",
+      "resume": "다시 시작"
+    }
   },
   "loading": {
     "image": "이미지 로딩 중...",

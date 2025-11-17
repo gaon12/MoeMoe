@@ -10,6 +10,7 @@ import { DownloadButton } from './components/DownloadButton/DownloadButton';
 import { SettingsButton } from './components/SettingsButton/SettingsButton';
 import { SettingsModal } from './components/SettingsModal/SettingsModal';
 import { FullscreenButton } from './components/FullscreenButton/FullscreenButton';
+import { AutoRefreshIndicator } from './components/AutoRefreshIndicator/AutoRefreshIndicator';
 import { type AnimeImage } from './types/image';
 import { useApp } from './contexts/AppContext';
 import './App.css';
@@ -20,38 +21,9 @@ function App() {
   const [isLoadingImage, setIsLoadingImage] = useState(true);
   const [currentImage, setCurrentImage] = useState<AnimeImage | null>(null);
   const [lastRefreshTime, setLastRefreshTime] = useState<number>(0);
+  const [isAutoRefreshPaused, setIsAutoRefreshPaused] = useState(false);
   const autoRefreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const imageBackgroundRef = useRef<ImageBackgroundHandle | null>(null);
-
-  const scheduleAutoRefresh = useCallback(() => {
-    // Clear existing timer
-    if (autoRefreshTimerRef.current) {
-      clearTimeout(autoRefreshTimerRef.current);
-      autoRefreshTimerRef.current = null;
-    }
-
-    // Schedule new auto-refresh if interval is set
-    if (settings.imageChangeInterval > 0) {
-      autoRefreshTimerRef.current = setTimeout(() => {
-        handleRefresh();
-      }, settings.imageChangeInterval * 1000);
-    }
-  }, [settings.imageChangeInterval]);
-
-  const handleImageLoad = useCallback((image: AnimeImage) => {
-    console.log('Image loaded successfully:', image);
-    setCurrentImage(image);
-    setIsLoadingImage(false);
-    // Update lastRefreshTime when image loading is complete
-    setLastRefreshTime(Date.now());
-    // Schedule next auto-refresh after transition complete
-    scheduleAutoRefresh();
-  }, [scheduleAutoRefresh]);
-
-  const handleImageError = useCallback((error: Error) => {
-    console.error('Image load error:', error);
-    setIsLoadingImage(false);
-  }, []);
 
   const handleRefresh = useCallback(() => {
     const now = Date.now();
@@ -73,6 +45,34 @@ function App() {
     imageBackgroundRef.current?.refresh();
   }, [lastRefreshTime]);
 
+  const scheduleAutoRefresh = useCallback(() => {
+    // Clear existing timer
+    if (autoRefreshTimerRef.current) {
+      clearTimeout(autoRefreshTimerRef.current);
+      autoRefreshTimerRef.current = null;
+    }
+
+    // Schedule new auto-refresh if interval is set and not paused
+    if (settings.imageChangeInterval > 0 && !isAutoRefreshPaused) {
+      autoRefreshTimerRef.current = setTimeout(() => {
+        handleRefresh();
+      }, settings.imageChangeInterval * 1000);
+    }
+  }, [settings.imageChangeInterval, isAutoRefreshPaused, handleRefresh]);
+
+  const handleImageLoad = useCallback((image: AnimeImage) => {
+    console.log('Image loaded successfully:', image);
+    setCurrentImage(image);
+    setIsLoadingImage(false);
+    // Update lastRefreshTime when image loading is complete
+    setLastRefreshTime(Date.now());
+  }, []);
+
+  const handleImageError = useCallback((error: Error) => {
+    console.error('Image load error:', error);
+    setIsLoadingImage(false);
+  }, []);
+
   // Cleanup timer on unmount or interval change
   useEffect(() => {
     return () => {
@@ -88,6 +88,10 @@ function App() {
       scheduleAutoRefresh();
     }
   }, [settings.imageChangeInterval, scheduleAutoRefresh, lastRefreshTime]);
+
+  const toggleAutoRefreshPause = useCallback(() => {
+    setIsAutoRefreshPaused((prev) => !prev);
+  }, []);
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -116,10 +120,18 @@ function App() {
         handleRefresh();
       }
 
-	      // F key to toggle fullscreen
-  	      if (event.key === 'f' || event.key === 'F') {
-  	        event.preventDefault();
-  	        toggleFullscreen();
+      // F key to toggle fullscreen
+      if (event.key === 'f' || event.key === 'F') {
+        event.preventDefault();
+        toggleFullscreen();
+      }
+
+      // P key to toggle auto-refresh pause
+      if (event.key === 'p' || event.key === 'P') {
+        if (settings.imageChangeInterval > 0) {
+          event.preventDefault();
+          toggleAutoRefreshPause();
+        }
       }
 
       // S key to open settings
@@ -129,12 +141,12 @@ function App() {
       }
     };
 
-	    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown);
 
-	    return () => {
-	      window.removeEventListener('keydown', handleKeyDown);
-	    };
-	  }, [handleRefresh, toggleFullscreen, setIsSettingsOpen]);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [handleRefresh, toggleFullscreen, setIsSettingsOpen, settings.imageChangeInterval, toggleAutoRefreshPause]);
 
   return (
     <div className="app">
@@ -157,16 +169,23 @@ function App() {
         )}
       </div>
 
-	      <SettingsButton />
-	      <FullscreenButton onToggle={toggleFullscreen} />
-	      <RefreshButton
-	        onRefresh={handleRefresh}
+      <SettingsButton />
+      <FullscreenButton onToggle={toggleFullscreen} />
+      <RefreshButton
+        onRefresh={handleRefresh}
         isLoading={isLoadingImage}
         lastRefreshTime={lastRefreshTime}
       />
       <DownloadButton
         imageUrl={currentImage?.url || null}
         imageName={currentImage?.animeName || 'anime-image'}
+      />
+      <AutoRefreshIndicator
+        intervalSeconds={settings.imageChangeInterval}
+        lastRefreshTime={lastRefreshTime}
+        isPaused={isAutoRefreshPaused}
+        isLoading={isLoadingImage}
+        onTogglePause={toggleAutoRefreshPause}
       />
       <SettingsModal />
 
@@ -176,6 +195,12 @@ function App() {
         <span>{t('keyboard.fullscreen')}</span>
         <span>•</span>
         <span>{t('keyboard.settings')}</span>
+        {settings.imageChangeInterval > 0 && (
+          <>
+            <span>•</span>
+            <span>{t('keyboard.autoRefresh')}</span>
+          </>
+        )}
       </div>
     </div>
   );

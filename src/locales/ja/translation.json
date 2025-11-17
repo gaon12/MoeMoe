@@ -116,7 +116,21 @@
   "keyboard": {
     "refresh": "RまたはSpace: 更新",
     "fullscreen": "F: フルスクリーン",
-    "settings": "S: 設定"
+    "settings": "S: 設定",
+    "autoRefresh": "P: 自動更新を一時停止"
+  },
+  "autoRefresh": {
+    "status": {
+      "disabled": "自動更新は無効です",
+      "paused": "自動更新を一時停止中",
+      "next": "次の更新まで {{seconds}}秒",
+      "refreshing": "更新中...",
+      "waiting": "最初の画像を待機中..."
+    },
+    "actions": {
+      "pause": "一時停止",
+      "resume": "再開"
+    }
   },
   "loading": {
     "image": "画像を読み込み中...",
