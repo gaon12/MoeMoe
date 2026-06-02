@@ -35,11 +35,10 @@
 
 .refresh-button:disabled {
   cursor: not-allowed;
-  opacity: 0.5;
 }
 
 .refresh-button.cooldown {
-  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .refresh-icon {
