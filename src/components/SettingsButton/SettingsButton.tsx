@@ -1,6 +1,6 @@
-import { useTranslation } from 'react-i18next';
-import { useApp } from '../../contexts/AppContext';
-import './SettingsButton.css';
+import { useTranslation } from "react-i18next";
+import { useApp } from "../../contexts/useApp";
+import "./SettingsButton.css";
 
 export const SettingsButton = () => {
   const { t } = useTranslation();
@@ -11,8 +11,8 @@ export const SettingsButton = () => {
       <button
         className="settings-fab"
         onClick={() => setIsSettingsOpen(true)}
-        aria-label={t('buttons.settings')}
-        title={t('buttons.settings')}
+        aria-label={t("buttons.settings")}
+        title={t("buttons.settings")}
       >
         ⚙️
       </button>

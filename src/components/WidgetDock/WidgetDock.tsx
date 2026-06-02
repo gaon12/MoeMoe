@@ -1,28 +1,28 @@
-import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
-import { useApp } from '../../contexts/AppContext';
-import { type AppSettings, type Widget } from '../../types/settings';
-import { getFormattedTimeParts, getFullDateString } from '../../utils/time';
-import './WidgetDock.css';
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { useTranslation } from "react-i18next";
+import { useApp } from "../../contexts/useApp";
+import { type AppSettings, type Widget } from "../../types/settings";
+import { getFormattedTimeParts, getFullDateString } from "../../utils/time";
+import "./WidgetDock.css";
 
 interface WidgetDockProps {
   currentTime: Date;
 }
 
 const MAX_WIDGETS = 4;
-const MOBILE_QUERY = '(max-width: 640px)';
+const MOBILE_QUERY = "(max-width: 640px)";
 
 type WeatherConditionKey =
-  | 'clear'
-  | 'partlyCloudy'
-  | 'cloudy'
-  | 'fog'
-  | 'drizzle'
-  | 'rain'
-  | 'freezingRain'
-  | 'snow'
-  | 'thunderstorm'
-  | 'unknown';
+  | "clear"
+  | "partlyCloudy"
+  | "cloudy"
+  | "fog"
+  | "drizzle"
+  | "rain"
+  | "freezingRain"
+  | "snow"
+  | "thunderstorm"
+  | "unknown";
 
 interface WeatherData {
   temperature: number;
@@ -42,7 +42,7 @@ interface WeatherData {
 }
 
 interface WeatherState {
-  status: 'idle' | 'loading' | 'ready' | 'error';
+  status: "idle" | "loading" | "ready" | "error";
   data?: WeatherData;
   error?: string;
 }
@@ -59,7 +59,7 @@ interface LocationData {
 }
 
 interface LocationState {
-  status: 'idle' | 'loading' | 'ready' | 'error';
+  status: "idle" | "loading" | "ready" | "error";
   data?: LocationData;
   error?: string;
 }
@@ -71,7 +71,7 @@ interface AnimeQuoteData {
 }
 
 interface AnimeQuoteState {
-  status: 'idle' | 'loading' | 'ready' | 'error';
+  status: "idle" | "loading" | "ready" | "error";
   data?: AnimeQuoteData;
   error?: string;
 }
@@ -90,45 +90,56 @@ export const WidgetDock = ({ currentTime }: WidgetDockProps) => {
 
   // 설정에서 활성화된 위젯만 추려서 최대 MAX_WIDGETS개까지 사용한다.
   const activeWidgets = useMemo(
-    () => settings.widgets.filter((widget) => widget.enabled).slice(0, MAX_WIDGETS),
+    () =>
+      settings.widgets.filter((widget) => widget.enabled).slice(0, MAX_WIDGETS),
     [settings.widgets],
   );
 
   // 날씨 위젯이 하나라도 있으면 날씨 데이터를 가져와야 한다.
-  const needsWeatherData = activeWidgets.some((widget) => widget.type === 'weather');
+  const needsWeatherData = activeWidgets.some(
+    (widget) => widget.type === "weather",
+  );
 
   // 위치 위젯이 하나라도 있으면 위치 데이터를 가져와야 한다.
-  const needsLocationData = activeWidgets.some((widget) => widget.type === 'location');
+  const needsLocationData = activeWidgets.some(
+    (widget) => widget.type === "location",
+  );
 
   // 애니 명대사 위젯이 하나라도 있으면 애니 명대사 데이터를 가져와야 한다.
-  const needsAnimeQuote = activeWidgets.some((widget) => widget.type === 'animeQuote');
+  const needsAnimeQuote = activeWidgets.some(
+    (widget) => widget.type === "animeQuote",
+  );
 
   // WeatherAPI 키
-  const weatherApiKey = settings.weatherApiKey?.trim() ?? '';
+  const weatherApiKey = settings.weatherApiKey?.trim() ?? "";
 
   // 날씨 데이터 훅
-  const weatherState = useWeatherData(needsWeatherData && Boolean(weatherApiKey), weatherApiKey);
+  const weatherState = useWeatherData(
+    needsWeatherData && Boolean(weatherApiKey),
+    weatherApiKey,
+  );
 
   // 위치 데이터 훅 (WeatherAPI 키 없이도 동작)
   const locationState = useLocationData(needsLocationData);
 
   // 애니 명대사 데이터 훅
-  const { state: animeQuoteState, refresh: refreshAnimeQuote } = useAnimeQuoteData(needsAnimeQuote);
+  const { state: animeQuoteState, refresh: refreshAnimeQuote } =
+    useAnimeQuoteData(needsAnimeQuote);
 
   // 화면 크기에 따른 모바일 여부 상태
   const [isMobile, setIsMobile] = useState(() => {
-    if (typeof window === 'undefined') return false;
+    if (typeof window === "undefined") return false;
     return window.matchMedia(MOBILE_QUERY).matches;
   });
 
   // 리사이즈/미디어쿼리 변경 시 모바일 여부 갱신
   useEffect(() => {
-    if (typeof window === 'undefined') return;
+    if (typeof window === "undefined") return;
     const mediaQuery = window.matchMedia(MOBILE_QUERY);
     const handler = (event: MediaQueryListEvent) => setIsMobile(event.matches);
-    mediaQuery.addEventListener('change', handler);
+    mediaQuery.addEventListener("change", handler);
     setIsMobile(mediaQuery.matches);
-    return () => mediaQuery.removeEventListener('change', handler);
+    return () => mediaQuery.removeEventListener("change", handler);
   }, []);
 
   // 모바일에서 스택 형태로 보여줄 때, 어떤 카드가 활성 카드인지 인덱스로 관리한다.
@@ -182,7 +193,7 @@ export const WidgetDock = ({ currentTime }: WidgetDockProps) => {
   }
 
   return (
-    <div className={`widget-dock${isMobile ? ' widget-dock-mobile' : ''}`}>
+    <div className={`widget-dock${isMobile ? " widget-dock-mobile" : ""}`}>
       {isMobile ? (
         // 모바일 레이아웃: 스택 형태의 카드 + 스와이프 지원
         <div
@@ -194,7 +205,11 @@ export const WidgetDock = ({ currentTime }: WidgetDockProps) => {
             <div
               key={widget.id}
               className={`widget-card-wrapper${
-                index === activeIndex ? ' active' : index < activeIndex ? ' above' : ' below'
+                index === activeIndex
+                  ? " active"
+                  : index < activeIndex
+                    ? " above"
+                    : " below"
               }`}
             >
               <WidgetCard
@@ -231,13 +246,17 @@ export const WidgetDock = ({ currentTime }: WidgetDockProps) => {
 
       {/* 모바일에서 여러 위젯이 있을 때, 페이지네이션 점(도트)을 표시한다. */}
       {isMobile && activeWidgets.length > 1 && (
-        <div className="widget-pagination" role="tablist" aria-label={t('settings.widgets.title')}>
+        <div
+          className="widget-pagination"
+          role="tablist"
+          aria-label={t("settings.widgets.title")}
+        >
           {activeWidgets.map((widget, index) => (
             <button
               key={widget.id}
               type="button"
-              className={`widget-pagination-dot${index === activeIndex ? ' active' : ''}`}
-              aria-label={`${t('settings.widgets.title')} ${index + 1}`}
+              className={`widget-pagination-dot${index === activeIndex ? " active" : ""}`}
+              aria-label={`${t("settings.widgets.title")} ${index + 1}`}
               aria-selected={index === activeIndex}
               onClick={() => setActiveIndex(index)}
             />
@@ -274,22 +293,28 @@ const WidgetCard = ({
   const language = i18n.language;
 
   // 시계 위젯
-  if (widget.type === 'clock') {
-    const { time, ampmPosition, ampmText } = getFormattedTimeParts(currentTime, settings, language);
+  if (widget.type === "clock") {
+    const { time, ampmPosition, ampmText } = getFormattedTimeParts(
+      currentTime,
+      settings,
+      language,
+    );
     const dateString = getFullDateString(currentTime, language);
     return (
       <article className="widget-card widget-card-clock">
         <header className="widget-card-header">
-          <span className="widget-card-title">{t('settings.widgets.clock')}</span>
-          <span className="widget-card-chip">{t('widgets.common.live')}</span>
+          <span className="widget-card-title">
+            {t("settings.widgets.clock")}
+          </span>
+          <span className="widget-card-chip">{t("widgets.common.live")}</span>
         </header>
         <div className="widget-card-body">
           <div className="widget-clock-time">
-            {ampmText && ampmPosition === 'before' ? (
+            {ampmText && ampmPosition === "before" ? (
               <span className="widget-clock-ampm">{ampmText}</span>
             ) : null}
             <span>{time}</span>
-            {ampmText && ampmPosition === 'after' ? (
+            {ampmText && ampmPosition === "after" ? (
               <span className="widget-clock-ampm">{ampmText}</span>
             ) : null}
           </div>
@@ -300,44 +325,52 @@ const WidgetCard = ({
   }
 
   // 날씨 위젯
-  if (widget.type === 'weather') {
+  if (widget.type === "weather") {
     // WeatherAPI 키가 없을 때 안내 문구
     if (!weatherApiKey) {
       return (
         <article className="widget-card widget-card-weather">
           <header className="widget-card-header">
-            <span className="widget-card-title">{t('widgets.weather.title')}</span>
+            <span className="widget-card-title">
+              {t("widgets.weather.title")}
+            </span>
           </header>
           <div className="widget-card-body">
-            <p className="widget-card-muted">{t('widgets.weather.missingKey')}</p>
+            <p className="widget-card-muted">
+              {t("widgets.weather.missingKey")}
+            </p>
           </div>
         </article>
       );
     }
 
     // 날씨 데이터 로딩 중 또는 초기 상태
-    if (weatherState.status === 'loading' || weatherState.status === 'idle') {
+    if (weatherState.status === "loading" || weatherState.status === "idle") {
       return (
         <article className="widget-card widget-card-weather">
           <header className="widget-card-header">
-            <span className="widget-card-title">{t('widgets.weather.title')}</span>
+            <span className="widget-card-title">
+              {t("widgets.weather.title")}
+            </span>
           </header>
           <div className="widget-card-body">
-            <p className="widget-card-muted">{t('widgets.weather.loading')}</p>
+            <p className="widget-card-muted">{t("widgets.weather.loading")}</p>
           </div>
         </article>
       );
     }
 
     // 날씨 데이터 로딩 실패
-    if (weatherState.status === 'error') {
+    if (weatherState.status === "error") {
       return (
         <article className="widget-card widget-card-weather">
           <header className="widget-card-header">
-            <span className="widget-card-title">{t('widgets.weather.title')}</span>
+            <span className="widget-card-title">
+              {t("widgets.weather.title")}
+            </span>
           </header>
           <div className="widget-card-body">
-            <p className="widget-card-muted">{t('widgets.weather.error')}</p>
+            <p className="widget-card-muted">{t("widgets.weather.error")}</p>
           </div>
         </article>
       );
@@ -349,7 +382,9 @@ const WidgetCard = ({
     return (
       <article className="widget-card widget-card-weather">
         <header className="widget-card-header">
-          <span className="widget-card-title">{t('widgets.weather.title')}</span>
+          <span className="widget-card-title">
+            {t("widgets.weather.title")}
+          </span>
           <span className="widget-card-chip">{data.icon}</span>
         </header>
         <div className="widget-card-body">
@@ -367,30 +402,34 @@ const WidgetCard = ({
   }
 
   // 위치 위젯
-  if (widget.type === 'location') {
+  if (widget.type === "location") {
     // 위치 정보 로딩 중 또는 초기 상태
-    if (locationState.status === 'loading' || locationState.status === 'idle') {
+    if (locationState.status === "loading" || locationState.status === "idle") {
       return (
         <article className="widget-card widget-card-location">
           <header className="widget-card-header">
-            <span className="widget-card-title">{t('widgets.location.title')}</span>
+            <span className="widget-card-title">
+              {t("widgets.location.title")}
+            </span>
           </header>
           <div className="widget-card-body">
-            <p className="widget-card-muted">{t('widgets.location.loading')}</p>
+            <p className="widget-card-muted">{t("widgets.location.loading")}</p>
           </div>
         </article>
       );
     }
 
     // 위치 정보 로딩 실패
-    if (locationState.status === 'error') {
+    if (locationState.status === "error") {
       return (
         <article className="widget-card widget-card-location">
           <header className="widget-card-header">
-            <span className="widget-card-title">{t('widgets.location.title')}</span>
+            <span className="widget-card-title">
+              {t("widgets.location.title")}
+            </span>
           </header>
           <div className="widget-card-body">
-            <p className="widget-card-muted">{t('widgets.location.error')}</p>
+            <p className="widget-card-muted">{t("widgets.location.error")}</p>
           </div>
         </article>
       );
@@ -401,10 +440,12 @@ const WidgetCard = ({
       return (
         <article className="widget-card widget-card-location">
           <header className="widget-card-header">
-            <span className="widget-card-title">{t('widgets.location.title')}</span>
+            <span className="widget-card-title">
+              {t("widgets.location.title")}
+            </span>
           </header>
           <div className="widget-card-body">
-            <p className="widget-card-muted">{t('widgets.location.error')}</p>
+            <p className="widget-card-muted">{t("widgets.location.error")}</p>
           </div>
         </article>
       );
@@ -417,10 +458,10 @@ const WidgetCard = ({
     const localTime =
       location.localTime != null
         ? new Intl.DateTimeFormat(
-            language === 'ko' ? 'ko-KR' : language === 'ja' ? 'ja-JP' : 'en-US',
+            language === "ko" ? "ko-KR" : language === "ja" ? "ja-JP" : "en-US",
             {
-              dateStyle: 'medium',
-              timeStyle: 'short',
+              dateStyle: "medium",
+              timeStyle: "short",
             },
           ).format(location.localTime)
         : null;
@@ -429,28 +470,36 @@ const WidgetCard = ({
       <article className="widget-card widget-card-location">
         <header className="widget-card-header">
           <span className="widget-card-title">{location.name}</span>
-          <span className="widget-card-chip">{t('widgets.location.title')}</span>
+          <span className="widget-card-chip">
+            {t("widgets.location.title")}
+          </span>
         </header>
         <div className="widget-card-body widget-location-grid">
           {subtitleParts.length > 0 && (
-            <p className="widget-card-subtext">{subtitleParts.join(', ')}</p>
+            <p className="widget-card-subtext">{subtitleParts.join(", ")}</p>
           )}
           <div className="widget-location-row">
-            <span className="widget-location-label">{t('widgets.location.coordsLabel')}</span>
+            <span className="widget-location-label">
+              {t("widgets.location.coordsLabel")}
+            </span>
             <span className="widget-location-value">
-              {t('widgets.location.coords', {
+              {t("widgets.location.coords", {
                 lat: location.lat.toFixed(2),
                 lon: location.lon.toFixed(2),
               })}
             </span>
           </div>
           <div className="widget-location-row">
-            <span className="widget-location-label">{t('widgets.location.timezone')}</span>
+            <span className="widget-location-label">
+              {t("widgets.location.timezone")}
+            </span>
             <span className="widget-location-value">{timezoneText}</span>
           </div>
           {localTime && (
             <div className="widget-location-row">
-              <span className="widget-location-label">{t('widgets.location.localTime')}</span>
+              <span className="widget-location-label">
+                {t("widgets.location.localTime")}
+              </span>
               <span className="widget-location-value">{localTime}</span>
             </div>
           )}
@@ -460,33 +509,45 @@ const WidgetCard = ({
   }
 
   // 애니 명대사 위젯
-  if (widget.type === 'animeQuote') {
+  if (widget.type === "animeQuote") {
     // 로딩 중 또는 초기 상태일 때
-    if (animeQuoteState.status === 'loading' || animeQuoteState.status === 'idle') {
+    if (
+      animeQuoteState.status === "loading" ||
+      animeQuoteState.status === "idle"
+    ) {
       return (
         <article className="widget-card widget-card-quote">
           <header className="widget-card-header">
-            <span className="widget-card-title">{t('widgets.animeQuote.title')}</span>
+            <span className="widget-card-title">
+              {t("widgets.animeQuote.title")}
+            </span>
           </header>
           <div className="widget-card-body">
-            <p className="widget-card-muted">{t('widgets.animeQuote.loading')}</p>
+            <p className="widget-card-muted">
+              {t("widgets.animeQuote.loading")}
+            </p>
           </div>
         </article>
       );
     }
 
     // 에러 상태일 때
-    if (animeQuoteState.status === 'error') {
+    if (animeQuoteState.status === "error") {
       return (
         <article className="widget-card widget-card-quote">
           <header className="widget-card-header">
-            <span className="widget-card-title">{t('widgets.animeQuote.title')}</span>
-            <button className="widget-card-action" onClick={onRefreshAnimeQuote}>
-              {t('widgets.animeQuote.refresh')}
+            <span className="widget-card-title">
+              {t("widgets.animeQuote.title")}
+            </span>
+            <button
+              className="widget-card-action"
+              onClick={onRefreshAnimeQuote}
+            >
+              {t("widgets.animeQuote.refresh")}
             </button>
           </header>
           <div className="widget-card-body">
-            <p className="widget-card-muted">{t('widgets.animeQuote.error')}</p>
+            <p className="widget-card-muted">{t("widgets.animeQuote.error")}</p>
           </div>
         </article>
       );
@@ -499,16 +560,18 @@ const WidgetCard = ({
     return (
       <article className="widget-card widget-card-quote">
         <header className="widget-card-header">
-          <span className="widget-card-title">{t('widgets.animeQuote.title')}</span>
+          <span className="widget-card-title">
+            {t("widgets.animeQuote.title")}
+          </span>
           <button className="widget-card-action" onClick={onRefreshAnimeQuote}>
-            {t('widgets.animeQuote.refresh')}
+            {t("widgets.animeQuote.refresh")}
           </button>
         </header>
         <div className="widget-card-body">
           <p className="widget-quote-text">“{data.content}”</p>
           <p className="widget-anime-quote-character">{data.character}</p>
           <p className="widget-anime-quote-show">
-            {t('widgets.animeQuote.from', { show: data.show })}
+            {t("widgets.animeQuote.from", { show: data.show })}
           </p>
         </div>
       </article>
@@ -516,16 +579,21 @@ const WidgetCard = ({
   }
 
   // 사용자 정의 텍스트 위젯
-  if (widget.type === 'customText') {
-    const customText = typeof widget.data?.text === 'string' ? widget.data.text.trim() : '';
+  if (widget.type === "customText") {
+    const customText =
+      typeof widget.data?.text === "string" ? widget.data.text.trim() : "";
     return (
       <article className="widget-card widget-card-custom">
         <header className="widget-card-header">
-          <span className="widget-card-title">{t('settings.widgets.customText')}</span>
+          <span className="widget-card-title">
+            {t("settings.widgets.customText")}
+          </span>
         </header>
         <div className="widget-card-body">
-          <p className={`widget-custom-text${customText ? '' : ' placeholder'}`}>
-            {customText || t('widgets.customText.placeholder')}
+          <p
+            className={`widget-custom-text${customText ? "" : " placeholder"}`}
+          >
+            {customText || t("widgets.customText.placeholder")}
           </p>
         </div>
       </article>
@@ -546,7 +614,7 @@ const WidgetCard = ({
 function useWeatherData(shouldFetch: boolean, apiKey: string): WeatherState {
   // 현재 날씨 위젯의 상태를 관리한다.
   const [state, setState] = useState<WeatherState>({
-    status: shouldFetch ? 'loading' : 'idle',
+    status: shouldFetch ? "loading" : "idle",
   });
 
   // 컴포넌트가 마운트되어 있는지 추적하기 위한 ref
@@ -564,7 +632,7 @@ function useWeatherData(shouldFetch: boolean, apiKey: string): WeatherState {
     // 데이터를 가져올 필요가 없는 경우 → idle 상태로 전환
     if (!shouldFetch) {
       if (!mountedRef.current) return;
-      setState({ status: 'idle' });
+      setState({ status: "idle" });
       return;
     }
 
@@ -572,8 +640,8 @@ function useWeatherData(shouldFetch: boolean, apiKey: string): WeatherState {
     if (!apiKey) {
       if (!mountedRef.current) return;
       setState({
-        status: 'error',
-        error: 'WeatherAPI key missing',
+        status: "error",
+        error: "WeatherAPI key missing",
       });
       return;
     }
@@ -586,7 +654,7 @@ function useWeatherData(shouldFetch: boolean, apiKey: string): WeatherState {
       if (!mountedRef.current) return;
 
       // 로딩 상태로 설정
-      setState({ status: 'loading' });
+      setState({ status: "loading" });
 
       try {
         // 브라우저의 위치 정보를 가져온다. 실패 시 DEFAULT_COORDS를 사용한다.
@@ -605,18 +673,19 @@ function useWeatherData(shouldFetch: boolean, apiKey: string): WeatherState {
         if (mergedLocation && reverseInfo) {
           mergedLocation.name = reverseInfo.name ?? mergedLocation.name;
           mergedLocation.region = reverseInfo.region ?? mergedLocation.region;
-          mergedLocation.country = reverseInfo.country ?? mergedLocation.country;
+          mergedLocation.country =
+            reverseInfo.country ?? mergedLocation.country;
         }
 
         if (!mountedRef.current) return;
 
         // 최종적으로 ready 상태와 데이터를 설정한다.
-        setState({ status: 'ready', data: weatherData });
+        setState({ status: "ready", data: weatherData });
       } catch (error) {
         if (cancelled || !mountedRef.current) return;
         setState({
-          status: 'error',
-          error: error instanceof Error ? error.message : 'Weather error',
+          status: "error",
+          error: error instanceof Error ? error.message : "Weather error",
         });
       }
     };
@@ -639,7 +708,7 @@ function useWeatherData(shouldFetch: boolean, apiKey: string): WeatherState {
  */
 function useLocationData(shouldFetch: boolean): LocationState {
   const [state, setState] = useState<LocationState>({
-    status: shouldFetch ? 'loading' : 'idle',
+    status: shouldFetch ? "loading" : "idle",
   });
 
   const mountedRef = useRef(false);
@@ -654,13 +723,13 @@ function useLocationData(shouldFetch: boolean): LocationState {
   useEffect(() => {
     if (!shouldFetch) {
       if (!mountedRef.current) return;
-      setState({ status: 'idle' });
+      setState({ status: "idle" });
       return;
     }
 
     const fetchLocation = async () => {
       if (!mountedRef.current) return;
-      setState({ status: 'loading' });
+      setState({ status: "loading" });
 
       try {
         const coords = await getCoordinates();
@@ -669,30 +738,30 @@ function useLocationData(shouldFetch: boolean): LocationState {
         const reverseInfo = await reverseGeocode(coords);
 
         const resolvedTimeZone =
-          typeof Intl !== 'undefined'
-            ? Intl.DateTimeFormat().resolvedOptions().timeZone ?? ''
-            : '';
+          typeof Intl !== "undefined"
+            ? (Intl.DateTimeFormat().resolvedOptions().timeZone ?? "")
+            : "";
 
         const now = new Date();
 
         const data: LocationData = {
-          name: reverseInfo?.name ?? 'Location',
-          region: reverseInfo?.region ?? '',
-          country: reverseInfo?.country ?? '',
+          name: reverseInfo?.name ?? "Location",
+          region: reverseInfo?.region ?? "",
+          country: reverseInfo?.country ?? "",
           tzId: resolvedTimeZone,
           localTime: now,
           lat: coords.latitude,
           lon: coords.longitude,
-          timezoneLabel: resolvedTimeZone || 'Local time',
+          timezoneLabel: resolvedTimeZone || "Local time",
         };
 
         if (!mountedRef.current) return;
-        setState({ status: 'ready', data });
+        setState({ status: "ready", data });
       } catch (error) {
         if (!mountedRef.current) return;
         setState({
-          status: 'error',
-          error: error instanceof Error ? error.message : 'Location error',
+          status: "error",
+          error: error instanceof Error ? error.message : "Location error",
         });
       }
     };
@@ -714,12 +783,15 @@ async function fetchWeatherApi(
   const params = new URLSearchParams({
     key: apiKey,
     q: query,
-    aqi: 'no',
+    aqi: "no",
   });
 
-  const response = await fetch(`https://api.weatherapi.com/v1/current.json?${params.toString()}`, {
-    cache: 'no-store',
-  });
+  const response = await fetch(
+    `https://api.weatherapi.com/v1/current.json?${params.toString()}`,
+    {
+      cache: "no-store",
+    },
+  );
 
   if (!response.ok) {
     throw new Error(`WeatherAPI error: ${response.status}`);
@@ -734,28 +806,35 @@ async function fetchWeatherApi(
 
   const location = data?.location
     ? {
-        name: data.location.name ?? 'Location',
-        region: data.location.region ?? '',
-        country: data.location.country ?? '',
-        tzId: data.location.tz_id ?? '',
+        name: data.location.name ?? "Location",
+        region: data.location.region ?? "",
+        country: data.location.country ?? "",
+        tzId: data.location.tz_id ?? "",
         localTime: data.location.localtime_epoch
           ? new Date(data.location.localtime_epoch * 1000)
           : undefined,
-        lat: typeof data.location.lat === 'number' ? data.location.lat : coords.latitude,
-        lon: typeof data.location.lon === 'number' ? data.location.lon : coords.longitude,
+        lat:
+          typeof data.location.lat === "number"
+            ? data.location.lat
+            : coords.latitude,
+        lon:
+          typeof data.location.lon === "number"
+            ? data.location.lon
+            : coords.longitude,
       }
     : {
-        name: 'Location',
-        region: '',
-        country: '',
-        tzId: '',
+        name: "Location",
+        region: "",
+        country: "",
+        tzId: "",
         localTime: undefined,
         lat: coords.latitude,
         lon: coords.longitude,
       };
 
   return {
-    temperature: typeof data?.current?.temp_c === 'number' ? data.current.temp_c : 0,
+    temperature:
+      typeof data?.current?.temp_c === "number" ? data.current.temp_c : 0,
     conditionKey,
     icon,
     timezoneLabel,
@@ -771,18 +850,18 @@ async function fetchWeatherApi(
 async function reverseGeocode(coords: { latitude: number; longitude: number }) {
   try {
     const params = new URLSearchParams({
-      format: 'jsonv2',
+      format: "jsonv2",
       lat: coords.latitude.toString(),
       lon: coords.longitude.toString(),
-      zoom: '10',
-      addressdetails: '1',
-      email: 'support@moemoe.app',
+      zoom: "10",
+      addressdetails: "1",
+      email: "support@moemoe.app",
     });
 
     const response = await fetch(
       `https://nominatim.openstreetmap.org/reverse?${params.toString()}`,
       {
-        headers: { Accept: 'application/json' },
+        headers: { Accept: "application/json" },
       },
     );
 
@@ -801,16 +880,18 @@ async function reverseGeocode(coords: { latitude: number; longitude: number }) {
       address.village ||
       address.hamlet ||
       address.suburb ||
-      (typeof data?.display_name === 'string' ? data.display_name.split(',')[0]?.trim() : undefined);
+      (typeof data?.display_name === "string"
+        ? data.display_name.split(",")[0]?.trim()
+        : undefined);
 
     return {
       name: primaryName,
-      region: address.state || address.county || '',
-      country: address.country || '',
+      region: address.state || address.county || "",
+      country: address.country || "",
     };
   } catch (error) {
     // 역지오코딩은 부가 정보이므로 실패해도 치명적이지 않다. 콘솔 경고만 남기고 null을 반환한다.
-    console.warn('Reverse geocoding failed:', error);
+    console.warn("Reverse geocoding failed:", error);
     return null;
   }
 }
@@ -824,14 +905,16 @@ async function reverseGeocode(coords: { latitude: number; longitude: number }) {
 function useAnimeQuoteData(shouldFetch: boolean) {
   // 명대사 위젯의 상태를 관리한다.
   const [state, setState] = useState<AnimeQuoteState>({
-    status: shouldFetch ? 'loading' : 'idle',
+    status: shouldFetch ? "loading" : "idle",
   });
 
   // 컴포넌트 마운트 여부를 추적하기 위한 ref
   const mountedRef = useRef(false);
 
   // 환경 변수에서 API URL을 읽어온다.
-  const apiUrl = (import.meta.env.VITE_ANIME_QUOTE_API_URL as string | undefined)?.trim();
+  const apiUrl = (
+    import.meta.env.VITE_ANIME_QUOTE_API_URL as string | undefined
+  )?.trim();
 
   // 마운트 시 mountedRef를 true, 언마운트 시 false로 설정한다.
   useEffect(() => {
@@ -859,18 +942,18 @@ function useAnimeQuoteData(shouldFetch: boolean) {
     // 환경 변수에 API URL이 설정되어 있지 않은 경우
     if (!apiUrl) {
       setState({
-        status: 'error',
-        error: 'Anime quote API not configured',
+        status: "error",
+        error: "Anime quote API not configured",
       });
       return;
     }
 
     // 요청을 시작했으므로 loading 상태로 설정한다.
-    setState({ status: 'loading' });
+    setState({ status: "loading" });
 
     try {
       const response = await fetch(apiUrl, {
-        cache: 'no-store',
+        cache: "no-store",
       });
 
       if (!response.ok) {
@@ -889,11 +972,11 @@ function useAnimeQuoteData(shouldFetch: boolean) {
 
       // 정상적으로 데이터를 받았으므로 ready 상태와 내용을 설정한다.
       setState({
-        status: 'ready',
+        status: "ready",
         data: {
-          content: entry?.quote ?? '',
-          character: entry?.character ?? 'Unknown',
-          show: entry?.show ?? '',
+          content: entry?.quote ?? "",
+          character: entry?.character ?? "Unknown",
+          show: entry?.show ?? "",
         },
       });
     } catch (error) {
@@ -903,8 +986,8 @@ function useAnimeQuoteData(shouldFetch: boolean) {
       }
 
       setState({
-        status: 'error',
-        error: error instanceof Error ? error.message : 'Anime quote error',
+        status: "error",
+        error: error instanceof Error ? error.message : "Anime quote error",
       });
     }
   }, [shouldFetch, apiUrl]);
@@ -919,7 +1002,7 @@ function useAnimeQuoteData(shouldFetch: boolean) {
       if (!mountedRef.current) {
         return;
       }
-      setState({ status: 'idle' });
+      setState({ status: "idle" });
       return;
     }
 
@@ -934,41 +1017,43 @@ function useAnimeQuoteData(shouldFetch: boolean) {
  * WeatherAPI의 날씨 코드 → 내부에서 사용하는 날씨 키로 매핑
  */
 function mapWeatherCode(code: number): WeatherConditionKey {
-  if (code === 1000) return 'clear';
-  if (code === 1003) return 'partlyCloudy';
-  if ([1006, 1009].includes(code)) return 'cloudy';
-  if ([1030, 1135, 1147].includes(code)) return 'fog';
-  if ([1150, 1153, 1168, 1171, 1180, 1183].includes(code)) return 'drizzle';
+  if (code === 1000) return "clear";
+  if (code === 1003) return "partlyCloudy";
+  if ([1006, 1009].includes(code)) return "cloudy";
+  if ([1030, 1135, 1147].includes(code)) return "fog";
+  if ([1150, 1153, 1168, 1171, 1180, 1183].includes(code)) return "drizzle";
   if ([1063, 1186, 1189, 1192, 1195, 1240, 1243, 1246].includes(code)) {
-    return 'rain';
+    return "rain";
   }
-  if ([1069, 1072, 1198, 1201, 1204, 1207, 1249, 1252].includes(code)) return 'freezingRain';
+  if ([1069, 1072, 1198, 1201, 1204, 1207, 1249, 1252].includes(code))
+    return "freezingRain";
   if (
     [
-      1066, 1114, 1117, 1210, 1213, 1216, 1219, 1222, 1225, 1237, 1255, 1258, 1261, 1264,
+      1066, 1114, 1117, 1210, 1213, 1216, 1219, 1222, 1225, 1237, 1255, 1258,
+      1261, 1264,
     ].includes(code)
   ) {
-    return 'snow';
+    return "snow";
   }
-  if ([1087, 1273, 1276, 1279, 1282].includes(code)) return 'thunderstorm';
+  if ([1087, 1273, 1276, 1279, 1282].includes(code)) return "thunderstorm";
   // 알 수 없는 코드는 기본적으로 흐림으로 처리한다.
-  return 'cloudy';
+  return "cloudy";
 }
 
 /**
  * 날씨 상태에 사용할 간단한 이모지 아이콘 매핑
  */
 const WEATHER_ICONS: Record<WeatherConditionKey, string> = {
-  clear: '☀️',
-  partlyCloudy: '🌤️',
-  cloudy: '☁️',
-  fog: '🌫️',
-  drizzle: '🌦️',
-  rain: '🌧️',
-  freezingRain: '🌧️',
-  snow: '❄️',
-  thunderstorm: '⛈️',
-  unknown: '❔',
+  clear: "☀️",
+  partlyCloudy: "🌤️",
+  cloudy: "☁️",
+  fog: "🌫️",
+  drizzle: "🌦️",
+  rain: "🌧️",
+  freezingRain: "🌧️",
+  snow: "❄️",
+  thunderstorm: "⛈️",
+  unknown: "❔",
 };
 
 /**
@@ -976,8 +1061,8 @@ const WEATHER_ICONS: Record<WeatherConditionKey, string> = {
  * 예: "Asia/Seoul" → "Asia · Seoul"
  */
 function formatTimezoneLabel(tz?: string) {
-  if (!tz || typeof tz !== 'string') return 'UTC';
-  return tz.replace(/_/g, ' ').replace(/\//g, ' · ');
+  if (!tz || typeof tz !== "string") return "UTC";
+  return tz.replace(/_/g, " ").replace(/\//g, " · ");
 }
 
 /**
@@ -986,17 +1071,22 @@ function formatTimezoneLabel(tz?: string) {
  * - 권한을 얻지 못하거나 실패한 경우, IP 기반 역지오코딩 API를 사용해 대략적인 위치를 얻는다.
  * - 둘 다 실패하면 DEFAULT_COORDS(서울 좌표)를 반환한다.
  */
-async function getCoordinates(): Promise<{ latitude: number; longitude: number }> {
+async function getCoordinates(): Promise<{
+  latitude: number;
+  longitude: number;
+}> {
   // 1) Geolocation API 시도
-  if (typeof navigator !== 'undefined' && navigator.geolocation) {
+  if (typeof navigator !== "undefined" && navigator.geolocation) {
     try {
-      const geoPosition = await new Promise<GeolocationPosition>((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(
-          (position) => resolve(position),
-          (error) => reject(error),
-          { enableHighAccuracy: false, timeout: 5000 },
-        );
-      });
+      const geoPosition = await new Promise<GeolocationPosition>(
+        (resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(
+            (position) => resolve(position),
+            (error) => reject(error),
+            { enableHighAccuracy: false, timeout: 5000 },
+          );
+        },
+      );
 
       return {
         latitude: geoPosition.coords.latitude,
@@ -1009,22 +1099,24 @@ async function getCoordinates(): Promise<{ latitude: number; longitude: number }
 
   // 2) IP 기반 역지오코딩 API 시도
   try {
-    const rawIpApiBase = (import.meta.env.VITE_IP_REVERSE_GEOCODING_API_URL as string | undefined)
-      ?.trim() || '';
+    const rawIpApiBase =
+      (
+        import.meta.env.VITE_IP_REVERSE_GEOCODING_API_URL as string | undefined
+      )?.trim() || "";
 
     if (rawIpApiBase) {
       // .env에는 https://ipinfo.io/ 와 같이 기본 URL만 넣고,
       // 실제 요청은 /json을 붙여서 보낸다.
       let ipApiUrl = rawIpApiBase;
       // 끝에 /가 여러 개 붙어 있어도 하나만 제거
-      while (ipApiUrl.endsWith('/')) {
+      while (ipApiUrl.endsWith("/")) {
         ipApiUrl = ipApiUrl.slice(0, -1);
       }
-      if (!ipApiUrl.toLowerCase().endsWith('/json')) {
+      if (!ipApiUrl.toLowerCase().endsWith("/json")) {
         ipApiUrl = `${ipApiUrl}/json`;
       }
 
-      const response = await fetch(ipApiUrl, { cache: 'no-store' });
+      const response = await fetch(ipApiUrl, { cache: "no-store" });
       if (response.ok) {
         const data = await response.json();
         // ipinfo.io 형식(lat, lon이 있는 loc 문자열 등)을 가정하되,
@@ -1032,8 +1124,8 @@ async function getCoordinates(): Promise<{ latitude: number; longitude: number }
         let latitude: number | null = null;
         let longitude: number | null = null;
 
-        if (typeof data?.loc === 'string') {
-          const [latStr, lonStr] = data.loc.split(',');
+        if (typeof data?.loc === "string") {
+          const [latStr, lonStr] = data.loc.split(",");
           const lat = Number(latStr);
           const lon = Number(lonStr);
           if (Number.isFinite(lat) && Number.isFinite(lon)) {
@@ -1049,9 +1141,14 @@ async function getCoordinates(): Promise<{ latitude: number; longitude: number }
           !Number.isFinite(longitude)
         ) {
           // 다른 구조를 가진 API를 사용할 수도 있으니, 일반적인 lat/lon 필드도 시도한다.
-          const lat = typeof data?.latitude === 'number' ? data.latitude : Number(data?.latitude);
+          const lat =
+            typeof data?.latitude === "number"
+              ? data.latitude
+              : Number(data?.latitude);
           const lon =
-            typeof data?.longitude === 'number' ? data.longitude : Number(data?.longitude);
+            typeof data?.longitude === "number"
+              ? data.longitude
+              : Number(data?.longitude);
           if (Number.isFinite(lat) && Number.isFinite(lon)) {
             latitude = lat;
             longitude = lon;
@@ -1069,7 +1166,7 @@ async function getCoordinates(): Promise<{ latitude: number; longitude: number }
       }
     }
   } catch (error) {
-    console.warn('IP-based reverse geocoding failed:', error);
+    console.warn("IP-based reverse geocoding failed:", error);
   }
 
   // 3) 모든 시도가 실패한 경우 기본 좌표(서울) 사용

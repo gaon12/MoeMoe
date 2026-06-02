@@ -1,16 +1,16 @@
-import { useState, useRef, useEffect } from 'react';
-import './DownloadButton.css';
+import { useState, useRef, useEffect } from "react";
+import "./DownloadButton.css";
 
 interface DownloadButtonProps {
   imageUrl: string | null;
   imageName?: string;
 }
 
-type ImageFormat = 'jpg' | 'png' | 'webp' | 'avif';
+type ImageFormat = "jpg" | "png" | "webp" | "avif";
 
 export const DownloadButton: React.FC<DownloadButtonProps> = ({
   imageUrl,
-  imageName = 'anime-image',
+  imageName = "anime-image",
 }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
@@ -25,11 +25,11 @@ export const DownloadButton: React.FC<DownloadButtonProps> = ({
     };
 
     if (isMenuOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener("mousedown", handleClickOutside);
     }
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [isMenuOpen]);
 
@@ -46,57 +46,57 @@ export const DownloadButton: React.FC<DownloadButtonProps> = ({
 
       // Create an image element
       const img = new Image();
-      img.crossOrigin = 'anonymous';
+      img.crossOrigin = "anonymous";
 
       await new Promise<void>((resolve, reject) => {
         img.onload = () => resolve();
-        img.onerror = () => reject(new Error('Failed to load image'));
+        img.onerror = () => reject(new Error("Failed to load image"));
         img.src = URL.createObjectURL(blob);
       });
 
       // Create canvas
-      const canvas = document.createElement('canvas');
+      const canvas = document.createElement("canvas");
       canvas.width = img.naturalWidth;
       canvas.height = img.naturalHeight;
-      const ctx = canvas.getContext('2d');
+      const ctx = canvas.getContext("2d");
 
       if (!ctx) {
-        throw new Error('Failed to get canvas context');
+        throw new Error("Failed to get canvas context");
       }
 
       // Draw image on canvas
       ctx.drawImage(img, 0, 0);
 
       // Convert to desired format
-      let mimeType = 'image/png';
-      let quality = 0.95;
+      let mimeType = "image/png";
+      const quality = 0.95;
 
       switch (format) {
-        case 'jpg':
-          mimeType = 'image/jpeg';
+        case "jpg":
+          mimeType = "image/jpeg";
           break;
-        case 'webp':
-          mimeType = 'image/webp';
+        case "webp":
+          mimeType = "image/webp";
           break;
-        case 'avif':
-          mimeType = 'image/avif';
+        case "avif":
+          mimeType = "image/avif";
           break;
         default:
-          mimeType = 'image/png';
+          mimeType = "image/png";
       }
 
       // Convert canvas to blob
       canvas.toBlob(
         (convertedBlob) => {
           if (!convertedBlob) {
-            console.error('Failed to convert image');
+            console.error("Failed to convert image");
             setIsDownloading(false);
             return;
           }
 
           // Create download link
           const url = URL.createObjectURL(convertedBlob);
-          const link = document.createElement('a');
+          const link = document.createElement("a");
           link.href = url;
           link.download = `${imageName}.${format}`;
           document.body.appendChild(link);
@@ -107,13 +107,13 @@ export const DownloadButton: React.FC<DownloadButtonProps> = ({
           setIsDownloading(false);
         },
         mimeType,
-        quality
+        quality,
       );
 
       // Clean up
       URL.revokeObjectURL(img.src);
     } catch (error) {
-      console.error('Download failed:', error);
+      console.error("Download failed:", error);
       setIsDownloading(false);
     }
   };
@@ -126,7 +126,7 @@ export const DownloadButton: React.FC<DownloadButtonProps> = ({
   return (
     <div className="download-button-container" ref={menuRef}>
       <button
-        className={`download-button ${isDownloading ? 'downloading' : ''}`}
+        className={`download-button ${isDownloading ? "downloading" : ""}`}
         onClick={handleButtonClick}
         disabled={!imageUrl || isDownloading}
         aria-label="Download image"
@@ -166,25 +166,25 @@ export const DownloadButton: React.FC<DownloadButtonProps> = ({
           <div className="download-menu-header">Select Format</div>
           <button
             className="download-menu-item"
-            onClick={() => handleDownload('jpg')}
+            onClick={() => handleDownload("jpg")}
           >
             JPG
           </button>
           <button
             className="download-menu-item"
-            onClick={() => handleDownload('png')}
+            onClick={() => handleDownload("png")}
           >
             PNG
           </button>
           <button
             className="download-menu-item"
-            onClick={() => handleDownload('webp')}
+            onClick={() => handleDownload("webp")}
           >
             WebP
           </button>
           <button
             className="download-menu-item"
-            onClick={() => handleDownload('avif')}
+            onClick={() => handleDownload("avif")}
           >
             AVIF
           </button>

@@ -1,18 +1,31 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
-import { useTranslation } from 'react-i18next';
-import { type AppSettings, defaultSettings, type ThemeMode, type Widget, type WidgetType } from '../types/settings';
+import { useState, useEffect, type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
+import {
+  type AppSettings,
+  defaultSettings,
+  type ThemeMode,
+  type Widget,
+  type WidgetType,
+} from "../types/settings";
+import { AppContext } from "./appContextValue";
 
-const VALID_WIDGET_TYPES: WidgetType[] = ['clock', 'weather', 'location', 'animeQuote', 'customText'];
+const VALID_WIDGET_TYPES: WidgetType[] = [
+  "clock",
+  "weather",
+  "location",
+  "animeQuote",
+  "customText",
+];
 
-type LegacyWidgetType = WidgetType | 'date' | 'quote' | string | undefined;
+type LegacyWidgetType = WidgetType | "date" | "quote" | string | undefined;
 
 function normalizeWidgetType(type: LegacyWidgetType): WidgetType {
-  if (type === 'date') return 'clock';
-  if (type === 'quote') return 'animeQuote';
+  if (type === "date") return "clock";
+  if (type === "quote") return "animeQuote";
   if (VALID_WIDGET_TYPES.includes(type as WidgetType)) {
     return type as WidgetType;
   }
-  return 'clock';
+  return "clock";
 }
 
 function sanitizeWidgets(widgets?: Widget[]): Widget[] {
@@ -32,17 +45,7 @@ function sanitizeWidgets(widgets?: Widget[]): Widget[] {
     });
 }
 
-interface AppContextType {
-  settings: AppSettings;
-  updateSettings: (newSettings: Partial<AppSettings>) => void;
-  resetSettings: () => void;
-  isSettingsOpen: boolean;
-  setIsSettingsOpen: (open: boolean) => void;
-}
-
-const AppContext = createContext<AppContextType | undefined>(undefined);
-
-const STORAGE_KEY = 'moemoe-settings';
+const STORAGE_KEY = "moemoe-settings";
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const { i18n } = useTranslation();
@@ -55,16 +58,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
         base = { ...defaultSettings, ...parsed };
       }
     } catch (error) {
-      console.error('Failed to load settings:', error);
+      console.error("Failed to load settings:", error);
     }
     if (!base) {
       // No saved settings: derive language from browser, default to English
-      let lang: AppSettings['language'] = 'en';
+      let lang: AppSettings["language"] = "en";
       try {
-        const navLang = (navigator.language || '').toLowerCase();
-        if (navLang.startsWith('ko')) lang = 'ko';
-        else if (navLang.startsWith('ja')) lang = 'ja';
-        else if (navLang.startsWith('en')) lang = 'en';
+        const navLang = (navigator.language || "").toLowerCase();
+        if (navLang.startsWith("ko")) lang = "ko";
+        else if (navLang.startsWith("ja")) lang = "ja";
+        else if (navLang.startsWith("en")) lang = "en";
       } catch {
         /* ignore */
       }
@@ -73,7 +76,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return {
       ...base,
       widgets: sanitizeWidgets(base.widgets),
-      weatherApiKey: typeof base.weatherApiKey === 'string' ? base.weatherApiKey.trim() : '',
+      weatherApiKey:
+        typeof base.weatherApiKey === "string" ? base.weatherApiKey.trim() : "",
     };
   });
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -83,23 +87,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const applyTheme = (theme: ThemeMode) => {
       const root = document.documentElement;
 
-      if (theme === 'auto') {
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        root.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+      if (theme === "auto") {
+        const prefersDark = window.matchMedia(
+          "(prefers-color-scheme: dark)",
+        ).matches;
+        root.setAttribute("data-theme", prefersDark ? "dark" : "light");
       } else {
-        root.setAttribute('data-theme', theme);
+        root.setAttribute("data-theme", theme);
       }
     };
 
     applyTheme(settings.theme);
 
     // Listen for system theme changes if in auto mode
-    if (settings.theme === 'auto') {
-      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-      const handleChange = () => applyTheme('auto');
+    if (settings.theme === "auto") {
+      const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+      const handleChange = () => applyTheme("auto");
 
-      mediaQuery.addEventListener('change', handleChange);
-      return () => mediaQuery.removeEventListener('change', handleChange);
+      mediaQuery.addEventListener("change", handleChange);
+      return () => mediaQuery.removeEventListener("change", handleChange);
     }
   }, [settings.theme]);
 
@@ -108,8 +114,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (i18n.language !== settings.language) {
       i18n.changeLanguage(settings.language);
     }
-    localStorage.setItem('moemoe-language', settings.language);
-  }, [settings.language]);
+    localStorage.setItem("moemoe-language", settings.language);
+  }, [i18n, settings.language]);
 
   // Apply font size
   useEffect(() => {
@@ -121,7 +127,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
     } catch (error) {
-      console.error('Failed to save settings:', error);
+      console.error("Failed to save settings:", error);
     }
   }, [settings]);
 
@@ -131,7 +137,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
       return {
         ...merged,
         widgets: sanitizeWidgets(newSettings.widgets ?? prev.widgets),
-        weatherApiKey: (newSettings.weatherApiKey ?? prev.weatherApiKey ?? '').trim(),
+        weatherApiKey: (
+          newSettings.weatherApiKey ??
+          prev.weatherApiKey ??
+          ""
+        ).trim(),
       };
     });
   };
@@ -140,7 +150,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setSettings({
       ...defaultSettings,
       widgets: sanitizeWidgets(defaultSettings.widgets),
-      weatherApiKey: '',
+      weatherApiKey: "",
     });
     localStorage.removeItem(STORAGE_KEY);
   };
@@ -158,12 +168,4 @@ export function AppProvider({ children }: { children: ReactNode }) {
       {children}
     </AppContext.Provider>
   );
-}
-
-export function useApp() {
-  const context = useContext(AppContext);
-  if (!context) {
-    throw new Error('useApp must be used within AppProvider');
-  }
-  return context;
 }

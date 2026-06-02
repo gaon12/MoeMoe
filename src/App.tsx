@@ -1,32 +1,35 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
-import { Clock } from './components/Clock/Clock';
+import { useState, useEffect, useCallback, useRef } from "react";
+import { Clock } from "./components/Clock/Clock";
 import {
   ImageBackground,
   type ImageBackgroundHandle,
-} from './components/ImageBackground/ImageBackground';
-import { RefreshButton } from './components/RefreshButton/RefreshButton';
-import { DownloadButton } from './components/DownloadButton/DownloadButton';
-import { SettingsButton } from './components/SettingsButton/SettingsButton';
-import { SettingsModal } from './components/SettingsModal/SettingsModal';
-import { FullscreenButton } from './components/FullscreenButton/FullscreenButton';
-import { AutoRefreshIndicator } from './components/AutoRefreshIndicator/AutoRefreshIndicator';
-import { type AnimeImage } from './types/image';
-import { useApp } from './contexts/AppContext';
-import { useSyncedTime } from './hooks/useSyncedTime';
-import { WidgetDock } from './components/WidgetDock/WidgetDock';
-import './App.css';
+} from "./components/ImageBackground/ImageBackground";
+import { RefreshButton } from "./components/RefreshButton/RefreshButton";
+import { DownloadButton } from "./components/DownloadButton/DownloadButton";
+import { SettingsButton } from "./components/SettingsButton/SettingsButton";
+import { SettingsModal } from "./components/SettingsModal/SettingsModal";
+import { FullscreenButton } from "./components/FullscreenButton/FullscreenButton";
+import { AutoRefreshIndicator } from "./components/AutoRefreshIndicator/AutoRefreshIndicator";
+import { type AnimeImage } from "./types/image";
+import { useApp } from "./contexts/useApp";
+import { useSyncedTime } from "./hooks/useSyncedTime";
+import { WidgetDock } from "./components/WidgetDock/WidgetDock";
+import "./App.css";
 
 function App() {
-  const { t } = useTranslation();
   const { settings, setIsSettingsOpen } = useApp();
   const [isLoadingImage, setIsLoadingImage] = useState(true);
   const [currentImage, setCurrentImage] = useState<AnimeImage | null>(null);
   const [lastRefreshTime, setLastRefreshTime] = useState<number>(0);
   const [isAutoRefreshPaused, setIsAutoRefreshPaused] = useState(false);
-  const autoRefreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const autoRefreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const imageBackgroundRef = useRef<ImageBackgroundHandle | null>(null);
-  const currentTime = useSyncedTime(settings.useServerTime, settings.serverTimeUpdateIntervalSec);
+  const currentTime = useSyncedTime(
+    settings.useServerTime,
+    settings.serverTimeUpdateIntervalSec,
+  );
 
   const handleRefresh = useCallback(() => {
     const now = Date.now();
@@ -35,7 +38,9 @@ function App() {
 
     // Check if cooldown is still active
     if (timeSinceLastRefresh < cooldownSeconds && lastRefreshTime > 0) {
-      console.log(`Please wait ${Math.ceil(cooldownSeconds - timeSinceLastRefresh)}s before refreshing`);
+      console.log(
+        `Please wait ${Math.ceil(cooldownSeconds - timeSinceLastRefresh)}s before refreshing`,
+      );
       return;
     }
 
@@ -64,7 +69,7 @@ function App() {
   }, [settings.imageChangeInterval, isAutoRefreshPaused, handleRefresh]);
 
   const handleImageLoad = useCallback((image: AnimeImage) => {
-    console.log('Image loaded successfully:', image);
+    console.log("Image loaded successfully:", image);
     setCurrentImage(image);
     setIsLoadingImage(false);
     // Update lastRefreshTime when image loading is complete
@@ -72,7 +77,7 @@ function App() {
   }, []);
 
   const handleImageError = useCallback((error: Error) => {
-    console.error('Image load error:', error);
+    console.error("Image load error:", error);
     setIsLoadingImage(false);
   }, []);
 
@@ -96,8 +101,8 @@ function App() {
     setIsAutoRefreshPaused((prev) => !prev);
   }, []);
 
-  const toggleFullscreen = () => {
-    if (typeof document === 'undefined') return;
+  const toggleFullscreen = useCallback(() => {
+    if (typeof document === "undefined") return;
 
     const doc = document as Document & {
       webkitFullscreenElement?: Element | null;
@@ -130,16 +135,16 @@ function App() {
       if (requestFullscreen) {
         try {
           const result = requestFullscreen.call(docElement);
-          if (result && typeof (result as Promise<void>).catch === 'function') {
+          if (result && typeof (result as Promise<void>).catch === "function") {
             (result as Promise<void>).catch((err) => {
-              console.error('Failed to enter fullscreen:', err);
+              console.error("Failed to enter fullscreen:", err);
             });
           }
         } catch (err) {
-          console.error('Failed to enter fullscreen:', err);
+          console.error("Failed to enter fullscreen:", err);
         }
       } else {
-        console.warn('Fullscreen API is not supported in this browser.');
+        console.warn("Fullscreen API is not supported in this browser.");
       }
     } else {
       const exitFullscreen =
@@ -151,17 +156,17 @@ function App() {
       if (exitFullscreen) {
         try {
           const result = exitFullscreen.call(doc);
-          if (result && typeof (result as Promise<void>).catch === 'function') {
+          if (result && typeof (result as Promise<void>).catch === "function") {
             (result as Promise<void>).catch((err) => {
-              console.error('Failed to exit fullscreen:', err);
+              console.error("Failed to exit fullscreen:", err);
             });
           }
         } catch (err) {
-          console.error('Failed to exit fullscreen:', err);
+          console.error("Failed to exit fullscreen:", err);
         }
       }
     }
-  };
+  }, []);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -175,19 +180,19 @@ function App() {
       }
 
       // R key or Space key to refresh
-      if (event.key === 'r' || event.key === 'R' || event.key === ' ') {
+      if (event.key === "r" || event.key === "R" || event.key === " ") {
         event.preventDefault();
         handleRefresh();
       }
 
       // F key to toggle fullscreen
-      if (event.key === 'f' || event.key === 'F') {
+      if (event.key === "f" || event.key === "F") {
         event.preventDefault();
         toggleFullscreen();
       }
 
       // P key to toggle auto-refresh pause
-      if (event.key === 'p' || event.key === 'P') {
+      if (event.key === "p" || event.key === "P") {
         if (settings.imageChangeInterval > 0) {
           event.preventDefault();
           toggleAutoRefreshPause();
@@ -195,18 +200,24 @@ function App() {
       }
 
       // S key to open settings
-      if (event.key === 's' || event.key === 'S') {
+      if (event.key === "s" || event.key === "S") {
         event.preventDefault();
         setIsSettingsOpen(true);
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [handleRefresh, toggleFullscreen, setIsSettingsOpen, settings.imageChangeInterval, toggleAutoRefreshPause]);
+  }, [
+    handleRefresh,
+    toggleFullscreen,
+    setIsSettingsOpen,
+    settings.imageChangeInterval,
+    toggleAutoRefreshPause,
+  ]);
 
   return (
     <div className="app">
@@ -222,11 +233,6 @@ function App() {
       />
       <div className="content">
         <Clock currentTime={currentTime} />
-        {currentImage && currentImage.animeName && (
-          <div className="image-info">
-            <p className="anime-name">{currentImage.animeName}</p>
-          </div>
-        )}
       </div>
 
       <SettingsButton />
@@ -238,31 +244,19 @@ function App() {
       />
       <DownloadButton
         imageUrl={currentImage?.url || null}
-        imageName={currentImage?.animeName || 'anime-image'}
+        imageName={currentImage?.animeName || "anime-image"}
       />
-      <AutoRefreshIndicator
-        intervalSeconds={settings.imageChangeInterval}
-        lastRefreshTime={lastRefreshTime}
-        isPaused={isAutoRefreshPaused}
-        isLoading={isLoadingImage}
-        onTogglePause={toggleAutoRefreshPause}
-      />
+      {settings.imageChangeInterval > 0 && (
+        <AutoRefreshIndicator
+          intervalSeconds={settings.imageChangeInterval}
+          lastRefreshTime={lastRefreshTime}
+          isPaused={isAutoRefreshPaused}
+          isLoading={isLoadingImage}
+          onTogglePause={toggleAutoRefreshPause}
+        />
+      )}
       <WidgetDock currentTime={currentTime} />
       <SettingsModal />
-
-      <div className="keyboard-hints">
-        <span>{t('keyboard.refresh')}</span>
-        <span>•</span>
-        <span>{t('keyboard.fullscreen')}</span>
-        <span>•</span>
-        <span>{t('keyboard.settings')}</span>
-        {settings.imageChangeInterval > 0 && (
-          <>
-            <span>•</span>
-            <span>{t('keyboard.autoRefresh')}</span>
-          </>
-        )}
-      </div>
     </div>
   );
 }

@@ -1,30 +1,34 @@
-import { type ImageSource, ALL_IMAGE_SOURCES } from './image';
+import { type ImageSource } from "./image";
 
 /**
  * Theme mode options
  */
-export type ThemeMode = 'light' | 'dark' | 'auto';
+export type ThemeMode = "light" | "dark" | "auto";
 
 /**
  * Language options
  */
-export type Language = 'ko' | 'en' | 'ja';
-
+export type Language = "ko" | "en" | "ja";
 
 /**
  * Image fit mode options
  */
-export type ImageFitMode = 'cover' | 'contain';
+export type ImageFitMode = "cover" | "contain";
 
 /**
  * Letterbox fill mode options (for 'contain' mode)
  */
-export type LetterboxFillMode = 'blur' | 'edge-color' | 'custom' | 'solid';
+export type LetterboxFillMode = "blur" | "edge-color" | "custom" | "solid";
 
 /**
  * Widget types
  */
-export type WidgetType = 'clock' | 'weather' | 'location' | 'animeQuote' | 'customText';
+export type WidgetType =
+  | "clock"
+  | "weather"
+  | "location"
+  | "animeQuote"
+  | "customText";
 
 /**
  * Widget configuration
@@ -37,7 +41,7 @@ export interface Widget {
     x: number;
     y: number;
   };
-  data?: any;
+  data?: Record<string, unknown>;
 }
 
 /**
@@ -61,8 +65,8 @@ export interface AppSettings {
   showSeconds: boolean;
   use24Hour: boolean;
   showAmPm: boolean; // Only applies when use24Hour is false
-  amPmPosition: 'before' | 'after'; // Only applies when showAmPm is true
-  amPmStyle: 'locale' | 'latin'; // Non-English: locale words vs AM/PM
+  amPmPosition: "before" | "after"; // Only applies when showAmPm is true
+  amPmStyle: "locale" | "latin"; // Non-English: locale words vs AM/PM
 
   // Time source
   useServerTime: boolean;
@@ -80,29 +84,22 @@ export interface AppSettings {
  * Default application settings
  */
 export const defaultSettings: AppSettings = {
-  theme: 'dark',
-  language: 'en',
+  theme: "dark",
+  language: "en",
   fontSize: 16,
-  imageSources: ALL_IMAGE_SOURCES,
+  imageSources: ["nekos_best"],
   allowNSFW: false,
-  imageFitMode: 'cover',
-  letterboxFillMode: 'blur',
-  letterboxCustomColor: '#1a1a1a',
+  imageFitMode: "cover",
+  letterboxFillMode: "blur",
+  letterboxCustomColor: "#1a1a1a",
   imageChangeInterval: 0,
   showSeconds: false,
   use24Hour: false,
   showAmPm: true,
-  amPmPosition: 'after',
-  amPmStyle: 'locale',
+  amPmPosition: "after",
+  amPmStyle: "locale",
   useServerTime: false,
   serverTimeUpdateIntervalSec: 60,
-  widgets: [
-    {
-      id: 'clock-widget',
-      type: 'clock',
-      enabled: true,
-      position: { x: 0, y: 0 },
-    },
-  ],
-  weatherApiKey: '',
+  widgets: [],
+  weatherApiKey: "",
 };

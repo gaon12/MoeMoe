@@ -4,18 +4,19 @@
   align-items: center;
   justify-content: center;
   color: white;
-  text-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  text-align: center;
+  text-shadow: 0 4px 18px rgba(0, 0, 0, 0.55);
   user-select: none;
   z-index: 10;
 }
 
 .clock-time {
-  font-size: 8rem;
+  font-size: clamp(4.5rem, 12vw, 9rem);
   font-weight: 200;
   line-height: 1;
   margin-bottom: 0.5rem;
-  letter-spacing: -0.02em;
-  font-family: 'RIDIBatang', serif;
+  letter-spacing: 0;
+  font-family: "RIDIBatang", serif;
 }
 
 .clock-time .ampm {
@@ -26,16 +27,16 @@
 }
 
 .clock-date {
-  font-size: 1.5rem;
+  font-size: clamp(1rem, 2.2vw, 1.6rem);
   font-weight: 300;
   opacity: 0.95;
-  letter-spacing: 0.02em;
-  font-family: 'RIDIBatang', serif;
+  letter-spacing: 0;
+  font-family: "RIDIBatang", serif;
 }
 
 @media (max-width: 768px) {
   .clock-time {
-    font-size: 4rem;
+    font-size: clamp(3.25rem, 17vw, 5rem);
   }
 
   .clock-time .ampm {
