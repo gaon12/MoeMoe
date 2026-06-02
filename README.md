@@ -115,11 +115,13 @@ Artist/source links are shown when available; click to open in a new tab.
 ## Settings
 
 Appearance
+
 - Language: auto‑initialized from browser (ko/ja/en; falls back to en)
 - Theme: Dark / Light / Auto
 - Clock: 12/24‑hour, seconds on/off, AM/PM style (locale or AM/PM) and position
 
 Images
+
 - Sources: multi‑select with Select All / Deselect All; at least one is required (defaults to all selected)
 - Fit mode: Cover / Contain
 - Letterbox fill: Blur / Edge‑Color / Custom / Solid
@@ -127,12 +129,14 @@ Images
 - Allow NSFW (where supported)
 
 Time
+
 - Use server time (optional)
 - Update interval for server sync (10/30/60/300 seconds)
 
 ## API Sources
 
 Integrated
+
 - Nekos.best — rich categories, artist/anime metadata
 - Waifu.pics — simple, reliable SFW/NSFW endpoints
 - Nekosia — curated catgirl images
@@ -141,11 +145,13 @@ Integrated
 - Donmai.us (Danbooru) — random posts (respecting SFW/NSFW setting)
 
 Planned/Requested
+
 - Waifu.it, Pic.re, Neoksapi.com
 
 ## Internationalization
 
 Supported languages
+
 - Korean (한국어)
 - English
 - Japanese (日本語)

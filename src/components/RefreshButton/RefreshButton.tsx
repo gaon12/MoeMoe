@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import './RefreshButton.css';
+import { useState, useEffect } from "react";
+import "./RefreshButton.css";
 
 interface RefreshButtonProps {
   onRefresh: () => void;
@@ -47,14 +47,14 @@ export const RefreshButton: React.FC<RefreshButtonProps> = ({
 
   return (
     <button
-      className={`refresh-button ${isLoading ? 'loading' : ''} ${isAnimating ? 'animating' : ''} ${isCooldownActive ? 'cooldown' : ''}`}
+      className={`refresh-button ${isLoading ? "loading" : ""} ${isAnimating ? "animating" : ""} ${isCooldownActive ? "cooldown" : ""}`}
       onClick={handleClick}
       disabled={isDisabled}
       aria-label="Refresh image"
       title={
         isCooldownActive
           ? `Please wait ${Math.ceil(remainingCooldown)}s before refreshing`
-          : 'Refresh image (Press R or Space)'
+          : "Refresh image (Press R or Space)"
       }
     >
       {isCooldownActive ? (

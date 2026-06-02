@@ -1,6 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from "react";
 
-export function useSyncedTime(useServerTime: boolean, serverTimeUpdateIntervalSec: number) {
+export function useSyncedTime(
+  useServerTime: boolean,
+  serverTimeUpdateIntervalSec: number,
+) {
   const [currentTime, setCurrentTime] = useState<Date>(() => new Date());
   const offsetRef = useRef(0); // server-client delta
   const syncTimerRef = useRef<number | null>(null);
@@ -18,15 +21,17 @@ export function useSyncedTime(useServerTime: boolean, serverTimeUpdateIntervalSe
 
   const fetchServerTime = useCallback(async () => {
     try {
-      const baseUrl = import.meta.env.VITE_SERVER_TIME_API_URL as string | undefined;
+      const baseUrl = import.meta.env.VITE_SERVER_TIME_API_URL as
+        | string
+        | undefined;
       if (!baseUrl) {
         offsetRef.current = 0;
         return;
       }
-      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
       const requestUrl = `${baseUrl}${encodeURIComponent(tz)}`;
       const t0 = Date.now();
-      const response = await fetch(requestUrl, { cache: 'no-store' });
+      const response = await fetch(requestUrl, { cache: "no-store" });
       const t3 = Date.now();
       if (!response.ok) {
         const snippet = await response
@@ -40,35 +45,37 @@ export function useSyncedTime(useServerTime: boolean, serverTimeUpdateIntervalSe
         if (snippet) {
           details.push(`body: ${snippet}`);
         }
-        throw new Error(details.join('\n'));
+        throw new Error(details.join("\n"));
       }
       const data = await response.json();
       let serverMs: number | null = null;
-      if (data && typeof data.timestamp === 'string') {
+      if (data && typeof data.timestamp === "string") {
         const sec = parseFloat(data.timestamp);
         if (!Number.isNaN(sec)) {
           serverMs = Math.round(sec * 1000);
         }
       }
-      if (serverMs == null && typeof data?.iso8601 === 'string') {
+      if (serverMs == null && typeof data?.iso8601 === "string") {
         const parsed = Date.parse(data.iso8601);
         if (!Number.isNaN(parsed)) {
           serverMs = parsed;
         }
       }
-      if (serverMs == null && typeof data?.datetime === 'string') {
-        const parsed = Date.parse(data.datetime.replace(' ', 'T'));
+      if (serverMs == null && typeof data?.datetime === "string") {
+        const parsed = Date.parse(data.datetime.replace(" ", "T"));
         if (!Number.isNaN(parsed)) {
           serverMs = parsed;
         }
       }
       if (serverMs == null) {
-        throw new Error('Server time response did not include a valid timestamp');
+        throw new Error(
+          "Server time response did not include a valid timestamp",
+        );
       }
       const midpoint = (t0 + t3) / 2;
       offsetRef.current = serverMs - midpoint;
     } catch (error) {
-      console.error('Server time sync failed:', error);
+      console.error("Server time sync failed:", error);
       offsetRef.current = 0;
     }
   }, []);

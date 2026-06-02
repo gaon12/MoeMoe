@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
-import './AutoRefreshIndicator.css';
+import { useState, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
+import "./AutoRefreshIndicator.css";
 
 interface AutoRefreshIndicatorProps {
   intervalSeconds: number;
@@ -63,24 +63,24 @@ export function AutoRefreshIndicator({
   let summaryText: string;
   let detailText: string | null = null;
   if (intervalSeconds <= 0) {
-    summaryText = t('autoRefresh.status.disabled');
+    summaryText = t("autoRefresh.status.disabled");
   } else if (isPaused) {
-    summaryText = t('autoRefresh.status.paused');
+    summaryText = t("autoRefresh.status.paused");
   } else if (isLoading) {
-    summaryText = t('autoRefresh.status.refreshing');
+    summaryText = t("autoRefresh.status.refreshing");
   } else if (timeLeft != null) {
     const seconds = Math.max(1, Math.ceil(timeLeft));
     // 기본(축소) 상태에서는 짧은 문구를, 호버/포커스 확장 시에는
     // 기존의 자세한 문구(다음 새로고침까지 N초)를 함께 보여준다.
-    summaryText = t('autoRefresh.status.shortNext', { seconds });
-    detailText = t('autoRefresh.status.next', { seconds });
+    summaryText = t("autoRefresh.status.shortNext", { seconds });
+    detailText = t("autoRefresh.status.next", { seconds });
   } else {
-    summaryText = t('autoRefresh.status.waiting');
+    summaryText = t("autoRefresh.status.waiting");
   }
 
   return (
     <div
-      className={`auto-refresh-indicator${isExpanded ? ' expanded' : ' collapsed'}`}
+      className={`auto-refresh-indicator${isExpanded ? " expanded" : " collapsed"}`}
       role="status"
       aria-live="polite"
       onMouseEnter={handleMouseEnter}
@@ -89,7 +89,9 @@ export function AutoRefreshIndicator({
       onBlur={handleBlur}
       tabIndex={0}
     >
-      <span className={`indicator-dot${intervalSeconds <= 0 ? ' disabled' : isPaused ? ' paused' : ''}`} />
+      <span
+        className={`indicator-dot${intervalSeconds <= 0 ? " disabled" : isPaused ? " paused" : ""}`}
+      />
       {(!detailText || !isExpanded) && (
         <span className="indicator-summary">{summaryText}</span>
       )}
@@ -102,7 +104,9 @@ export function AutoRefreshIndicator({
           className="indicator-toggle"
           onClick={handleToggle}
         >
-          {isPaused ? t('autoRefresh.actions.resume') : t('autoRefresh.actions.pause')}
+          {isPaused
+            ? t("autoRefresh.actions.resume")
+            : t("autoRefresh.actions.pause")}
         </button>
       )}
     </div>

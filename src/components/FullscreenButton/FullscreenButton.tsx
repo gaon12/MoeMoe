@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import './FullscreenButton.css';
+import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import "./FullscreenButton.css";
 
 interface FullscreenButtonProps {
   onToggle: () => void;
@@ -11,17 +11,21 @@ export const FullscreenButton: React.FC<FullscreenButtonProps> = ({
 }) => {
   const { t } = useTranslation();
   const [isFullscreen, setIsFullscreen] = useState(
-    typeof document !== 'undefined'
+    typeof document !== "undefined"
       ? Boolean(
-          (document as Document & {
-            webkitFullscreenElement?: Element | null;
-            mozFullScreenElement?: Element | null;
-            msFullscreenElement?: Element | null;
-          }).fullscreenElement ||
-            (document as Document & { webkitFullscreenElement?: Element | null })
-              .webkitFullscreenElement ||
-            (document as Document & { mozFullScreenElement?: Element | null }).mozFullScreenElement ||
-            (document as Document & { msFullscreenElement?: Element | null }).msFullscreenElement,
+          (
+            document as Document & {
+              webkitFullscreenElement?: Element | null;
+              mozFullScreenElement?: Element | null;
+              msFullscreenElement?: Element | null;
+            }
+          ).fullscreenElement ||
+          (document as Document & { webkitFullscreenElement?: Element | null })
+            .webkitFullscreenElement ||
+          (document as Document & { mozFullScreenElement?: Element | null })
+            .mozFullScreenElement ||
+          (document as Document & { msFullscreenElement?: Element | null })
+            .msFullscreenElement,
         )
       : false,
   );
@@ -36,26 +40,41 @@ export const FullscreenButton: React.FC<FullscreenButtonProps> = ({
       setIsFullscreen(
         Boolean(
           doc.fullscreenElement ||
-            doc.webkitFullscreenElement ||
-            doc.mozFullScreenElement ||
-            doc.msFullscreenElement,
+          doc.webkitFullscreenElement ||
+          doc.mozFullScreenElement ||
+          doc.msFullscreenElement,
         ),
       );
     };
 
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    document.addEventListener('webkitfullscreenchange', handleFullscreenChange as EventListener);
-    document.addEventListener('mozfullscreenchange', handleFullscreenChange as EventListener);
-    document.addEventListener('MSFullscreenChange', handleFullscreenChange as EventListener);
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    document.addEventListener(
+      "webkitfullscreenchange",
+      handleFullscreenChange as EventListener,
+    );
+    document.addEventListener(
+      "mozfullscreenchange",
+      handleFullscreenChange as EventListener,
+    );
+    document.addEventListener(
+      "MSFullscreenChange",
+      handleFullscreenChange as EventListener,
+    );
 
     return () => {
-      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
       document.removeEventListener(
-        'webkitfullscreenchange',
+        "webkitfullscreenchange",
         handleFullscreenChange as EventListener,
       );
-      document.removeEventListener('mozfullscreenchange', handleFullscreenChange as EventListener);
-      document.removeEventListener('MSFullscreenChange', handleFullscreenChange as EventListener);
+      document.removeEventListener(
+        "mozfullscreenchange",
+        handleFullscreenChange as EventListener,
+      );
+      document.removeEventListener(
+        "MSFullscreenChange",
+        handleFullscreenChange as EventListener,
+      );
     };
   }, []);
 
@@ -65,10 +84,10 @@ export const FullscreenButton: React.FC<FullscreenButtonProps> = ({
 
   return (
     <button
-      className={`fullscreen-button ${isFullscreen ? 'active' : ''}`}
+      className={`fullscreen-button ${isFullscreen ? "active" : ""}`}
       onClick={handleClick}
-      aria-label={t('buttons.fullscreen')}
-      title={t('buttons.fullscreen')}
+      aria-label={t("buttons.fullscreen")}
+      title={t("buttons.fullscreen")}
     >
       <svg
         className="fullscreen-icon"

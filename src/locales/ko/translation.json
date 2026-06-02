@@ -70,7 +70,7 @@
       "autoRefreshInterval": "새로고침 간격",
       "autoRefreshDisabled": "비활성화"
     },
-    
+
     "widgets": {
       "title": "위젯",
       "description": "페이지 하단에 최대 4개의 위젯 카드를 배치할 수 있습니다. 모바일에서는 카드를 쌓고 위/아래로 슬라이드로 전환하세요.",

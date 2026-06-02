@@ -36,7 +36,9 @@
   border-radius: 50%;
   background: #4ade80;
   box-shadow: 0 0 10px rgba(74, 222, 128, 0.6);
-  transition: background 0.3s ease, box-shadow 0.3s ease;
+  transition:
+    background 0.3s ease,
+    box-shadow 0.3s ease;
 }
 
 .indicator-dot.paused {
@@ -80,7 +82,9 @@
   border-radius: 999px;
   font-size: 0.8rem;
   cursor: pointer;
-  transition: background 0.2s ease, transform 0.2s ease;
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease;
 }
 
 .indicator-toggle:hover {
