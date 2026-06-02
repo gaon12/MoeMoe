@@ -7,6 +7,7 @@ import {
   useImperativeHandle,
 } from "react";
 import { createPortal } from "react-dom";
+import { useTranslation } from "react-i18next";
 import { rgbaToThumbHash, thumbHashToDataURL } from "thumbhash";
 import { fetchRandomImage } from "../../services/imageApi";
 import { type AnimeImage, type ImageSource } from "../../types/image";
@@ -46,6 +47,7 @@ export const ImageBackground = forwardRef<
     },
     ref,
   ) => {
+    const { t } = useTranslation();
     const [currentImage, setCurrentImage] = useState<AnimeImage | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [hasError, setHasError] = useState(false);
@@ -419,9 +421,9 @@ export const ImageBackground = forwardRef<
     const normalizedRepoUrl = githubRepoUrl?.replace(/\/$/, "");
     const githubIssueUrl = normalizedRepoUrl
       ? `${normalizedRepoUrl}/issues/new?title=${encodeURIComponent(
-          "Image load error",
+          t("image.error.issueTitle"),
         )}&body=${encodeURIComponent(
-          `오류 메시지:\n\n${errorMessage ?? "알 수 없는 오류입니다."}`,
+          `${t("image.error.issueBodyLabel")}:\n\n${errorMessage ?? t("image.error.unknown")}`,
         )}`
       : null;
 
@@ -512,7 +514,7 @@ export const ImageBackground = forwardRef<
 
               {/* Artist attribution - always on top with z-index: 100 */}
               <div className="image-attribution">
-                <span>Art by: </span>
+                <span>{t("image.attribution.artBy")} </span>
                 {currentImage.artistName ? (
                   currentImage.artistHref ? (
                     <a
@@ -527,13 +529,13 @@ export const ImageBackground = forwardRef<
                     <span>{currentImage.artistName}</span>
                   )
                 ) : (
-                  <a
+                  <button
                     type="button"
-                    className="artist-link"
+                    className="artist-link metadata-link-button"
                     onClick={handleShowMetadata}
                   >
-                    N/A
-                  </a>
+                    {t("image.attribution.unknown")}
+                  </button>
                 )}
                 {currentImage.animeName && (
                   <span> • {currentImage.animeName}</span>
@@ -547,7 +549,7 @@ export const ImageBackground = forwardRef<
                       rel="noopener noreferrer"
                       className="source-link"
                     >
-                      Source
+                      {t("image.attribution.source")}
                     </a>
                   </>
                 )}
@@ -559,16 +561,14 @@ export const ImageBackground = forwardRef<
           createPortal(
             <div className="error-modal-overlay">
               <div className="error-modal">
-                <h2 className="error-modal-title">
-                  이미지 로딩 중 오류가 발생했어요
-                </h2>
+                <h2 className="error-modal-title">{t("image.error.title")}</h2>
                 <div className="error-modal-content">
                   <p className="error-modal-text">
-                    아래 오류 메시지를 첨부해서 깃허브 이슈를 등록해 주세요.
+                    {t("image.error.description")}
                   </p>
                   <textarea
                     className="error-modal-message"
-                    value={errorMessage ?? "알 수 없는 오류입니다."}
+                    value={errorMessage ?? t("image.error.unknown")}
                     readOnly
                   />
                   <div className="error-modal-actions">
@@ -577,7 +577,9 @@ export const ImageBackground = forwardRef<
                       className="error-modal-button"
                       onClick={handleCopyError}
                     >
-                      {copyState === "copied" ? "복사됨" : "오류 메시지 복사"}
+                      {copyState === "copied"
+                        ? t("image.error.copied")
+                        : t("image.error.copy")}
                     </button>
                     {githubIssueUrl && (
                       <a
@@ -586,13 +588,13 @@ export const ImageBackground = forwardRef<
                         rel="noopener noreferrer"
                         className="error-modal-button error-modal-link"
                       >
-                        깃허브 이슈 열기
+                        {t("image.error.openIssue")}
                       </a>
                     )}
                   </div>
                   {copyState === "failed" && (
                     <p className="error-modal-copy-hint">
-                      클립보드 복사에 실패했어요. 직접 선택해서 복사해 주세요.
+                      {t("image.error.copyFailed")}
                     </p>
                   )}
                 </div>
@@ -602,7 +604,7 @@ export const ImageBackground = forwardRef<
                     className="error-modal-button secondary"
                     onClick={loadNewImage}
                   >
-                    다시 시도
+                    {t("image.error.retry")}
                   </button>
                 </div>
               </div>
@@ -617,11 +619,12 @@ export const ImageBackground = forwardRef<
               onClick={() => setIsMetadataOpen(false)}
             >
               <div className="error-modal" onClick={(e) => e.stopPropagation()}>
-                <h2 className="error-modal-title">이미지 메타데이터</h2>
+                <h2 className="error-modal-title">
+                  {t("image.metadata.title")}
+                </h2>
                 <div className="error-modal-content">
                   <p className="error-modal-text">
-                    현재 배경 이미지에 대해 API에서 받은 정보를 확인할 수
-                    있어요.
+                    {t("image.metadata.description")}
                   </p>
                   <textarea
                     className="error-modal-message"
@@ -635,13 +638,13 @@ export const ImageBackground = forwardRef<
                       onClick={handleCopyMetadata}
                     >
                       {metadataCopyState === "copied"
-                        ? "복사됨"
-                        : "메타데이터 복사"}
+                        ? t("image.metadata.copied")
+                        : t("image.metadata.copy")}
                     </button>
                   </div>
                   {metadataCopyState === "failed" && (
                     <p className="error-modal-copy-hint">
-                      클립보드 복사에 실패했어요. 직접 선택해서 복사해 주세요.
+                      {t("image.error.copyFailed")}
                     </p>
                   )}
                 </div>
@@ -651,7 +654,7 @@ export const ImageBackground = forwardRef<
                     className="error-modal-button secondary"
                     onClick={() => setIsMetadataOpen(false)}
                   >
-                    닫기
+                    {t("image.metadata.close")}
                   </button>
                 </div>
               </div>

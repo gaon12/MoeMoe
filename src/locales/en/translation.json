@@ -140,6 +140,32 @@
     "settings": "Settings",
     "fullscreen": "Fullscreen"
   },
+  "image": {
+    "attribution": {
+      "artBy": "Art by:",
+      "source": "Source",
+      "unknown": "Unknown"
+    },
+    "error": {
+      "title": "Something went wrong while loading the image",
+      "description": "Attach the error message below when opening a GitHub issue.",
+      "unknown": "Unknown error.",
+      "copy": "Copy error message",
+      "copied": "Copied",
+      "copyFailed": "Clipboard copy failed. Select and copy the text manually.",
+      "openIssue": "Open GitHub issue",
+      "retry": "Try again",
+      "issueTitle": "Image load error",
+      "issueBodyLabel": "Error message"
+    },
+    "metadata": {
+      "title": "Image Metadata",
+      "description": "Review the metadata received for the current background image.",
+      "copy": "Copy metadata",
+      "copied": "Copied",
+      "close": "Close"
+    }
+  },
   "keyboard": {
     "refresh": "R or Space: Refresh",
     "fullscreen": "F: Fullscreen",

@@ -390,7 +390,7 @@ export const SettingsModal = () => {
           <button
             className="settings-close"
             onClick={handleClose}
-            aria-label="Close"
+            aria-label={t("settings.close")}
           >
             ✕
           </button>

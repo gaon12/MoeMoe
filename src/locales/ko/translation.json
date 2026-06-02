@@ -141,6 +141,32 @@
     "settings": "설정",
     "fullscreen": "전체화면"
   },
+  "image": {
+    "attribution": {
+      "artBy": "작가:",
+      "source": "출처",
+      "unknown": "알 수 없음"
+    },
+    "error": {
+      "title": "이미지 로딩 중 오류가 발생했어요",
+      "description": "아래 오류 메시지를 첨부해서 깃허브 이슈를 등록해 주세요.",
+      "unknown": "알 수 없는 오류입니다.",
+      "copy": "오류 메시지 복사",
+      "copied": "복사됨",
+      "copyFailed": "클립보드 복사에 실패했어요. 직접 선택해서 복사해 주세요.",
+      "openIssue": "깃허브 이슈 열기",
+      "retry": "다시 시도",
+      "issueTitle": "이미지 로딩 오류",
+      "issueBodyLabel": "오류 메시지"
+    },
+    "metadata": {
+      "title": "이미지 메타데이터",
+      "description": "현재 배경 이미지에 대해 API에서 받은 정보를 확인할 수 있어요.",
+      "copy": "메타데이터 복사",
+      "copied": "복사됨",
+      "close": "닫기"
+    }
+  },
   "keyboard": {
     "refresh": "R 또는 스페이스: 새로고침",
     "fullscreen": "F: 전체화면",

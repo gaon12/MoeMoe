@@ -190,6 +190,14 @@
   cursor: pointer;
 }
 
+.metadata-link-button {
+  appearance: none;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+}
+
 .error-modal-overlay {
   position: fixed;
   top: 0;
