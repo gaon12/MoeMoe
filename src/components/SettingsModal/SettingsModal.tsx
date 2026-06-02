@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useApp } from "../../contexts/useApp";
 import {
@@ -9,18 +9,32 @@ import {
   type Widget,
   type WidgetType,
   type AppSettings,
+  defaultSettings,
 } from "../../types/settings";
 import { type ImageSource, ALL_IMAGE_SOURCES } from "../../types/image";
+import {
+  createSettingsExport,
+  parseSettingsExport,
+} from "../../utils/settingsExport";
 import "./SettingsModal.css";
 
 export const SettingsModal = () => {
   const { t, i18n } = useTranslation();
-  const { settings, updateSettings, isSettingsOpen, setIsSettingsOpen } =
-    useApp();
+  const {
+    settings,
+    updateSettings,
+    resetSettings,
+    isSettingsOpen,
+    setIsSettingsOpen,
+  } = useApp();
   const [localSettings, setLocalSettings] = useState(settings);
   const [activeTab, setActiveTab] = useState<
     "general" | "image" | "clock" | "widgets" | "info"
   >("general");
+  const [settingsTransferStatus, setSettingsTransferStatus] = useState<
+    "idle" | "imported" | "failed"
+  >("idle");
+  const importInputRef = useRef<HTMLInputElement>(null);
 
   const secondsLabel = (n: number) =>
     `${n}${i18n.language === "ko" ? "초" : i18n.language === "ja" ? "秒" : "s"}`;
@@ -205,6 +219,7 @@ export const SettingsModal = () => {
     setIsSettingsOpen(false);
     setLocalSettings(settings);
     setActiveTab("general");
+    setSettingsTransferStatus("idle");
   };
 
   const handleSave = () => {
@@ -217,6 +232,7 @@ export const SettingsModal = () => {
     });
     setIsSettingsOpen(false);
     setActiveTab("general");
+    setSettingsTransferStatus("idle");
   };
 
   const handleOverlayClick = (e: React.MouseEvent) => {
@@ -315,6 +331,55 @@ export const SettingsModal = () => {
     if (!target) return;
     const data = { ...(target.data || {}), text };
     handleWidgetUpdate(id, { data });
+  };
+
+  const handleExportSettings = () => {
+    const blob = new Blob([createSettingsExport(localSettings)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const stamp = new Date().toISOString().slice(0, 10);
+    link.href = url;
+    link.download = `moemoe-settings-${stamp}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImportSettingsClick = () => {
+    importInputRef.current?.click();
+  };
+
+  const handleImportSettings = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    try {
+      const imported = parseSettingsExport(await file.text());
+      setLocalSettings((prev) => ({
+        ...prev,
+        ...imported,
+        weatherApiKey:
+          typeof imported.weatherApiKey === "string"
+            ? imported.weatherApiKey.trim()
+            : prev.weatherApiKey,
+      }));
+      setSettingsTransferStatus("imported");
+    } catch (error) {
+      console.error("Failed to import settings:", error);
+      setSettingsTransferStatus("failed");
+    }
+  };
+
+  const handleResetSettings = () => {
+    resetSettings();
+    setLocalSettings(defaultSettings);
+    setSettingsTransferStatus("idle");
   };
 
   return (
@@ -438,6 +503,55 @@ export const SettingsModal = () => {
                     <option value="auto">{t("settings.theme.auto")}</option>
                   </select>
                 </div>
+              </div>
+
+              <div className="settings-section">
+                <h3 className="settings-section-title">
+                  {t("settings.management.title")}
+                </h3>
+                <p className="settings-description">
+                  {t("settings.management.description")}
+                </p>
+                <div className="settings-management-actions">
+                  <button
+                    type="button"
+                    className="settings-button settings-button-secondary"
+                    onClick={handleExportSettings}
+                  >
+                    {t("settings.management.export")}
+                  </button>
+                  <button
+                    type="button"
+                    className="settings-button settings-button-secondary"
+                    onClick={handleImportSettingsClick}
+                  >
+                    {t("settings.management.import")}
+                  </button>
+                  <button
+                    type="button"
+                    className="settings-button settings-button-danger"
+                    onClick={handleResetSettings}
+                  >
+                    {t("settings.management.reset")}
+                  </button>
+                  <input
+                    ref={importInputRef}
+                    type="file"
+                    accept="application/json,.json"
+                    className="settings-file-input"
+                    onChange={handleImportSettings}
+                  />
+                </div>
+                {settingsTransferStatus === "imported" && (
+                  <p className="settings-description settings-status-success">
+                    {t("settings.management.imported")}
+                  </p>
+                )}
+                {settingsTransferStatus === "failed" && (
+                  <p className="settings-description settings-status-error">
+                    {t("settings.management.importFailed")}
+                  </p>
+                )}
               </div>
             </>
           )}

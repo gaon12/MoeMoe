@@ -36,6 +36,15 @@
       "dark": "Dark Mode",
       "auto": "System Default"
     },
+    "management": {
+      "title": "Settings Management",
+      "description": "Save the current settings as JSON or import a settings file you exported earlier.",
+      "export": "Export Settings",
+      "import": "Import Settings",
+      "reset": "Restore Defaults",
+      "imported": "Settings imported. Press Save to apply them.",
+      "importFailed": "Unable to read that settings file."
+    },
     "imageSource": {
       "title": "Image Sources",
       "description": "Select image sources to enable (multiple selection)",
