@@ -151,54 +151,99 @@
 
 .image-attribution {
   position: fixed;
-  bottom: 1rem;
+  bottom: max(1rem, env(safe-area-inset-bottom));
   left: 1rem;
-  padding: 0.35rem 0.55rem;
-  background: rgba(0, 0, 0, 0.22);
-  backdrop-filter: blur(12px);
-  border-radius: 6px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.74);
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  max-width: min(34rem, calc(100% - 7rem));
+  padding: 0.5rem 0.65rem;
+  background: rgba(12, 14, 18, 0.42);
+  backdrop-filter: blur(16px) saturate(1.12);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  font-size: 0.78rem;
+  line-height: 1.2;
+  color: rgba(255, 255, 255, 0.82);
   z-index: 100;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.24);
   transition:
-    opacity 0.25s ease,
-    background 0.25s ease;
-  max-width: calc(100% - 2rem);
-  word-break: break-word;
-  opacity: 0;
-  pointer-events: none;
+    background 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
 }
 
-.image-attribution:hover {
-  background: rgba(0, 0, 0, 0.46);
-  opacity: 1;
-  pointer-events: auto;
+.image-attribution:hover,
+.image-attribution:focus-within {
+  transform: translateY(-2px);
+  background: rgba(12, 14, 18, 0.58);
+  border-color: rgba(255, 255, 255, 0.34);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.32);
 }
 
-.image-attribution a {
-  color: var(--accent);
+.artwork-link {
+  min-width: 0;
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.9);
   text-decoration: none;
-  font-weight: 500;
-  transition: all 0.2s ease;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.image-attribution a:hover {
-  color: var(--accent-hover);
-  text-decoration: underline;
+.artwork-link:hover,
+.artwork-link:focus-visible {
+  color: #ffffff;
 }
 
-.artist-link,
-.source-link {
-  cursor: pointer;
+.artwork-title {
+  font-weight: 650;
+}
+
+.artwork-separator,
+.artwork-artist {
+  color: rgba(255, 255, 255, 0.72);
 }
 
 .metadata-link-button {
   appearance: none;
+  flex: 0 0 1.1rem;
+  width: 1.1rem;
+  height: 1.1rem;
   padding: 0;
-  border: 0;
-  background: transparent;
-  font: inherit;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.82);
+  font:
+    700 0.72rem/1 system-ui,
+    sans-serif;
+  cursor: pointer;
+}
+
+.metadata-link-button::before {
+  content: "i";
+}
+
+.metadata-link-button:hover,
+.metadata-link-button:focus-visible {
+  border-color: rgba(255, 255, 255, 0.42);
+  background: rgba(255, 255, 255, 0.16);
+}
+
+@media (max-width: 768px) {
+  .image-attribution {
+    bottom: calc(max(0.75rem, env(safe-area-inset-bottom)) + 3.75rem);
+    left: 0.75rem;
+    max-width: calc(100% - 1.5rem);
+    font-size: 0.72rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .image-attribution {
+    transition: none;
+  }
 }
 
 .error-modal-overlay {

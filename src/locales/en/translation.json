@@ -144,7 +144,10 @@
     "attribution": {
       "artBy": "Art by:",
       "source": "Source",
-      "unknown": "Unknown"
+      "unknown": "Unknown",
+      "untitled": "Untitled work",
+      "unknownArtist": "Unknown artist",
+      "openOriginal": "Open original image"
     },
     "error": {
       "title": "Something went wrong while loading the image",

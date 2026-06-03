@@ -165,7 +165,6 @@ export const ImageBackground = forwardRef<
         // Step 2: Fetch and preload new image
         const randomSource =
           imageSources[Math.floor(Math.random() * imageSources.length)];
-
         const image = await fetchRandomImage({
           source: randomSource,
           allowNSFW,
@@ -376,6 +375,15 @@ export const ImageBackground = forwardRef<
       setIsMetadataOpen(true);
     };
 
+    const getOriginalUrl = (image: AnimeImage): string =>
+      image.sourceUrl || image.artistHref || image.url;
+
+    const getArtworkTitle = (image: AnimeImage): string =>
+      image.animeName?.trim() || t("image.attribution.untitled");
+
+    const getArtistName = (image: AnimeImage): string =>
+      image.artistName?.trim() || t("image.attribution.unknownArtist");
+
     const buildMetadataText = (image: AnimeImage): string => {
       const proxyUrl = import.meta.env.VITE_FIX_CORS_API_URL as
         | string
@@ -511,46 +519,30 @@ export const ImageBackground = forwardRef<
                 />
               )}
 
-              {/* Artist attribution - always on top with z-index: 100 */}
               <div className="image-attribution">
-                <span>{t("image.attribution.artBy")} </span>
-                {currentImage.artistName ? (
-                  currentImage.artistHref ? (
-                    <a
-                      href={currentImage.artistHref}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="artist-link"
-                    >
-                      {currentImage.artistName}
-                    </a>
-                  ) : (
-                    <span>{currentImage.artistName}</span>
-                  )
-                ) : (
+                <a
+                  href={getOriginalUrl(currentImage)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="artwork-link"
+                  title={t("image.attribution.openOriginal")}
+                  aria-label={t("image.attribution.openOriginal")}
+                >
+                  <span className="artwork-title">
+                    {getArtworkTitle(currentImage)}
+                  </span>
+                  <span className="artwork-separator"> - </span>
+                  <span className="artwork-artist">
+                    {getArtistName(currentImage)}
+                  </span>
+                </a>
+                {!currentImage.animeName && !currentImage.artistName && (
                   <button
                     type="button"
-                    className="artist-link metadata-link-button"
+                    className="metadata-link-button"
                     onClick={handleShowMetadata}
-                  >
-                    {t("image.attribution.unknown")}
-                  </button>
-                )}
-                {currentImage.animeName && (
-                  <span> • {currentImage.animeName}</span>
-                )}
-                {currentImage.sourceUrl && (
-                  <>
-                    <span> • </span>
-                    <a
-                      href={currentImage.sourceUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="source-link"
-                    >
-                      {t("image.attribution.source")}
-                    </a>
-                  </>
+                    aria-label={t("image.metadata.title")}
+                  />
                 )}
               </div>
             </>

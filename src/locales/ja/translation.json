@@ -144,7 +144,10 @@
     "attribution": {
       "artBy": "作者:",
       "source": "出典",
-      "unknown": "不明"
+      "unknown": "不明",
+      "untitled": "作品情報なし",
+      "unknownArtist": "作者不明",
+      "openOriginal": "元画像を開く"
     },
     "error": {
       "title": "画像の読み込み中にエラーが発生しました",
