@@ -158,6 +158,15 @@ export interface ImageApiConfig {
   fallbackUrl?: string;
 }
 
+const createCacheBustToken = (): string =>
+  `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+const withCacheBust = (url: string): string => {
+  const nextUrl = new URL(url);
+  nextUrl.searchParams.set("_moemoe_refresh", createCacheBustToken());
+  return nextUrl.toString();
+};
+
 /**
  * Fetches a random anime image from nekos.best API
  * Note: Nekos.best is SFW only, NSFW parameter is ignored
@@ -429,10 +438,11 @@ async function fetchFromDanbooru(allowNSFW = false): Promise<AnimeImage> {
  */
 async function fetchFromPicRe(): Promise<AnimeImage> {
   // Pic.re serves a random safe-for-work anime image at this URL.
-  const imageUrl = "https://pic.re/image";
+  const imageUrl = withCacheBust("https://pic.re/image");
   return {
     url: imageUrl,
     proxiedUrl: getProxiedImageUrl(imageUrl),
+    sourceUrl: imageUrl,
   };
 }
 

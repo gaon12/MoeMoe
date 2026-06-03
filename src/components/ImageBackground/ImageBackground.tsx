@@ -71,6 +71,11 @@ export const ImageBackground = forwardRef<
     const [showDemoThumbhash, setShowDemoThumbhash] = useState(false);
     const [showDemoImage, setShowDemoImage] = useState(true);
     const imageRef = useRef<HTMLImageElement>(null);
+    const currentImageRef = useRef<AnimeImage | null>(null);
+
+    useEffect(() => {
+      currentImageRef.current = currentImage;
+    }, [currentImage]);
 
     // Generate thumbhash from image
     const generateThumbhash = useCallback(
@@ -163,12 +168,26 @@ export const ImageBackground = forwardRef<
         setIsLoading(true);
 
         // Step 2: Fetch and preload new image
-        const randomSource =
+        const previousUrl = currentImageRef.current?.url;
+        let randomSource =
           imageSources[Math.floor(Math.random() * imageSources.length)];
-        const image = await fetchRandomImage({
+        let image = await fetchRandomImage({
           source: randomSource,
           allowNSFW,
         });
+
+        for (
+          let attempt = 0;
+          attempt < 2 && image.url === previousUrl;
+          attempt += 1
+        ) {
+          randomSource =
+            imageSources[Math.floor(Math.random() * imageSources.length)];
+          image = await fetchRandomImage({
+            source: randomSource,
+            allowNSFW,
+          });
+        }
 
         // Preload image
         const img = new Image();
