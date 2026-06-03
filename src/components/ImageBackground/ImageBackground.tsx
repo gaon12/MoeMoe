@@ -37,9 +37,9 @@ export const ImageBackground = forwardRef<
 >(
   (
     {
-      imageSources = ["nekos_best"],
+      imageSources = ["pic_re"],
       allowNSFW = false,
-      imageFitMode = "cover",
+      imageFitMode = "contain",
       letterboxFillMode = "blur",
       letterboxCustomColor = "#1a1a1a",
       onImageLoad,
@@ -69,7 +69,7 @@ export const ImageBackground = forwardRef<
       string | null
     >(null);
     const [showDemoThumbhash, setShowDemoThumbhash] = useState(false);
-    const [showDemoImage, setShowDemoImage] = useState(false);
+    const [showDemoImage, setShowDemoImage] = useState(true);
     const imageRef = useRef<HTMLImageElement>(null);
 
     // Generate thumbhash from image
@@ -426,7 +426,6 @@ export const ImageBackground = forwardRef<
           `${t("image.error.issueBodyLabel")}:\n\n${errorMessage ?? t("image.error.unknown")}`,
         )}`
       : null;
-
     return (
       <>
         <div className="image-background">

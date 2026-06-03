@@ -7,6 +7,7 @@ import {
   type Widget,
   type WidgetType,
 } from "../types/settings";
+import { type ImageSource } from "../types/image";
 import { AppContext } from "./appContextValue";
 
 const VALID_WIDGET_TYPES: WidgetType[] = [
@@ -45,6 +46,22 @@ function sanitizeWidgets(widgets?: Widget[]): Widget[] {
     });
 }
 
+function sanitizeImageSources(imageSources?: ImageSource[]): ImageSource[] {
+  if (
+    !Array.isArray(imageSources) ||
+    imageSources.length === 0 ||
+    (imageSources.length === 1 && imageSources[0] === "nekos_best")
+  ) {
+    return [...defaultSettings.imageSources];
+  }
+
+  return imageSources;
+}
+
+function sanitizeImageFitMode(imageFitMode?: AppSettings["imageFitMode"]) {
+  return imageFitMode === "cover" ? "contain" : imageFitMode;
+}
+
 const STORAGE_KEY = "moemoe-settings";
 
 export function AppProvider({ children }: { children: ReactNode }) {
@@ -75,6 +92,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
     return {
       ...base,
+      imageSources: sanitizeImageSources(base.imageSources),
+      imageFitMode:
+        sanitizeImageFitMode(base.imageFitMode) ?? defaultSettings.imageFitMode,
       widgets: sanitizeWidgets(base.widgets),
       weatherApiKey:
         typeof base.weatherApiKey === "string" ? base.weatherApiKey.trim() : "",
@@ -136,6 +156,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const merged = { ...prev, ...newSettings };
       return {
         ...merged,
+        imageSources: sanitizeImageSources(
+          newSettings.imageSources ?? prev.imageSources,
+        ),
         widgets: sanitizeWidgets(newSettings.widgets ?? prev.widgets),
         weatherApiKey: (
           newSettings.weatherApiKey ??

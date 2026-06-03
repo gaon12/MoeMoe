@@ -499,7 +499,7 @@ async function fetchFromNekosApi(allowNSFW = false): Promise<AnimeImage> {
       if (proxyError instanceof Error && proxyError.message) {
         lines.push("proxyError:", proxyError.message);
       }
-      throw new Error(lines.join("\n"));
+      throw new Error(lines.join("\n"), { cause: proxyError });
     }
   }
 
@@ -553,7 +553,7 @@ function getFallbackImage(): AnimeImage {
  * Fetches a random anime image from the configured source with automatic fallback
  */
 export async function fetchRandomImage(
-  config: ImageApiConfig = { source: "nekos_best", allowNSFW: false },
+  config: ImageApiConfig = { source: "pic_re", allowNSFW: false },
 ): Promise<AnimeImage> {
   let { source } = config;
   const { allowNSFW = false } = config;
@@ -609,13 +609,13 @@ export async function fetchRandomImage(
   } catch (error) {
     console.error("Error fetching image from primary source:", error);
 
-    // Automatic fallback to nekos.best if primary source fails
-    if (source !== "nekos_best") {
+    // Automatic fallback to Pic.re, which serves a direct image without an API CORS preflight.
+    if (source !== "pic_re") {
       try {
-        console.log("Attempting fallback to nekos.best...");
-        return await fetchFromNekosBest();
+        console.log("Attempting fallback to Pic.re...");
+        return await fetchFromPicRe();
       } catch (fallbackError) {
-        console.error("Fallback to nekos.best failed:", fallbackError);
+        console.error("Fallback to Pic.re failed:", fallbackError);
       }
     }
 

@@ -14,7 +14,8 @@ describe("settings export", () => {
       exportedAt: "2026-06-02T00:00:00.000Z",
       settings: {
         widgets: [],
-        imageSources: ["nekos_best"],
+        imageSources: ["pic_re"],
+        imageFitMode: "contain",
       },
     });
   });

@@ -7,7 +7,11 @@ describe("defaultSettings", () => {
     expect(defaultSettings.imageChangeInterval).toBe(0);
   });
 
-  it("uses conservative browser-safe image sources by default", () => {
-    expect(defaultSettings.imageSources).toEqual(["nekos_best"]);
+  it("uses a CORS-friendly direct image source by default", () => {
+    expect(defaultSettings.imageSources).toEqual(["pic_re"]);
+  });
+
+  it("shows the whole image by default instead of cropping it", () => {
+    expect(defaultSettings.imageFitMode).toBe("contain");
   });
 });
