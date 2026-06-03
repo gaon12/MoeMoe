@@ -1,50 +1,49 @@
 .settings-button-wrapper {
-  position: fixed;
-  right: 1rem;
-  bottom: 13rem;
-  z-index: 100;
+  display: contents;
 }
 
 .settings-fab {
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
   border-radius: 8px;
-  background: rgba(0, 0, 0, 0.22);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(14px);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid transparent;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition:
-    opacity 0.25s ease,
-    transform 0.25s ease,
-    background 0.25s ease;
+    background 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    color 0.18s ease,
+    transform 0.18s ease;
   color: #ffffff;
-  font-size: 1.25rem;
-  opacity: 0;
+  padding: 0;
+  opacity: 0.86;
 }
 
-.settings-button-wrapper:hover .settings-fab,
 .settings-fab:focus-visible,
 .settings-fab:hover {
-  transform: translateY(-2px) rotate(90deg);
-  background: rgba(0, 0, 0, 0.46);
+  transform: translateY(-1px) rotate(30deg);
+  border-color: rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.16);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.24);
   opacity: 1;
 }
 
 .settings-fab:active {
-  transform: scale(0.95) rotate(90deg);
+  transform: scale(0.95) rotate(30deg);
+}
+
+.settings-icon {
+  width: 21px;
+  height: 21px;
 }
 
 @media (max-width: 768px) {
-  .settings-button-wrapper {
-    right: 0.75rem;
-    bottom: 11rem;
-  }
-
   .settings-fab {
-    width: 44px;
-    height: 44px;
+    width: 42px;
+    height: 42px;
   }
 }

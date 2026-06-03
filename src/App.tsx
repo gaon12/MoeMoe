@@ -22,6 +22,7 @@ function App() {
   const [currentImage, setCurrentImage] = useState<AnimeImage | null>(null);
   const [lastRefreshTime, setLastRefreshTime] = useState<number>(0);
   const [isAutoRefreshPaused, setIsAutoRefreshPaused] = useState(false);
+  const [isPseudoFullscreen, setIsPseudoFullscreen] = useState(false);
   const autoRefreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
@@ -125,7 +126,7 @@ function App() {
       !!doc.mozFullScreenElement ||
       !!doc.msFullscreenElement;
 
-    if (!isFullscreenActive) {
+    if (!isFullscreenActive && !isPseudoFullscreen) {
       const requestFullscreen =
         docElement.requestFullscreen ||
         docElement.webkitRequestFullscreen ||
@@ -136,17 +137,22 @@ function App() {
         try {
           const result = requestFullscreen.call(docElement);
           if (result && typeof (result as Promise<void>).catch === "function") {
-            (result as Promise<void>).catch((err) => {
-              console.error("Failed to enter fullscreen:", err);
+            (result as Promise<void>).catch(() => {
+              setIsPseudoFullscreen(true);
             });
           }
-        } catch (err) {
-          console.error("Failed to enter fullscreen:", err);
+        } catch {
+          setIsPseudoFullscreen(true);
         }
       } else {
-        console.warn("Fullscreen API is not supported in this browser.");
+        setIsPseudoFullscreen(true);
       }
     } else {
+      if (isPseudoFullscreen) {
+        setIsPseudoFullscreen(false);
+        return;
+      }
+
       const exitFullscreen =
         doc.exitFullscreen ||
         doc.webkitExitFullscreen ||
@@ -157,16 +163,30 @@ function App() {
         try {
           const result = exitFullscreen.call(doc);
           if (result && typeof (result as Promise<void>).catch === "function") {
-            (result as Promise<void>).catch((err) => {
-              console.error("Failed to exit fullscreen:", err);
-            });
+            (result as Promise<void>).catch(() => setIsPseudoFullscreen(false));
           }
-        } catch (err) {
-          console.error("Failed to exit fullscreen:", err);
+        } catch {
+          setIsPseudoFullscreen(false);
         }
       }
     }
-  }, []);
+  }, [isPseudoFullscreen]);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle(
+      "pseudo-fullscreen-root",
+      isPseudoFullscreen,
+    );
+    document.body.classList.toggle(
+      "pseudo-fullscreen-root",
+      isPseudoFullscreen,
+    );
+
+    return () => {
+      document.documentElement.classList.remove("pseudo-fullscreen-root");
+      document.body.classList.remove("pseudo-fullscreen-root");
+    };
+  }, [isPseudoFullscreen]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -220,7 +240,7 @@ function App() {
   ]);
 
   return (
-    <div className="app">
+    <div className={`app ${isPseudoFullscreen ? "pseudo-fullscreen" : ""}`}>
       <ImageBackground
         ref={imageBackgroundRef}
         imageSources={settings.imageSources}
@@ -235,17 +255,22 @@ function App() {
         <Clock currentTime={currentTime} />
       </div>
 
-      <SettingsButton />
-      <FullscreenButton onToggle={toggleFullscreen} />
-      <RefreshButton
-        onRefresh={handleRefresh}
-        isLoading={isLoadingImage}
-        lastRefreshTime={lastRefreshTime}
-      />
-      <DownloadButton
-        imageUrl={currentImage?.url || null}
-        imageName={currentImage?.animeName || "anime-image"}
-      />
+      <div className="control-dock" aria-label="Wallpaper controls">
+        <SettingsButton />
+        <FullscreenButton
+          onToggle={toggleFullscreen}
+          isPseudoFullscreen={isPseudoFullscreen}
+        />
+        <DownloadButton
+          imageUrl={currentImage?.url || null}
+          imageName={currentImage?.animeName || "anime-image"}
+        />
+        <RefreshButton
+          onRefresh={handleRefresh}
+          isLoading={isLoadingImage}
+          lastRefreshTime={lastRefreshTime}
+        />
+      </div>
       {settings.imageChangeInterval > 0 && (
         <AutoRefreshIndicator
           intervalSeconds={settings.imageChangeInterval}

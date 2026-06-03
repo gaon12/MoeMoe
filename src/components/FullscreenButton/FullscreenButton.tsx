@@ -4,10 +4,12 @@ import "./FullscreenButton.css";
 
 interface FullscreenButtonProps {
   onToggle: () => void;
+  isPseudoFullscreen?: boolean;
 }
 
 export const FullscreenButton: React.FC<FullscreenButtonProps> = ({
   onToggle,
+  isPseudoFullscreen = false,
 }) => {
   const { t } = useTranslation();
   const [isFullscreen, setIsFullscreen] = useState(
@@ -84,7 +86,7 @@ export const FullscreenButton: React.FC<FullscreenButtonProps> = ({
 
   return (
     <button
-      className={`fullscreen-button ${isFullscreen ? "active" : ""}`}
+      className={`fullscreen-button ${isFullscreen || isPseudoFullscreen ? "active" : ""}`}
       onClick={handleClick}
       aria-label={t("buttons.fullscreen")}
       title={t("buttons.fullscreen")}
@@ -98,7 +100,7 @@ export const FullscreenButton: React.FC<FullscreenButtonProps> = ({
         strokeLinecap="round"
         strokeLinejoin="round"
       >
-        {isFullscreen ? (
+        {isFullscreen || isPseudoFullscreen ? (
           <>
             {/* Exit fullscreen (minimize) icon */}
             <polyline points="4 14 10 14 10 20" />

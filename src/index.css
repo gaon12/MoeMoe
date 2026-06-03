@@ -93,6 +93,7 @@ body {
   padding: 0;
   width: 100%;
   height: 100vh;
+  height: 100dvh;
   overflow: hidden;
   background-color: #000;
 }
@@ -100,4 +101,12 @@ body {
 #root {
   width: 100%;
   height: 100%;
+}
+
+@supports (-webkit-touch-callout: none) {
+  html,
+  body,
+  #root {
+    min-height: -webkit-fill-available;
+  }
 }
