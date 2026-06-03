@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import {
   type AppSettings,
   defaultSettings,
+  type ImageAspectPreference,
   type ThemeMode,
   type Widget,
   type WidgetType,
@@ -62,6 +63,24 @@ function sanitizeImageFitMode(imageFitMode?: AppSettings["imageFitMode"]) {
   return imageFitMode === "cover" ? "contain" : imageFitMode;
 }
 
+const VALID_IMAGE_ASPECT_PREFERENCES: ImageAspectPreference[] = [
+  "any",
+  "screen",
+  "landscape",
+  "portrait",
+  "square",
+];
+
+function sanitizeImageAspectPreference(
+  imageAspectPreference?: AppSettings["imageAspectPreference"],
+): ImageAspectPreference {
+  return VALID_IMAGE_ASPECT_PREFERENCES.includes(
+    imageAspectPreference as ImageAspectPreference,
+  )
+    ? (imageAspectPreference as ImageAspectPreference)
+    : defaultSettings.imageAspectPreference;
+}
+
 const STORAGE_KEY = "moemoe-settings";
 
 export function AppProvider({ children }: { children: ReactNode }) {
@@ -95,6 +114,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       imageSources: sanitizeImageSources(base.imageSources),
       imageFitMode:
         sanitizeImageFitMode(base.imageFitMode) ?? defaultSettings.imageFitMode,
+      imageAspectPreference: sanitizeImageAspectPreference(
+        base.imageAspectPreference,
+      ),
       widgets: sanitizeWidgets(base.widgets),
       weatherApiKey:
         typeof base.weatherApiKey === "string" ? base.weatherApiKey.trim() : "",
@@ -158,6 +180,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         ...merged,
         imageSources: sanitizeImageSources(
           newSettings.imageSources ?? prev.imageSources,
+        ),
+        imageAspectPreference: sanitizeImageAspectPreference(
+          newSettings.imageAspectPreference ?? prev.imageAspectPreference,
         ),
         widgets: sanitizeWidgets(newSettings.widgets ?? prev.widgets),
         weatherApiKey: (

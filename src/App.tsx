@@ -39,9 +39,6 @@ function App() {
 
     // Check if cooldown is still active
     if (timeSinceLastRefresh < cooldownSeconds && lastRefreshTime > 0) {
-      console.log(
-        `Please wait ${Math.ceil(cooldownSeconds - timeSinceLastRefresh)}s before refreshing`,
-      );
       return;
     }
 
@@ -70,15 +67,13 @@ function App() {
   }, [settings.imageChangeInterval, isAutoRefreshPaused, handleRefresh]);
 
   const handleImageLoad = useCallback((image: AnimeImage) => {
-    console.log("Image loaded successfully:", image);
     setCurrentImage(image);
     setIsLoadingImage(false);
     // Update lastRefreshTime when image loading is complete
     setLastRefreshTime(Date.now());
   }, []);
 
-  const handleImageError = useCallback((error: Error) => {
-    console.error("Image load error:", error);
+  const handleImageError = useCallback(() => {
     setIsLoadingImage(false);
   }, []);
 
@@ -246,6 +241,7 @@ function App() {
         imageSources={settings.imageSources}
         allowNSFW={settings.allowNSFW}
         imageFitMode={settings.imageFitMode}
+        imageAspectPreference={settings.imageAspectPreference}
         letterboxFillMode={settings.letterboxFillMode}
         letterboxCustomColor={settings.letterboxCustomColor}
         onImageLoad={handleImageLoad}

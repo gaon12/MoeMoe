@@ -14,4 +14,8 @@ describe("defaultSettings", () => {
   it("shows the whole image by default instead of cropping it", () => {
     expect(defaultSettings.imageFitMode).toBe("contain");
   });
+
+  it("prefers images matching the current screen ratio by default", () => {
+    expect(defaultSettings.imageAspectPreference).toBe("screen");
+  });
 });

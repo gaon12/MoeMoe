@@ -12,6 +12,12 @@ export interface AnimeImage {
   artistName?: string;
   artistHref?: string;
   sourceUrl?: string;
+  dimensions?: ImageDimensions;
+}
+
+export interface ImageDimensions {
+  width: number;
+  height: number;
 }
 
 /**

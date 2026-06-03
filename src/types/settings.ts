@@ -16,6 +16,16 @@ export type Language = "ko" | "en" | "ja";
 export type ImageFitMode = "cover" | "contain";
 
 /**
+ * Preferred source image aspect before CSS fitting is applied
+ */
+export type ImageAspectPreference =
+  | "any"
+  | "screen"
+  | "landscape"
+  | "portrait"
+  | "square";
+
+/**
  * Letterbox fill mode options (for 'contain' mode)
  */
 export type LetterboxFillMode = "blur" | "edge-color" | "custom" | "solid";
@@ -57,6 +67,7 @@ export interface AppSettings {
   imageSources: ImageSource[]; // Multiple sources can be enabled
   allowNSFW: boolean;
   imageFitMode: ImageFitMode;
+  imageAspectPreference: ImageAspectPreference;
   letterboxFillMode: LetterboxFillMode;
   letterboxCustomColor: string;
   imageChangeInterval: number; // Auto-refresh interval in seconds (0 = disabled)
@@ -90,6 +101,7 @@ export const defaultSettings: AppSettings = {
   imageSources: ["pic_re"],
   allowNSFW: false,
   imageFitMode: "contain",
+  imageAspectPreference: "screen",
   letterboxFillMode: "blur",
   letterboxCustomColor: "#1a1a1a",
   imageChangeInterval: 0,

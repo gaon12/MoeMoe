@@ -4,6 +4,7 @@ import { useApp } from "../../contexts/useApp";
 import {
   type ThemeMode,
   type Language,
+  type ImageAspectPreference,
   type ImageFitMode,
   type LetterboxFillMode,
   type Widget,
@@ -670,6 +671,37 @@ export const SettingsModal = () => {
                     <option value="contain">
                       {t("settings.image.fitContain")}
                     </option>
+                  </select>
+                </div>
+
+                <div className="settings-option">
+                  <label className="settings-label">
+                    {t("settings.image.aspectPreference")}
+                  </label>
+                  <select
+                    className="settings-select"
+                    value={localSettings.imageAspectPreference}
+                    onChange={(e) =>
+                      setLocalSettings({
+                        ...localSettings,
+                        imageAspectPreference: e.target
+                          .value as ImageAspectPreference,
+                      })
+                    }
+                  >
+                    <option value="screen">
+                      {t("settings.image.aspectScreen")}
+                    </option>
+                    <option value="landscape">
+                      {t("settings.image.aspectLandscape")}
+                    </option>
+                    <option value="portrait">
+                      {t("settings.image.aspectPortrait")}
+                    </option>
+                    <option value="square">
+                      {t("settings.image.aspectSquare")}
+                    </option>
+                    <option value="any">{t("settings.image.aspectAny")}</option>
                   </select>
                 </div>
 

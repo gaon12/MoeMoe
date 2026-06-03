@@ -1,4 +1,9 @@
-import { type AnimeImage, type ImageSource } from "../types/image";
+import {
+  type AnimeImage,
+  type ImageDimensions,
+  type ImageSource,
+} from "../types/image";
+import { type ImageAspectPreference } from "../types/settings";
 
 const MAX_ERROR_BODY_LENGTH = 1000;
 
@@ -97,6 +102,7 @@ interface NekosBestResponse {
     artist_name?: string;
     artist_href?: string;
     source_url?: string;
+    dimensions?: ImageDimensions;
   }>;
 }
 
@@ -116,14 +122,24 @@ interface NekosiaResponse {
 }
 
 interface WaifuImResponse {
-  images?: Array<{
-    url?: string;
-    artist?: {
-      name?: string;
-      pixiv?: string;
-    };
-    source?: string;
-  }>;
+  images?: WaifuImImage[];
+  items?: WaifuImImage[];
+}
+
+interface WaifuImArtist {
+  name?: string | null;
+  pixiv?: string | null;
+  twitter?: string | null;
+  deviantArt?: string | null;
+}
+
+interface WaifuImImage {
+  url?: string;
+  width?: number;
+  height?: number;
+  artist?: WaifuImArtist;
+  artists?: WaifuImArtist[];
+  source?: string | null;
 }
 
 /**
@@ -147,6 +163,8 @@ interface DanbooruPost {
   tag_string_artist?: string;
   source?: string;
   rating?: string; // 's', 'q', 'e'
+  image_width?: number;
+  image_height?: number;
 }
 
 /**
@@ -156,6 +174,13 @@ export interface ImageApiConfig {
   source: ImageSource;
   allowNSFW?: boolean;
   fallbackUrl?: string;
+  aspectPreference?: ImageAspectPreference;
+  viewport?: ImageDimensions;
+}
+
+export interface ImageAspectRequest {
+  preference: ImageAspectPreference;
+  viewport?: ImageDimensions;
 }
 
 const createCacheBustToken = (): string =>
@@ -165,6 +190,88 @@ const withCacheBust = (url: string): string => {
   const nextUrl = new URL(url);
   nextUrl.searchParams.set("_moemoe_refresh", createCacheBustToken());
   return nextUrl.toString();
+};
+
+const isValidDimensions = (
+  dimensions: ImageDimensions | undefined,
+): dimensions is ImageDimensions =>
+  Boolean(dimensions && dimensions.width > 0 && dimensions.height > 0);
+
+const getScreenRatio = (aspect?: ImageAspectRequest): number | undefined => {
+  if (aspect?.preference !== "screen" || !isValidDimensions(aspect.viewport)) {
+    return undefined;
+  }
+
+  return aspect.viewport.width / aspect.viewport.height;
+};
+
+const getOrientation = (
+  aspect?: ImageAspectRequest,
+): "Landscape" | "Portrait" | "Square" | undefined => {
+  if (!aspect || aspect.preference === "any") return undefined;
+  if (aspect.preference === "landscape") return "Landscape";
+  if (aspect.preference === "portrait") return "Portrait";
+  if (aspect.preference === "square") return "Square";
+
+  const ratio = getScreenRatio(aspect);
+  if (!ratio) return undefined;
+  if (Math.abs(ratio - 1) <= 0.08) return "Square";
+  return ratio > 1 ? "Landscape" : "Portrait";
+};
+
+const COMMON_RATIOS: Array<[number, number]> = [
+  [16, 9],
+  [9, 16],
+  [4, 3],
+  [3, 4],
+  [3, 2],
+  [2, 3],
+  [1, 1],
+];
+
+const getClosestCommonRatio = (ratio: number): [number, number] | undefined => {
+  const match = COMMON_RATIOS.find(
+    ([width, height]) => Math.abs(ratio - width / height) <= 0.08,
+  );
+  return match;
+};
+
+export const buildDanbooruAspectTags = (
+  aspect?: ImageAspectRequest,
+): string[] => {
+  if (!aspect || aspect.preference === "any") return [];
+  if (aspect.preference === "landscape") return ["ratio:>1"];
+  if (aspect.preference === "portrait") return ["ratio:<1"];
+  if (aspect.preference === "square") return ["ratio:1"];
+
+  if (!isValidDimensions(aspect.viewport)) return [];
+  const ratio = aspect.viewport.width / aspect.viewport.height;
+  const [width, height] =
+    getClosestCommonRatio(ratio) ??
+    (ratio > 1.08 ? [1, 0] : ratio < 0.92 ? [0, 1] : [1, 1]);
+  if (height === 0) return ["ratio:>1"];
+  if (width === 0) return ["ratio:<1"];
+  return [`ratio:${width}:${height}`];
+};
+
+export const buildWaifuImSearchUrl = (
+  allowNSFW: boolean,
+  aspect?: ImageAspectRequest,
+): string => {
+  const params = new URLSearchParams({
+    IsNsfw: allowNSFW ? "All" : "False",
+    OrderBy: "Random",
+    PageSize: "1",
+  });
+  const orientation = getOrientation(aspect);
+  if (orientation) {
+    params.set("Orientation", orientation);
+  }
+  if (aspect?.preference === "screen" && isValidDimensions(aspect.viewport)) {
+    params.set("Width", `>=${Math.round(aspect.viewport.width)}`);
+    params.set("Height", `>=${Math.round(aspect.viewport.height)}`);
+  }
+  return `https://api.waifu.im/images?${params.toString()}`;
 };
 
 /**
@@ -214,6 +321,7 @@ async function fetchFromNekosBest(): Promise<AnimeImage> {
     artistName: result.artist_name,
     artistHref: result.artist_href,
     sourceUrl: result.source_url,
+    dimensions: result.dimensions,
   };
 }
 
@@ -303,9 +411,11 @@ async function fetchFromNekosia(): Promise<AnimeImage> {
 /**
  * Fetches a random anime image from waifu.im API
  */
-async function fetchFromWaifuIm(allowNSFW = false): Promise<AnimeImage> {
-  const nsfwParam = allowNSFW ? "true" : "false";
-  const url = `https://api.waifu.im/search?is_nsfw=${nsfwParam}`;
+async function fetchFromWaifuIm(
+  allowNSFW = false,
+  aspect?: ImageAspectRequest,
+): Promise<AnimeImage> {
+  const url = buildWaifuImSearchUrl(allowNSFW, aspect);
 
   const response = await fetch(url, {
     method: "GET",
@@ -325,7 +435,8 @@ async function fetchFromWaifuIm(allowNSFW = false): Promise<AnimeImage> {
     throw buildDataError("waifu.im", url, "Failed to parse JSON response");
   }
 
-  if (!data.images || data.images.length === 0) {
+  const images = data.items ?? data.images ?? [];
+  if (images.length === 0) {
     throw buildDataError(
       "waifu.im",
       url,
@@ -334,7 +445,7 @@ async function fetchFromWaifuIm(allowNSFW = false): Promise<AnimeImage> {
     );
   }
 
-  const image = data.images[0];
+  const image = images[0];
   if (!image?.url) {
     throw buildDataError(
       "waifu.im",
@@ -345,13 +456,19 @@ async function fetchFromWaifuIm(allowNSFW = false): Promise<AnimeImage> {
   }
 
   const directUrl = image.url;
+  const artist = image.artists?.[0] ?? image.artist;
 
   return {
     url: directUrl,
     proxiedUrl: getProxiedImageUrl(directUrl),
-    artistName: image.artist?.name,
-    artistHref: image.artist?.pixiv,
-    sourceUrl: image.source,
+    artistName: artist?.name ?? undefined,
+    artistHref:
+      artist?.pixiv ?? artist?.twitter ?? artist?.deviantArt ?? undefined,
+    sourceUrl: image.source ?? undefined,
+    dimensions:
+      image.width && image.height
+        ? { width: image.width, height: image.height }
+        : undefined,
   };
 }
 
@@ -397,10 +514,13 @@ async function fetchFromNekosMoe(allowNSFW = false): Promise<AnimeImage> {
  * Fetches a random post from Danbooru (donmai.us)
  * API: https://danbooru.donmai.us/posts.json?random=true&limit=1&tags=rating:safe
  */
-async function fetchFromDanbooru(allowNSFW = false): Promise<AnimeImage> {
+async function fetchFromDanbooru(
+  allowNSFW = false,
+  aspect?: ImageAspectRequest,
+): Promise<AnimeImage> {
   const rating = allowNSFW ? "-rating:s" : "rating:s";
-  // Use order:random to get a random safe/NSFW as configured
-  const apiUrl = `https://danbooru.donmai.us/posts.json?limit=1&random=true&tags=${encodeURIComponent(rating)}`;
+  const tags = [rating, ...buildDanbooruAspectTags(aspect), "random:1"];
+  const apiUrl = `https://danbooru.donmai.us/posts.json?limit=1&tags=${encodeURIComponent(tags.join(" "))}`;
   const response = await fetch(apiUrl, {
     headers: { Accept: "application/json" },
   });
@@ -429,6 +549,10 @@ async function fetchFromDanbooru(allowNSFW = false): Promise<AnimeImage> {
     proxiedUrl: getProxiedImageUrl(url),
     artistName: post?.tag_string_artist,
     sourceUrl: post?.source,
+    dimensions:
+      post?.image_width && post.image_height
+        ? { width: post.image_width, height: post.image_height }
+        : undefined,
   };
 }
 
@@ -567,6 +691,9 @@ export async function fetchRandomImage(
 ): Promise<AnimeImage> {
   let { source } = config;
   const { allowNSFW = false } = config;
+  const aspect: ImageAspectRequest | undefined = config.aspectPreference
+    ? { preference: config.aspectPreference, viewport: config.viewport }
+    : undefined;
 
   // If RANDOM is selected, randomly choose an API
   if (source === "random") {
@@ -581,7 +708,6 @@ export async function fetchRandomImage(
       "nekosapi",
     ];
     source = sources[Math.floor(Math.random() * sources.length)];
-    console.log(`Random source selected: ${source}`);
   }
 
   try {
@@ -596,13 +722,13 @@ export async function fetchRandomImage(
         return await fetchFromNekosia();
 
       case "waifu_im":
-        return await fetchFromWaifuIm(allowNSFW);
+        return await fetchFromWaifuIm(allowNSFW, aspect);
 
       case "nekos_moe":
         return await fetchFromNekosMoe(allowNSFW);
 
       case "danbooru":
-        return await fetchFromDanbooru(allowNSFW);
+        return await fetchFromDanbooru(allowNSFW, aspect);
 
       case "pic_re":
         return await fetchFromPicRe();
@@ -616,21 +742,17 @@ export async function fetchRandomImage(
       default:
         throw new Error(`Unknown image source: ${source}`);
     }
-  } catch (error) {
-    console.error("Error fetching image from primary source:", error);
-
+  } catch {
     // Automatic fallback to Pic.re, which serves a direct image without an API CORS preflight.
     if (source !== "pic_re") {
       try {
-        console.log("Attempting fallback to Pic.re...");
         return await fetchFromPicRe();
-      } catch (fallbackError) {
-        console.error("Fallback to Pic.re failed:", fallbackError);
+      } catch {
+        // fall through to the final placeholder
       }
     }
 
     // Final fallback to placeholder
-    console.log("Using placeholder image as final fallback");
     return getFallbackImage();
   }
 }

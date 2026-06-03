@@ -12,6 +12,7 @@ import { rgbaToThumbHash, thumbHashToDataURL } from "thumbhash";
 import { fetchRandomImage } from "../../services/imageApi";
 import { type AnimeImage, type ImageSource } from "../../types/image";
 import {
+  type ImageAspectPreference,
   type ImageFitMode,
   type LetterboxFillMode,
 } from "../../types/settings";
@@ -21,6 +22,7 @@ interface ImageBackgroundProps {
   imageSources?: ImageSource[];
   allowNSFW?: boolean;
   imageFitMode?: ImageFitMode;
+  imageAspectPreference?: ImageAspectPreference;
   letterboxFillMode?: LetterboxFillMode;
   letterboxCustomColor?: string;
   onImageLoad?: (image: AnimeImage) => void;
@@ -40,6 +42,7 @@ export const ImageBackground = forwardRef<
       imageSources = ["pic_re"],
       allowNSFW = false,
       imageFitMode = "contain",
+      imageAspectPreference = "screen",
       letterboxFillMode = "blur",
       letterboxCustomColor = "#1a1a1a",
       onImageLoad,
@@ -76,6 +79,36 @@ export const ImageBackground = forwardRef<
     useEffect(() => {
       currentImageRef.current = currentImage;
     }, [currentImage]);
+
+    const getViewportDimensions = useCallback(
+      () => ({
+        width: window.innerWidth || document.documentElement.clientWidth || 1,
+        height:
+          window.innerHeight || document.documentElement.clientHeight || 1,
+      }),
+      [],
+    );
+
+    const matchesAspectPreference = useCallback(
+      (img: HTMLImageElement) => {
+        if (imageAspectPreference === "any") return true;
+
+        const width = img.naturalWidth || img.width;
+        const height = img.naturalHeight || img.height;
+        if (width <= 0 || height <= 0) return true;
+
+        const ratio = width / height;
+        if (imageAspectPreference === "landscape") return ratio > 1.05;
+        if (imageAspectPreference === "portrait") return ratio < 0.95;
+        if (imageAspectPreference === "square")
+          return Math.abs(ratio - 1) <= 0.12;
+
+        const viewport = getViewportDimensions();
+        const targetRatio = viewport.width / viewport.height;
+        return Math.abs(ratio - targetRatio) <= 0.24;
+      },
+      [getViewportDimensions, imageAspectPreference],
+    );
 
     // Generate thumbhash from image
     const generateThumbhash = useCallback(
@@ -169,79 +202,76 @@ export const ImageBackground = forwardRef<
 
         // Step 2: Fetch and preload new image
         const previousUrl = currentImageRef.current?.url;
-        let randomSource =
-          imageSources[Math.floor(Math.random() * imageSources.length)];
-        let image = await fetchRandomImage({
-          source: randomSource,
-          allowNSFW,
-        });
+        const viewport = getViewportDimensions();
+        let image: AnimeImage | null = null;
+        let loadedImg: HTMLImageElement | null = null;
+        let randomSource: ImageSource = imageSources[0] ?? "pic_re";
+        const maxAttempts = imageAspectPreference === "any" ? 3 : 5;
 
-        for (
-          let attempt = 0;
-          attempt < 2 && image.url === previousUrl;
-          attempt += 1
-        ) {
+        for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
           randomSource =
             imageSources[Math.floor(Math.random() * imageSources.length)];
-          image = await fetchRandomImage({
+          const candidate = await fetchRandomImage({
             source: randomSource,
             allowNSFW,
+            aspectPreference: imageAspectPreference,
+            viewport,
           });
+
+          const img = new Image();
+          await new Promise<void>((resolve, reject) => {
+            let triedProxy = false;
+            img.onload = () => {
+              if (candidate && img.src && img.src !== candidate.url) {
+                candidate.url = img.src;
+              }
+              resolve();
+            };
+            img.onerror = () => {
+              if (
+                !triedProxy &&
+                "proxiedUrl" in candidate &&
+                candidate.proxiedUrl &&
+                candidate.proxiedUrl !== candidate.url
+              ) {
+                triedProxy = true;
+                img.crossOrigin = "anonymous";
+                img.src = candidate.proxiedUrl;
+                return;
+              }
+
+              const lines: string[] = [
+                "Failed to preload image.",
+                `source: ${randomSource}`,
+                `directUrl: ${candidate.url}`,
+              ];
+              if ("proxiedUrl" in candidate && candidate.proxiedUrl) {
+                lines.push(`proxiedUrl: ${candidate.proxiedUrl}`);
+              }
+              if (candidate.sourceUrl) {
+                lines.push(`sourceUrl: ${candidate.sourceUrl}`);
+              }
+              if (candidate.animeName) {
+                lines.push(`animeName: ${candidate.animeName}`);
+              }
+              reject(new Error(lines.join("\n")));
+            };
+            img.src = candidate.url;
+          });
+
+          image = candidate;
+          loadedImg = img;
+          if (candidate.url !== previousUrl && matchesAspectPreference(img)) {
+            break;
+          }
         }
 
-        // Preload image
-        const img = new Image();
-        await new Promise<void>((resolve, reject) => {
-          let triedProxy = false;
-          img.onload = () => {
-            // If we successfully loaded via proxy, keep that URL on the image object
-            if (image && img.src && img.src !== image.url) {
-              image.url = img.src;
-            }
-            resolve();
-          };
-          img.onerror = () => {
-            if (
-              !triedProxy &&
-              "proxiedUrl" in image &&
-              image.proxiedUrl &&
-              image.proxiedUrl !== image.url
-            ) {
-              triedProxy = true;
-              console.warn(
-                "Direct image load failed, retrying via CORS proxy",
-                {
-                  directUrl: image.url,
-                  proxiedUrl: image.proxiedUrl,
-                  source: randomSource,
-                },
-              );
-              img.crossOrigin = "anonymous";
-              img.src = image.proxiedUrl;
-              return;
-            }
-
-            const lines: string[] = [
-              "Failed to preload image.",
-              `source: ${randomSource}`,
-              `directUrl: ${image.url}`,
-            ];
-            if ("proxiedUrl" in image && image.proxiedUrl) {
-              lines.push(`proxiedUrl: ${image.proxiedUrl}`);
-            }
-            if (image.sourceUrl) {
-              lines.push(`sourceUrl: ${image.sourceUrl}`);
-            }
-            if (image.animeName) {
-              lines.push(`animeName: ${image.animeName}`);
-            }
-            reject(new Error(lines.join("\n")));
-          };
-          img.src = image.url;
-        });
+        if (!image || !loadedImg) {
+          throw new Error("No image could be loaded.");
+        }
 
         // Step 3: Generate thumbhash from the loaded image
-        const thumbhash = generateThumbhash(img);
+        const thumbhash = generateThumbhash(loadedImg);
 
         if (thumbhash) {
           setThumbhashDataUrl(thumbhash);
@@ -273,7 +303,16 @@ export const ImageBackground = forwardRef<
         setShowThumbhash(false);
         onImageError?.(error as Error);
       }
-    }, [imageSources, allowNSFW, onImageLoad, onImageError, generateThumbhash]);
+    }, [
+      imageSources,
+      allowNSFW,
+      imageAspectPreference,
+      onImageLoad,
+      onImageError,
+      generateThumbhash,
+      getViewportDimensions,
+      matchesAspectPreference,
+    ]);
 
     // Load image on mount and when dependencies change (e.g. sources, NSFW)
     useEffect(() => {
@@ -426,6 +465,11 @@ export const ImageBackground = forwardRef<
         `artistName: ${image.artistName ?? "N/A"}`,
         `artistHref: ${image.artistHref ?? "N/A"}`,
         `sourceUrl: ${image.sourceUrl ?? "N/A"}`,
+        `dimensions: ${
+          image.dimensions
+            ? `${image.dimensions.width}x${image.dimensions.height}`
+            : "N/A"
+        }`,
       ];
       return lines.join("\n");
     };

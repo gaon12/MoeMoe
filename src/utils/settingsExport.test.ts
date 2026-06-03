@@ -16,6 +16,7 @@ describe("settings export", () => {
         widgets: [],
         imageSources: ["pic_re"],
         imageFitMode: "contain",
+        imageAspectPreference: "screen",
       },
     });
   });
