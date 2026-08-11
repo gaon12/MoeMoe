@@ -32,6 +32,7 @@ export type ImageSource =
   | "danbooru" // donmai.us
   | "pic_re"
   | "nekosapi"
+  | "wallhaven"
   | "random"
   | "fallback";
 
@@ -47,6 +48,7 @@ export const ALL_IMAGE_SOURCES: ImageSource[] = [
   "danbooru",
   "pic_re",
   "nekosapi",
+  "wallhaven",
 ];
 
 /**

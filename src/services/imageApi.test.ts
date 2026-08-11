@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   buildDanbooruAspectTags,
   buildWaifuImSearchUrl,
+  buildWallhavenSearchUrl,
   fetchRandomImage,
 } from "./imageApi";
 
@@ -55,6 +56,20 @@ describe("fetchRandomImage", () => {
     expect(buildDanbooruAspectTags({ preference: "portrait" })).toEqual([
       "ratio:<1",
     ]);
+  });
+
+  it("builds a SFW anime Wallhaven query for the current screen", () => {
+    const url = new URL(
+      buildWallhavenSearchUrl({
+        preference: "screen",
+        viewport: { width: 1920, height: 1080 },
+      }),
+    );
+    expect(url.searchParams.get("categories")).toBe("010");
+    expect(url.searchParams.get("purity")).toBe("100");
+    expect(url.searchParams.get("sorting")).toBe("random");
+    expect(url.searchParams.get("ratios")).toContain("16x9");
+    expect(url.searchParams.get("atleast")).toBe("1920x1080");
   });
 
   it("surfaces provider errors instead of silently returning a placeholder", async () => {

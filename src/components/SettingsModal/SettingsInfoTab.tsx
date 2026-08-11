@@ -126,6 +126,15 @@ export const SettingsInfoTab = () => {
             : "애니메이션 이미지 (safe/NSFW)",
     },
     {
+      name: "Wallhaven",
+      usage:
+        lang === "ja"
+          ? "高解像度SFWアニメ壁紙"
+          : lang === "en"
+            ? "High-resolution SFW anime wallpapers"
+            : "고해상도 SFW 애니 배경화면",
+    },
+    {
       name: "WeatherAPI.com",
       usage:
         lang === "ja"

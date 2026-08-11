@@ -82,3 +82,25 @@ export const buildWaifuImSearchUrl = (
   }
   return `https://api.waifu.im/images?${params.toString()}`;
 };
+
+export const buildWallhavenSearchUrl = (
+  aspect?: ImageAspectRequest,
+): string => {
+  const params = new URLSearchParams({
+    categories: "010",
+    purity: "100",
+    sorting: "random",
+    order: "desc",
+  });
+  const orientation = getOrientation(aspect);
+  if (orientation === "Landscape") params.set("ratios", "16x9,16x10");
+  if (orientation === "Portrait") params.set("ratios", "9x16,10x16");
+  if (orientation === "Square") params.set("ratios", "1x1");
+  if (aspect?.preference === "screen" && isValidDimensions(aspect.viewport)) {
+    params.set(
+      "atleast",
+      `${Math.round(aspect.viewport.width)}x${Math.round(aspect.viewport.height)}`,
+    );
+  }
+  return `https://wallhaven.cc/api/v1/search?${params.toString()}`;
+};

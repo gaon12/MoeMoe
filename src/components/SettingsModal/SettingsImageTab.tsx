@@ -44,6 +44,7 @@ export const SettingsImageTab = ({
     danbooru: "settings.imageSource.danbooru",
     pic_re: "settings.imageSource.picRe",
     nekosapi: "settings.imageSource.nekosapi",
+    wallhaven: "settings.imageSource.wallhaven",
   };
 
   const availableSources: Array<{ value: ImageSource; label: string }> =

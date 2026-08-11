@@ -1,5 +1,9 @@
 export type { ImageApiConfig, ImageAspectRequest } from "./imageApiTypes";
-export { buildDanbooruAspectTags, buildWaifuImSearchUrl } from "./imageAspect";
+export {
+  buildDanbooruAspectTags,
+  buildWaifuImSearchUrl,
+  buildWallhavenSearchUrl,
+} from "./imageAspect";
 export { fetchRandomImage } from "./imageProviders";
 
 /**

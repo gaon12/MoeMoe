@@ -1,6 +1,10 @@
 import type { AnimeImage, ImageDimensions, ImageSource } from "../types/image";
 import type { ImageApiConfig, ImageAspectRequest } from "./imageApiTypes";
-import { buildDanbooruAspectTags, buildWaifuImSearchUrl } from "./imageAspect";
+import {
+  buildDanbooruAspectTags,
+  buildWaifuImSearchUrl,
+  buildWallhavenSearchUrl,
+} from "./imageAspect";
 import {
   buildDataError,
   buildResponseError,
@@ -68,6 +72,17 @@ interface NekosMoeRandomResponse {
     nsfw?: boolean;
     artist?: string;
     approver?: { username?: string };
+    uploader?: { username?: string };
+  }>;
+}
+
+interface WallhavenResponse {
+  data?: Array<{
+    path?: string;
+    url?: string;
+    resolution?: string;
+    dimension_x?: number;
+    dimension_y?: number;
     uploader?: { username?: string };
   }>;
 }
@@ -499,6 +514,51 @@ async function fetchFromNekosApi(
   };
 }
 
+async function fetchFromWallhaven(
+  aspect?: ImageAspectRequest,
+  signal?: AbortSignal,
+): Promise<AnimeImage> {
+  const url = buildWallhavenSearchUrl(aspect);
+  const response = await fetch(url, {
+    headers: { Accept: "application/json" },
+    signal,
+  });
+  if (!response.ok) {
+    throw await buildResponseError("Wallhaven", url, response);
+  }
+
+  let data: WallhavenResponse;
+  try {
+    data = await response.json();
+  } catch {
+    throw buildDataError("Wallhaven", url, "Failed to parse JSON response");
+  }
+  const wallpaper = data.data?.[0];
+  if (!wallpaper?.path) {
+    throw buildDataError(
+      "Wallhaven",
+      url,
+      "No wallpaper URL returned from Wallhaven API",
+      data,
+    );
+  }
+  const [resolutionWidth, resolutionHeight] = (
+    wallpaper.resolution ?? ""
+  ).split("x");
+  const width = wallpaper.dimension_x ?? Number(resolutionWidth);
+  const height = wallpaper.dimension_y ?? Number(resolutionHeight);
+  return {
+    url: wallpaper.path,
+    proxiedUrl: getProxiedImageUrl(wallpaper.path),
+    artistName: wallpaper.uploader?.username,
+    sourceUrl: wallpaper.url,
+    dimensions:
+      Number.isFinite(width) && Number.isFinite(height)
+        ? { width, height }
+        : undefined,
+  };
+}
+
 /**
  * Returns a fallback placeholder image
  */
@@ -536,6 +596,7 @@ export async function fetchRandomImage(
       "danbooru",
       "pic_re",
       "nekosapi",
+      "wallhaven",
     ];
     source = sources[Math.floor(Math.random() * sources.length)];
   }
@@ -564,6 +625,9 @@ export async function fetchRandomImage(
 
     case "nekosapi":
       return await fetchFromNekosApi(allowNSFW, signal);
+
+    case "wallhaven":
+      return await fetchFromWallhaven(aspect, signal);
 
     case "fallback":
       return getFallbackImage();
