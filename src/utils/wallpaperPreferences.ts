@@ -115,3 +115,21 @@ export function getCandidateAcceptanceProbability(
     signals.reduce((sum, score) => sum + score, 0) / signals.length;
   return Math.max(EXPLORATION_FLOOR, Math.min(1, 0.7 + average));
 }
+
+export function shouldAcceptWallpaperCandidate(
+  image: AnimeImage,
+  feedback: readonly WallpaperFeedback[],
+  options: {
+    hasPreviousImage: boolean;
+    isFinalAttempt: boolean;
+    random?: () => number;
+  },
+): boolean {
+  if (!options.hasPreviousImage || image.isLocal || options.isFinalAttempt) {
+    return true;
+  }
+  return (
+    (options.random ?? Math.random)() <=
+    getCandidateAcceptanceProbability(image, feedback)
+  );
+}

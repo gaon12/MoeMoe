@@ -15,12 +15,18 @@ import {
   type LetterboxFillMode,
 } from "../../types/settings";
 import { ImageErrorDialog, ImageMetadataDialog } from "./ImageDialogs";
-import { extractEdgeColor, generateThumbhash } from "./imageProcessing";
+import { extractEdgeColor } from "./imageProcessing";
 import {
   chooseWeightedImageSource,
-  getCandidateAcceptanceProbability,
+  shouldAcceptWallpaperCandidate,
   type WallpaperFeedback,
 } from "../../utils/wallpaperPreferences";
+import {
+  capWallpaperAttemptBudget,
+  getRemainingWallpaperLoadBudget,
+  WALLPAPER_PRELOAD_BUDGET_MS,
+  WALLPAPER_PROVIDER_BUDGET_MS,
+} from "../../utils/wallpaperLoadBudget";
 import { getSafeHttpsUrl } from "../../utils/safeUrl";
 import "./ImageBackground.css";
 
@@ -65,10 +71,6 @@ export const ImageBackground = forwardRef<
     const [isLoading, setIsLoading] = useState(true);
     const [hasError, setHasError] = useState(false);
     const [isTransitioning, setIsTransitioning] = useState(false);
-    const [thumbhashDataUrl, setThumbhashDataUrl] = useState<string | null>(
-      null,
-    );
-    const [showThumbhash, setShowThumbhash] = useState(false);
     const [letterboxColor, setLetterboxColor] = useState<string>("#1a1a1a");
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">(
@@ -128,6 +130,7 @@ export const ImageBackground = forwardRef<
     );
 
     const loadNewImage = useCallback(async () => {
+      const loadStartedAt = Date.now();
       abortControllerRef.current?.abort();
       const controller = new AbortController();
       abortControllerRef.current = controller;
@@ -156,25 +159,65 @@ export const ImageBackground = forwardRef<
         let image: AnimeImage | null = null;
         let loadedImg: HTMLImageElement | null = null;
         let randomSource: ImageSource = imageSources[0] ?? "pic_re";
-        const maxAttempts = imageAspectPreference === "any" ? 3 : 5;
+        const maxAttempts = 3;
         const attemptErrors: Error[] = [];
 
         for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
           try {
+            const providerBudget = capWallpaperAttemptBudget(
+              getRemainingWallpaperLoadBudget(loadStartedAt),
+              WALLPAPER_PROVIDER_BUDGET_MS,
+            );
+            if (providerBudget === 0) {
+              throw new Error("Wallpaper load time budget was exhausted.");
+            }
+
             randomSource = chooseWeightedImageSource(
               imageSources,
               feedbackRef.current,
             );
-            const candidate = await fetchRandomImage({
-              source: randomSource,
-              allowNSFW,
-              aspectPreference: imageAspectPreference,
-              viewport,
-              signal: controller.signal,
+            const attemptController = new AbortController();
+            const handleRequestAbort = () =>
+              attemptController.abort(controller.signal.reason);
+            controller.signal.addEventListener("abort", handleRequestAbort, {
+              once: true,
             });
+            const providerTimeoutId = window.setTimeout(
+              () =>
+                attemptController.abort(
+                  new Error(
+                    `Wallpaper provider timed out after ${providerBudget}ms`,
+                  ),
+                ),
+              providerBudget,
+            );
+            let candidate: AnimeImage;
+            try {
+              candidate = await fetchRandomImage({
+                source: randomSource,
+                allowNSFW,
+                aspectPreference: imageAspectPreference,
+                viewport,
+                signal: attemptController.signal,
+              });
+            } finally {
+              window.clearTimeout(providerTimeoutId);
+              controller.signal.removeEventListener(
+                "abort",
+                handleRequestAbort,
+              );
+            }
             if (isStale()) return;
             if (excludedUrlsRef.current.includes(candidate.url)) {
               throw new Error(`Wallpaper is excluded: ${candidate.url}`);
+            }
+
+            const preloadBudget = capWallpaperAttemptBudget(
+              getRemainingWallpaperLoadBudget(loadStartedAt),
+              WALLPAPER_PRELOAD_BUDGET_MS,
+            );
+            if (preloadBudget === 0) {
+              throw new Error("Wallpaper load time budget was exhausted.");
             }
 
             const img = new Image();
@@ -194,8 +237,9 @@ export const ImageBackground = forwardRef<
               };
               timeoutId = window.setTimeout(() => {
                 cleanup();
+                img.src = "";
                 reject(new Error(`Image preload timed out: ${candidate.url}`));
-              }, 15_000);
+              }, preloadBudget);
               controller.signal.addEventListener("abort", handleAbort, {
                 once: true,
               });
@@ -238,14 +282,14 @@ export const ImageBackground = forwardRef<
 
             image = candidate;
             loadedImg = img;
-            const preferenceAccepted =
-              candidate.isLocal ||
-              attempt === maxAttempts - 1 ||
-              Math.random() <=
-                getCandidateAcceptanceProbability(
-                  candidate,
-                  feedbackRef.current,
-                );
+            const preferenceAccepted = shouldAcceptWallpaperCandidate(
+              candidate,
+              feedbackRef.current,
+              {
+                hasPreviousImage: Boolean(previousUrl),
+                isFinalAttempt: attempt === maxAttempts - 1,
+              },
+            );
             if (
               candidate.url !== previousUrl &&
               (candidate.isLocal || matchesAspectPreference(img)) &&
@@ -274,19 +318,7 @@ export const ImageBackground = forwardRef<
           );
         }
 
-        // Step 3: Generate thumbhash from the loaded image
-        const thumbhash = generateThumbhash(loadedImg);
-
-        if (thumbhash) {
-          setThumbhashDataUrl(thumbhash);
-          setShowThumbhash(true);
-          // Wait to show thumbhash
-          await new Promise((resolve) => setTimeout(resolve, 500));
-          if (isStale()) return;
-        }
-
-        // Step 4: Fade to original image
-        setShowThumbhash(false);
+        // Step 3: Fade to the already preloaded image without an artificial wait.
         setCurrentImage(image);
         setIsLoading(false);
         setIsTransitioning(false);
@@ -306,7 +338,6 @@ export const ImageBackground = forwardRef<
         setIsLoading(false);
         setHasError(true);
         setIsTransitioning(false);
-        setShowThumbhash(false);
         onImageError?.(error as Error);
       }
     }, [
@@ -504,17 +535,6 @@ export const ImageBackground = forwardRef<
                 onLoad={handleImageLoad}
                 onError={handleImageError}
               />
-
-              {/* Thumbhash preview during transition */}
-              {showThumbhash && thumbhashDataUrl && (
-                <img
-                  src={thumbhashDataUrl}
-                  alt="Loading preview"
-                  className="thumbhash-preview"
-                  style={{ objectFit: imageFitMode }}
-                />
-              )}
-
               <div className="image-attribution">
                 {currentImage.isLocal ? (
                   <span className="artwork-link">

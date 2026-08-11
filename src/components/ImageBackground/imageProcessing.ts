@@ -1,33 +1,3 @@
-import { rgbaToThumbHash, thumbHashToDataURL } from "thumbhash";
-
-export function generateThumbhash(img: HTMLImageElement): string | null {
-  try {
-    if (
-      img.crossOrigin !== "anonymous" &&
-      !img.currentSrc.startsWith(window.location.origin)
-    ) {
-      return null;
-    }
-
-    const canvas = document.createElement("canvas");
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return null;
-
-    const maxSize = 100;
-    const scale = Math.min(maxSize / img.width, maxSize / img.height);
-    canvas.width = Math.round(img.width * scale);
-    canvas.height = Math.round(img.height * scale);
-    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    return thumbHashToDataURL(
-      rgbaToThumbHash(canvas.width, canvas.height, imageData.data),
-    );
-  } catch (error) {
-    console.error("Failed to generate thumbhash:", error);
-    return null;
-  }
-}
-
 export function extractEdgeColor(img: HTMLImageElement): string {
   try {
     const canvas = document.createElement("canvas");

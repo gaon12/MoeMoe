@@ -54,7 +54,6 @@ export const SettingsInfoTab = () => {
     { name: "React DOM", license: "MIT" },
     { name: "i18next", license: "MIT" },
     { name: "react-i18next", license: "MIT" },
-    { name: "thumbhash", license: "MIT" },
     { name: "Vite", license: "MIT" },
     { name: "TypeScript", license: "Apache-2.0" },
   ];

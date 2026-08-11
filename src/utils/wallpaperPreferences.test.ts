@@ -6,6 +6,7 @@ import {
   getCandidateAcceptanceProbability,
   getSourceWeight,
   getWallpaperAspect,
+  shouldAcceptWallpaperCandidate,
 } from "./wallpaperPreferences";
 
 describe("wallpaper preference learning", () => {
@@ -80,5 +81,19 @@ describe("wallpaper preference learning", () => {
     expect(
       getCandidateAcceptanceProbability(image, feedback),
     ).toBeGreaterThanOrEqual(0.25);
+    expect(
+      shouldAcceptWallpaperCandidate(image, feedback, {
+        hasPreviousImage: false,
+        isFinalAttempt: false,
+        random: () => 0.99,
+      }),
+    ).toBe(true);
+    expect(
+      shouldAcceptWallpaperCandidate(image, feedback, {
+        hasPreviousImage: true,
+        isFinalAttempt: false,
+        random: () => 0.99,
+      }),
+    ).toBe(false);
   });
 });
