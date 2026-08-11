@@ -11,7 +11,7 @@ import { AppContext } from "./appContextValue";
 const STORAGE_KEY = "moemoe-settings";
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const { i18n, t } = useTranslation();
+  const { i18n } = useTranslation();
   const [settings, setSettings] = useState<AppSettings>(() => {
     let language: AppSettings["language"] = "en";
     try {
@@ -70,10 +70,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
     document.documentElement.lang = settings.language;
     localStorage.setItem("moemoe-language", settings.language);
   }, [i18n, settings.language]);
-
-  useEffect(() => {
-    document.title = t("app.title");
-  }, [settings.language, t]);
 
   // Apply font size
   useEffect(() => {
