@@ -6,7 +6,8 @@ Windows 잠금 화면에서 영감을 받은 애니메이션 배경화면 시계
 
 ## 주요 기능
 
-- 9개 이미지 공급자와 공급자별 장애 격리: Nekos.best, Waifu.pics, Nekosia, Waifu.im, Nekos.moe, Danbooru, Pic.re, NekosAPI, Wallhaven
+- 9개 온라인 이미지 공급자와 공급자별 장애 격리: Nekos.best, Waifu.pics, Nekosia, Waifu.im, Nekos.moe, Danbooru, Pic.re, NekosAPI, Wallhaven
+- JPEG·PNG·WebP·AVIF 사용자 이미지를 브라우저에 보관하고 온라인 소스와 함께 무작위 표시
 - 화면·가로·세로·정사각형 비율 선호, cover/contain 맞춤, 블러·단색 레터박스
 - Windows Spotlight 방식의 즐겨찾기 갤러리와 “이 이미지는 그만 보기” 피드백
 - 12/24시간제, 초 표시, AM/PM 위치, 선택적 서버 시간 동기화
@@ -41,6 +42,18 @@ macOS/Linux에서는 `cp .env.sample .env`를 사용하세요. `.env`와 `.env.*
 | `VITE_IP_REVERSE_GEOCODING_API_URL` | 위치 권한 거절 시 IP 위치 조회     | `https://ipinfo.io` |
 
 `VITE_` 값은 빌드 결과에 공개됩니다. 비밀 키를 넣지 마세요. 특히 CORS 프록시는 직접 관리하고 신뢰하는 서버만 사용해야 합니다. WeatherAPI 키는 설정 화면에 입력하며 브라우저 로컬 저장소에만 보관되지만, 클라이언트 앱 특성상 완전한 비밀로 취급할 수 없습니다.
+
+## 사용자 이미지
+
+설정 → 이미지 → 사용자 이미지에서 여러 파일을 추가할 수 있습니다. 파일은 서버로 업로드하지 않고 현재 브라우저의 IndexedDB에 저장되며, 추가하면 `사용자 이미지` 소스가 자동으로 활성화됩니다.
+
+- 허용 형식: JPEG, PNG, WebP, AVIF
+- 파일당 25MB, 최대 50개, 전체 250MB
+- 디코딩할 수 없는 파일과 1억 픽셀을 초과하는 이미지는 거부
+- 동일한 이름·크기·수정 시각의 중복 파일은 건너뜀
+- 사용자 이미지는 세션 전용 `blob:` 주소를 사용하므로 원격 즐겨찾기·차단 목록에는 저장하지 않음
+
+브라우저 데이터 삭제나 시크릿 모드 종료 시 이미지가 사라질 수 있으므로 원본 파일은 별도로 보관하세요.
 
 ## 단축키
 
