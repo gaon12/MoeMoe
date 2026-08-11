@@ -8,6 +8,15 @@ interface RefreshButtonProps {
   cooldownSeconds?: number;
 }
 
+const getRemainingCooldown = (
+  lastRefreshTime: number,
+  cooldownSeconds: number,
+) => {
+  if (lastRefreshTime <= 0) return 0;
+  const elapsed = (Date.now() - lastRefreshTime) / 1000;
+  return Math.max(0, cooldownSeconds - elapsed);
+};
+
 export const RefreshButton: React.FC<RefreshButtonProps> = ({
   onRefresh,
   isLoading = false,
@@ -15,16 +24,19 @@ export const RefreshButton: React.FC<RefreshButtonProps> = ({
   cooldownSeconds = 5,
 }) => {
   const [isAnimating, setIsAnimating] = useState(false);
-  const [remainingCooldown, setRemainingCooldown] = useState<number>(0);
+  const [remainingCooldown, setRemainingCooldown] = useState<number>(() =>
+    getRemainingCooldown(lastRefreshTime, cooldownSeconds),
+  );
 
   // Update cooldown timer
   useEffect(() => {
+    setRemainingCooldown(
+      getRemainingCooldown(lastRefreshTime, cooldownSeconds),
+    );
     const interval = setInterval(() => {
-      if (lastRefreshTime > 0) {
-        const elapsed = (Date.now() - lastRefreshTime) / 1000;
-        const remaining = Math.max(0, cooldownSeconds - elapsed);
-        setRemainingCooldown(remaining);
-      }
+      setRemainingCooldown(
+        getRemainingCooldown(lastRefreshTime, cooldownSeconds),
+      );
     }, 100);
 
     return () => clearInterval(interval);
