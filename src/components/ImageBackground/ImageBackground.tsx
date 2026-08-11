@@ -77,11 +77,6 @@ export const ImageBackground = forwardRef<
     const [metadataCopyState, setMetadataCopyState] = useState<
       "idle" | "copied" | "failed"
     >("idle");
-    const [demoThumbhashDataUrl, setDemoThumbhashDataUrl] = useState<
-      string | null
-    >(null);
-    const [showDemoThumbhash, setShowDemoThumbhash] = useState(false);
-    const [showDemoImage, setShowDemoImage] = useState(true);
     const imageRef = useRef<HTMLImageElement>(null);
     const currentImageRef = useRef<AnimeImage | null>(null);
     const requestSequenceRef = useRef(0);
@@ -130,43 +125,6 @@ export const ImageBackground = forwardRef<
       },
       [getViewportDimensions, imageAspectPreference],
     );
-
-    // Pre-generate thumbhash for local demo image
-    useEffect(() => {
-      let isMounted = true;
-      let timeoutId: number | null = null;
-
-      const demoImg = new Image();
-      demoImg.onload = () => {
-        if (!isMounted) return;
-        const thumb = generateThumbhash(demoImg);
-        if (thumb) {
-          setDemoThumbhashDataUrl(thumb);
-          setShowDemoThumbhash(true);
-          setShowDemoImage(false);
-          timeoutId = window.setTimeout(() => {
-            if (!isMounted) return;
-            setShowDemoThumbhash(false);
-            setShowDemoImage(true);
-          }, 500);
-        } else {
-          setShowDemoImage(true);
-        }
-      };
-      demoImg.onerror = () => {
-        if (!isMounted) return;
-        // If thumbhash generation fails, fall back to showing demo image directly
-        setShowDemoImage(true);
-      };
-      demoImg.src = "/demo/demo.png";
-
-      return () => {
-        isMounted = false;
-        if (timeoutId !== null) {
-          window.clearTimeout(timeoutId);
-        }
-      };
-    }, []);
 
     const loadNewImage = useCallback(async () => {
       abortControllerRef.current?.abort();
@@ -497,32 +455,15 @@ export const ImageBackground = forwardRef<
 
           {/* Initial demo image from public/demo while API image loads */}
           {!currentImage && (
-            <>
-              {showDemoThumbhash && demoThumbhashDataUrl && (
-                <img
-                  src={demoThumbhashDataUrl}
-                  alt="Demo preview"
-                  className="thumbhash-preview"
-                  style={{ objectFit: imageFitMode }}
-                />
-              )}
-              <picture>
-                <source srcSet="/demo/demo.avif" type="image/avif" />
-                <source srcSet="/demo/demo.webp" type="image/webp" />
-                <source srcSet="/demo/demo.jpg" type="image/jpeg" />
-                <source srcSet="/demo/demo.png" type="image/png" />
-                <img
-                  src="/demo/demo.png"
-                  alt="Demo background"
-                  className="background-image"
-                  style={{
-                    objectFit: imageFitMode,
-                    opacity: showDemoImage ? 1 : 0,
-                    transition: "opacity 0.3s ease-in-out",
-                  }}
-                />
-              </picture>
-            </>
+            <picture>
+              <source srcSet="/demo/demo.avif" type="image/avif" />
+              <img
+                src="/demo/demo.webp"
+                alt="Demo background"
+                className="background-image"
+                style={{ objectFit: imageFitMode }}
+              />
+            </picture>
           )}
 
           {currentImage && (
