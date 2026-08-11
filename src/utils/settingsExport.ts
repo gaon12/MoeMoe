@@ -14,10 +14,12 @@ interface SettingsExportPayload {
 }
 
 export function createSettingsExport(settings: AppSettings, now = new Date()) {
+  const portableSettings: Partial<AppSettings> = { ...settings };
+  delete portableSettings.weatherApiKey;
   const payload: SettingsExportPayload = {
     version: EXPORT_VERSION,
     exportedAt: now.toISOString(),
-    settings,
+    settings: portableSettings,
   };
 
   return JSON.stringify(payload, null, 2);

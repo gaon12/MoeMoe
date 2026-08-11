@@ -86,6 +86,19 @@ describe("fetchRandomImage", () => {
     ).rejects.toThrow(/503 Service Unavailable/);
   });
 
+  it("rejects active URLs returned by a compromised provider", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(JSON.stringify({ url: "javascript:alert(1)" }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+    );
+
+    await expect(fetchRandomImage({ source: "waifu_pics" })).rejects.toThrow(
+      /Unsafe image URL/,
+    );
+  });
+
   it("passes cancellation signals to providers", async () => {
     const controller = new AbortController();
     const fetchMock = vi

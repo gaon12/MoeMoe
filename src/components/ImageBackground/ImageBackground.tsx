@@ -21,6 +21,7 @@ import {
   getCandidateAcceptanceProbability,
   type WallpaperFeedback,
 } from "../../utils/wallpaperPreferences";
+import { getSafeHttpsUrl } from "../../utils/safeUrl";
 import "./ImageBackground.css";
 
 interface ImageBackgroundProps {
@@ -437,8 +438,7 @@ export const ImageBackground = forwardRef<
       }
     };
 
-    const githubRepoUrl = import.meta.env.VITE_GITHUB_REPO_URL as
-      string | undefined;
+    const githubRepoUrl = getSafeHttpsUrl(import.meta.env.VITE_GITHUB_REPO_URL);
     const normalizedRepoUrl = githubRepoUrl?.replace(/\/$/, "");
     const githubIssueUrl = normalizedRepoUrl
       ? `${normalizedRepoUrl}/issues/new?title=${encodeURIComponent(

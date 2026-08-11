@@ -19,6 +19,14 @@ describe("settings export", () => {
         imageAspectPreference: "screen",
       },
     });
+    expect(JSON.parse(exported).settings).not.toHaveProperty("weatherApiKey");
+  });
+
+  it("never exports a configured WeatherAPI credential", () => {
+    const exported = JSON.parse(
+      createSettingsExport({ ...defaultSettings, weatherApiKey: "secret-key" }),
+    );
+    expect(JSON.stringify(exported)).not.toContain("secret-key");
   });
 
   it("parses wrapped and raw settings payloads", () => {

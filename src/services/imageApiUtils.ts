@@ -70,7 +70,7 @@ export const buildResponseError = async (
  * Get CORS proxy URL from environment variable
  */
 export const getCorsProxyUrl = (): string | undefined => {
-  return import.meta.env.VITE_FIX_CORS_API_URL;
+  return getSafeHttpsUrl(import.meta.env.VITE_FIX_CORS_API_URL);
 };
 
 /**
@@ -93,3 +93,4 @@ export const withCacheBust = (url: string): string => {
   nextUrl.searchParams.set("_moemoe_refresh", createCacheBustToken());
   return nextUrl.toString();
 };
+import { getSafeHttpsUrl } from "../utils/safeUrl";

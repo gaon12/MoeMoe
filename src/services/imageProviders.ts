@@ -13,6 +13,7 @@ import {
   withCacheBust,
 } from "./imageApiUtils";
 import { fetchRandomUserImage } from "./userImageStore";
+import { isSafeHttpsUrl, isSafeImageUrl } from "../utils/safeUrl";
 
 /**
  * Response structure from nekos.best API
@@ -572,6 +573,22 @@ function getFallbackImage(): AnimeImage {
   };
 }
 
+function validateProviderImage(
+  image: AnimeImage,
+  source: ImageSource,
+): AnimeImage {
+  if (!isSafeImageUrl(image.url, Boolean(image.isLocal))) {
+    throw new Error(`Unsafe image URL returned by ${source}`);
+  }
+  return {
+    ...image,
+    source,
+    proxiedUrl: isSafeHttpsUrl(image.proxiedUrl) ? image.proxiedUrl : undefined,
+    sourceUrl: isSafeHttpsUrl(image.sourceUrl) ? image.sourceUrl : undefined,
+    artistHref: isSafeHttpsUrl(image.artistHref) ? image.artistHref : undefined,
+  };
+}
+
 /**
  * Fetches a random anime image from the configured source.
  * Provider failures are surfaced so the caller can choose and report fallbacks.
@@ -604,40 +621,55 @@ export async function fetchRandomImage(
 
   switch (source) {
     case "nekos_best":
-      return { ...(await fetchFromNekosBest(signal)), source };
+      return validateProviderImage(await fetchFromNekosBest(signal), source);
 
     case "waifu_pics":
-      return { ...(await fetchFromWaifuPics(allowNSFW, signal)), source };
+      return validateProviderImage(
+        await fetchFromWaifuPics(allowNSFW, signal),
+        source,
+      );
 
     case "nekosia":
-      return { ...(await fetchFromNekosia(signal)), source };
+      return validateProviderImage(await fetchFromNekosia(signal), source);
 
     case "waifu_im":
-      return { ...(await fetchFromWaifuIm(allowNSFW, aspect, signal)), source };
+      return validateProviderImage(
+        await fetchFromWaifuIm(allowNSFW, aspect, signal),
+        source,
+      );
 
     case "nekos_moe":
-      return { ...(await fetchFromNekosMoe(allowNSFW, signal)), source };
+      return validateProviderImage(
+        await fetchFromNekosMoe(allowNSFW, signal),
+        source,
+      );
 
     case "danbooru":
-      return {
-        ...(await fetchFromDanbooru(allowNSFW, aspect, signal)),
+      return validateProviderImage(
+        await fetchFromDanbooru(allowNSFW, aspect, signal),
         source,
-      };
+      );
 
     case "pic_re":
-      return { ...(await fetchFromPicRe()), source };
+      return validateProviderImage(await fetchFromPicRe(), source);
 
     case "nekosapi":
-      return { ...(await fetchFromNekosApi(allowNSFW, signal)), source };
+      return validateProviderImage(
+        await fetchFromNekosApi(allowNSFW, signal),
+        source,
+      );
 
     case "wallhaven":
-      return { ...(await fetchFromWallhaven(aspect, signal)), source };
+      return validateProviderImage(
+        await fetchFromWallhaven(aspect, signal),
+        source,
+      );
 
     case "user_uploads":
-      return { ...(await fetchRandomUserImage(signal)), source };
+      return validateProviderImage(await fetchRandomUserImage(signal), source);
 
     case "fallback":
-      return { ...getFallbackImage(), source };
+      return validateProviderImage(getFallbackImage(), source);
 
     default:
       throw new Error(`Unknown image source: ${source}`);

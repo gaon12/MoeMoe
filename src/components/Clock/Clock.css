@@ -16,7 +16,7 @@
   line-height: 1;
   margin-bottom: 0.5rem;
   letter-spacing: 0;
-  font-family: "RIDIBatang", serif;
+  font-family: "Noto Serif KR", "Malgun Myeongjo", serif;
 }
 
 .clock-time .ampm {
@@ -31,7 +31,7 @@
   font-weight: 300;
   opacity: 0.95;
   letter-spacing: 0;
-  font-family: "RIDIBatang", serif;
+  font-family: "Noto Serif KR", "Malgun Myeongjo", serif;
 }
 
 @media (max-width: 768px) {

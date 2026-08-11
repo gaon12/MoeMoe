@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { fetchWithTimeout } from "../utils/fetchWithTimeout";
+import { getSafeHttpsUrl } from "../utils/safeUrl";
 
 export function useSyncedTime(
   useServerTime: boolean,
@@ -22,8 +23,7 @@ export function useSyncedTime(
 
   const fetchServerTime = useCallback(async () => {
     try {
-      const baseUrl = import.meta.env.VITE_SERVER_TIME_API_URL as
-        string | undefined;
+      const baseUrl = getSafeHttpsUrl(import.meta.env.VITE_SERVER_TIME_API_URL);
       if (!baseUrl) {
         offsetRef.current = 0;
         return;

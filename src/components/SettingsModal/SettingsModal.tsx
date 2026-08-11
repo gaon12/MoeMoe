@@ -123,10 +123,7 @@ export const SettingsModal = () => {
       setLocalSettings((prev) => ({
         ...prev,
         ...imported,
-        weatherApiKey:
-          typeof imported.weatherApiKey === "string"
-            ? imported.weatherApiKey.trim()
-            : prev.weatherApiKey,
+        weatherApiKey: prev.weatherApiKey,
       }));
       setSettingsTransferStatus("imported");
     } catch (error) {

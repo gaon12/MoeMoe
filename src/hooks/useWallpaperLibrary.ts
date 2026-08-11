@@ -10,6 +10,7 @@ import {
   type WallpaperFeedback,
   type WallpaperSentiment,
 } from "../utils/wallpaperPreferences";
+import { isSafeHttpsUrl } from "../utils/safeUrl";
 
 const STORAGE_KEY = "moemoe-wallpaper-library";
 const MAX_FAVORITES = 50;
@@ -23,12 +24,7 @@ export interface WallpaperLibraryData {
 }
 
 function isSafeRemoteUrl(value: unknown): value is string {
-  if (typeof value !== "string") return false;
-  try {
-    return ["https:", "http:"].includes(new URL(value).protocol);
-  } catch {
-    return false;
-  }
+  return isSafeHttpsUrl(value);
 }
 
 export function sanitizeWallpaperLibrary(value: unknown): WallpaperLibraryData {

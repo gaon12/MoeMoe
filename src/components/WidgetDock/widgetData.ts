@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { fetchWithTimeout } from "../../utils/fetchWithTimeout";
+import { getSafeHttpsUrl } from "../../utils/safeUrl";
 import type {
   LocationData,
   LocationState,
@@ -417,10 +418,9 @@ async function resolveCoordinates(): Promise<Coordinates> {
 
   // 2) IP 기반 역지오코딩 API 시도
   try {
-    const rawIpApiBase =
-      (
-        import.meta.env.VITE_IP_REVERSE_GEOCODING_API_URL as string | undefined
-      )?.trim() || "";
+    const rawIpApiBase = getSafeHttpsUrl(
+      import.meta.env.VITE_IP_REVERSE_GEOCODING_API_URL,
+    );
 
     if (rawIpApiBase) {
       // .env에는 https://ipinfo.io/ 와 같이 기본 URL만 넣고,
