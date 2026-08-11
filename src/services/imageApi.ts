@@ -176,6 +176,7 @@ export interface ImageApiConfig {
   fallbackUrl?: string;
   aspectPreference?: ImageAspectPreference;
   viewport?: ImageDimensions;
+  signal?: AbortSignal;
 }
 
 export interface ImageAspectRequest {
@@ -278,7 +279,7 @@ export const buildWaifuImSearchUrl = (
  * Fetches a random anime image from nekos.best API
  * Note: Nekos.best is SFW only, NSFW parameter is ignored
  */
-async function fetchFromNekosBest(): Promise<AnimeImage> {
+async function fetchFromNekosBest(signal?: AbortSignal): Promise<AnimeImage> {
   // Nekos.best is SFW only, so we use waifu category
   const category = "waifu";
   const url = `https://nekos.best/api/v2/${category}?amount=1`;
@@ -288,6 +289,7 @@ async function fetchFromNekosBest(): Promise<AnimeImage> {
     headers: {
       Accept: "application/json",
     },
+    signal,
   });
 
   if (!response.ok) {
@@ -328,7 +330,10 @@ async function fetchFromNekosBest(): Promise<AnimeImage> {
 /**
  * Fetches a random anime image from waifu.pics API
  */
-async function fetchFromWaifuPics(allowNSFW = false): Promise<AnimeImage> {
+async function fetchFromWaifuPics(
+  allowNSFW = false,
+  signal?: AbortSignal,
+): Promise<AnimeImage> {
   const sfwOrNsfw = allowNSFW ? "nsfw" : "sfw";
   const url = `https://api.waifu.pics/${sfwOrNsfw}/waifu`;
 
@@ -337,6 +342,7 @@ async function fetchFromWaifuPics(allowNSFW = false): Promise<AnimeImage> {
     headers: {
       Accept: "application/json",
     },
+    signal,
   });
 
   if (!response.ok) {
@@ -370,7 +376,7 @@ async function fetchFromWaifuPics(allowNSFW = false): Promise<AnimeImage> {
 /**
  * Fetches a random anime image from Nekosia API
  */
-async function fetchFromNekosia(): Promise<AnimeImage> {
+async function fetchFromNekosia(signal?: AbortSignal): Promise<AnimeImage> {
   const url = "https://nekosia.cat/api/v1/images/catgirl";
 
   const response = await fetch(url, {
@@ -378,6 +384,7 @@ async function fetchFromNekosia(): Promise<AnimeImage> {
     headers: {
       Accept: "application/json",
     },
+    signal,
   });
 
   if (!response.ok) {
@@ -414,6 +421,7 @@ async function fetchFromNekosia(): Promise<AnimeImage> {
 async function fetchFromWaifuIm(
   allowNSFW = false,
   aspect?: ImageAspectRequest,
+  signal?: AbortSignal,
 ): Promise<AnimeImage> {
   const url = buildWaifuImSearchUrl(allowNSFW, aspect);
 
@@ -422,6 +430,7 @@ async function fetchFromWaifuIm(
     headers: {
       Accept: "application/json",
     },
+    signal,
   });
 
   if (!response.ok) {
@@ -477,11 +486,15 @@ async function fetchFromWaifuIm(
  * API: https://nekos.moe/api/v1/random/image?count=1&nsfw=false
  * Direct image: https://nekos.moe/image/{id}
  */
-async function fetchFromNekosMoe(allowNSFW = false): Promise<AnimeImage> {
+async function fetchFromNekosMoe(
+  allowNSFW = false,
+  signal?: AbortSignal,
+): Promise<AnimeImage> {
   const url = `https://nekos.moe/api/v1/random/image?count=1&nsfw=${allowNSFW ? "true" : "false"}`;
   const response = await fetch(url, {
     method: "GET",
     headers: { Accept: "application/json" },
+    signal,
   });
   if (!response.ok) {
     throw await buildResponseError("nekos.moe", url, response);
@@ -517,12 +530,14 @@ async function fetchFromNekosMoe(allowNSFW = false): Promise<AnimeImage> {
 async function fetchFromDanbooru(
   allowNSFW = false,
   aspect?: ImageAspectRequest,
+  signal?: AbortSignal,
 ): Promise<AnimeImage> {
   const rating = allowNSFW ? "-rating:s" : "rating:s";
   const tags = [rating, ...buildDanbooruAspectTags(aspect), "random:1"];
   const apiUrl = `https://danbooru.donmai.us/posts.json?limit=1&tags=${encodeURIComponent(tags.join(" "))}`;
   const response = await fetch(apiUrl, {
     headers: { Accept: "application/json" },
+    signal,
   });
   if (!response.ok) {
     throw await buildResponseError("danbooru", apiUrl, response);
@@ -586,7 +601,10 @@ interface NekosApiImage {
  * Fetches a random anime image from Nekos API
  * Base URL: https://api.nekosapi.com/v4
  */
-async function fetchFromNekosApi(allowNSFW = false): Promise<AnimeImage> {
+async function fetchFromNekosApi(
+  allowNSFW = false,
+  signal?: AbortSignal,
+): Promise<AnimeImage> {
   const params = new URLSearchParams();
   params.set("limit", "1");
   if (!allowNSFW) {
@@ -599,6 +617,7 @@ async function fetchFromNekosApi(allowNSFW = false): Promise<AnimeImage> {
     headers: {
       Accept: "application/json",
     },
+    signal,
   };
 
   let requestUrl = baseUrl;
@@ -684,13 +703,15 @@ function getFallbackImage(): AnimeImage {
 }
 
 /**
- * Fetches a random anime image from the configured source with automatic fallback
+ * Fetches a random anime image from the configured source.
+ * Provider failures are surfaced so the caller can choose and report fallbacks.
  */
 export async function fetchRandomImage(
   config: ImageApiConfig = { source: "pic_re", allowNSFW: false },
 ): Promise<AnimeImage> {
   let { source } = config;
   const { allowNSFW = false } = config;
+  const { signal } = config;
   const aspect: ImageAspectRequest | undefined = config.aspectPreference
     ? { preference: config.aspectPreference, viewport: config.viewport }
     : undefined;
@@ -710,50 +731,36 @@ export async function fetchRandomImage(
     source = sources[Math.floor(Math.random() * sources.length)];
   }
 
-  try {
-    switch (source) {
-      case "nekos_best":
-        return await fetchFromNekosBest();
+  switch (source) {
+    case "nekos_best":
+      return await fetchFromNekosBest(signal);
 
-      case "waifu_pics":
-        return await fetchFromWaifuPics(allowNSFW);
+    case "waifu_pics":
+      return await fetchFromWaifuPics(allowNSFW, signal);
 
-      case "nekosia":
-        return await fetchFromNekosia();
+    case "nekosia":
+      return await fetchFromNekosia(signal);
 
-      case "waifu_im":
-        return await fetchFromWaifuIm(allowNSFW, aspect);
+    case "waifu_im":
+      return await fetchFromWaifuIm(allowNSFW, aspect, signal);
 
-      case "nekos_moe":
-        return await fetchFromNekosMoe(allowNSFW);
+    case "nekos_moe":
+      return await fetchFromNekosMoe(allowNSFW, signal);
 
-      case "danbooru":
-        return await fetchFromDanbooru(allowNSFW, aspect);
+    case "danbooru":
+      return await fetchFromDanbooru(allowNSFW, aspect, signal);
 
-      case "pic_re":
-        return await fetchFromPicRe();
+    case "pic_re":
+      return await fetchFromPicRe();
 
-      case "nekosapi":
-        return await fetchFromNekosApi(allowNSFW);
+    case "nekosapi":
+      return await fetchFromNekosApi(allowNSFW, signal);
 
-      case "fallback":
-        return getFallbackImage();
+    case "fallback":
+      return getFallbackImage();
 
-      default:
-        throw new Error(`Unknown image source: ${source}`);
-    }
-  } catch {
-    // Automatic fallback to Pic.re, which serves a direct image without an API CORS preflight.
-    if (source !== "pic_re") {
-      try {
-        return await fetchFromPicRe();
-      } catch {
-        // fall through to the final placeholder
-      }
-    }
-
-    // Final fallback to placeholder
-    return getFallbackImage();
+    default:
+      throw new Error(`Unknown image source: ${source}`);
   }
 }
 

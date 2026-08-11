@@ -14,6 +14,7 @@ export const DownloadButton: React.FC<DownloadButtonProps> = ({
 }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
   // Close menu when clicking outside
@@ -38,20 +39,30 @@ export const DownloadButton: React.FC<DownloadButtonProps> = ({
 
     setIsDownloading(true);
     setIsMenuOpen(false);
+    setDownloadError(null);
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 20_000);
+    let sourceObjectUrl: string | null = null;
 
     try {
       // Fetch the image
-      const response = await fetch(imageUrl);
+      const response = await fetch(imageUrl, { signal: controller.signal });
+      if (!response.ok) {
+        throw new Error(
+          `Image download failed (${response.status} ${response.statusText})`,
+        );
+      }
       const blob = await response.blob();
 
       // Create an image element
       const img = new Image();
       img.crossOrigin = "anonymous";
 
+      sourceObjectUrl = URL.createObjectURL(blob);
       await new Promise<void>((resolve, reject) => {
         img.onload = () => resolve();
         img.onerror = () => reject(new Error("Failed to load image"));
-        img.src = URL.createObjectURL(blob);
+        img.src = sourceObjectUrl!;
       });
 
       // Create canvas
@@ -86,34 +97,37 @@ export const DownloadButton: React.FC<DownloadButtonProps> = ({
       }
 
       // Convert canvas to blob
-      canvas.toBlob(
-        (convertedBlob) => {
-          if (!convertedBlob) {
-            console.error("Failed to convert image");
-            setIsDownloading(false);
-            return;
-          }
-
-          // Create download link
-          const url = URL.createObjectURL(convertedBlob);
-          const link = document.createElement("a");
-          link.href = url;
-          link.download = `${imageName}.${format}`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          URL.revokeObjectURL(url);
-
-          setIsDownloading(false);
-        },
-        mimeType,
-        quality,
+      const convertedBlob = await new Promise<Blob>((resolve, reject) =>
+        canvas.toBlob(
+          (result) =>
+            result
+              ? resolve(result)
+              : reject(
+                  new Error(
+                    `${format.toUpperCase()} conversion is not supported by this browser`,
+                  ),
+                ),
+          mimeType,
+          quality,
+        ),
       );
 
-      // Clean up
-      URL.revokeObjectURL(img.src);
+      const url = URL.createObjectURL(convertedBlob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${imageName}.${format}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
     } catch (error) {
       console.error("Download failed:", error);
+      setDownloadError(
+        error instanceof Error ? error.message : "Image download failed",
+      );
+    } finally {
+      window.clearTimeout(timeoutId);
+      if (sourceObjectUrl) URL.revokeObjectURL(sourceObjectUrl);
       setIsDownloading(false);
     }
   };
@@ -188,6 +202,11 @@ export const DownloadButton: React.FC<DownloadButtonProps> = ({
           >
             AVIF
           </button>
+        </div>
+      )}
+      {downloadError && (
+        <div className="download-error" role="alert">
+          {downloadError}
         </div>
       )}
     </div>

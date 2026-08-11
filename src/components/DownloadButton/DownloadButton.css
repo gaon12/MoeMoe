@@ -2,6 +2,21 @@
   position: relative;
 }
 
+.download-error {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 0.75rem);
+  width: min(22rem, 80vw);
+  padding: 0.65rem 0.8rem;
+  border: 1px solid color-mix(in srgb, #ef4444 70%, transparent);
+  border-radius: 0.6rem;
+  background: color-mix(in srgb, #1f1114 94%, transparent);
+  color: #fecaca;
+  font-size: 0.78rem;
+  line-height: 1.35;
+  box-shadow: 0 0.8rem 2rem rgb(0 0 0 / 35%);
+}
+
 .download-button {
   width: 44px;
   height: 44px;

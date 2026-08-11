@@ -75,6 +75,8 @@ export const ImageBackground = forwardRef<
     const [showDemoImage, setShowDemoImage] = useState(true);
     const imageRef = useRef<HTMLImageElement>(null);
     const currentImageRef = useRef<AnimeImage | null>(null);
+    const requestSequenceRef = useRef(0);
+    const abortControllerRef = useRef<AbortController | null>(null);
 
     useEffect(() => {
       currentImageRef.current = currentImage;
@@ -187,6 +189,14 @@ export const ImageBackground = forwardRef<
     }, [generateThumbhash]);
 
     const loadNewImage = useCallback(async () => {
+      abortControllerRef.current?.abort();
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+      const requestSequence = ++requestSequenceRef.current;
+      const isStale = () =>
+        controller.signal.aborted ||
+        requestSequence !== requestSequenceRef.current;
+
       setHasError(false);
       setErrorMessage(null);
       setCopyState("idle");
@@ -197,6 +207,7 @@ export const ImageBackground = forwardRef<
         // Step 1: Start transition - blur current image if one exists
         setIsTransitioning(true);
         await new Promise((resolve) => setTimeout(resolve, 300));
+        if (isStale()) return;
 
         setIsLoading(true);
 
@@ -207,67 +218,104 @@ export const ImageBackground = forwardRef<
         let loadedImg: HTMLImageElement | null = null;
         let randomSource: ImageSource = imageSources[0] ?? "pic_re";
         const maxAttempts = imageAspectPreference === "any" ? 3 : 5;
+        const attemptErrors: Error[] = [];
 
         for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-          randomSource =
-            imageSources[Math.floor(Math.random() * imageSources.length)];
-          const candidate = await fetchRandomImage({
-            source: randomSource,
-            allowNSFW,
-            aspectPreference: imageAspectPreference,
-            viewport,
-          });
+          try {
+            randomSource =
+              imageSources[Math.floor(Math.random() * imageSources.length)];
+            const candidate = await fetchRandomImage({
+              source: randomSource,
+              allowNSFW,
+              aspectPreference: imageAspectPreference,
+              viewport,
+              signal: controller.signal,
+            });
+            if (isStale()) return;
 
-          const img = new Image();
-          await new Promise<void>((resolve, reject) => {
-            let triedProxy = false;
-            img.onload = () => {
-              if (candidate && img.src && img.src !== candidate.url) {
-                candidate.url = img.src;
-              }
-              resolve();
-            };
-            img.onerror = () => {
-              if (
-                !triedProxy &&
-                "proxiedUrl" in candidate &&
-                candidate.proxiedUrl &&
-                candidate.proxiedUrl !== candidate.url
-              ) {
-                triedProxy = true;
-                img.crossOrigin = "anonymous";
-                img.src = candidate.proxiedUrl;
-                return;
-              }
+            const img = new Image();
+            await new Promise<void>((resolve, reject) => {
+              let triedProxy = false;
+              let timeoutId = 0;
+              const cleanup = () => {
+                window.clearTimeout(timeoutId);
+                controller.signal.removeEventListener("abort", handleAbort);
+                img.onload = null;
+                img.onerror = null;
+              };
+              const handleAbort = () => {
+                cleanup();
+                img.src = "";
+                reject(new DOMException("Image load aborted", "AbortError"));
+              };
+              timeoutId = window.setTimeout(() => {
+                cleanup();
+                reject(new Error(`Image preload timed out: ${candidate.url}`));
+              }, 15_000);
+              controller.signal.addEventListener("abort", handleAbort, {
+                once: true,
+              });
+              img.onload = () => {
+                cleanup();
+                if (img.src && img.src !== candidate.url)
+                  candidate.url = img.src;
+                resolve();
+              };
+              img.onerror = () => {
+                if (
+                  !triedProxy &&
+                  candidate.proxiedUrl &&
+                  candidate.proxiedUrl !== candidate.url
+                ) {
+                  triedProxy = true;
+                  img.crossOrigin = "anonymous";
+                  img.src = candidate.proxiedUrl;
+                  return;
+                }
+                cleanup();
+                reject(
+                  new Error(
+                    [
+                      "Failed to preload image.",
+                      `source: ${randomSource}`,
+                      `directUrl: ${candidate.url}`,
+                      candidate.proxiedUrl
+                        ? `proxiedUrl: ${candidate.proxiedUrl}`
+                        : undefined,
+                    ]
+                      .filter(Boolean)
+                      .join("\n"),
+                  ),
+                );
+              };
+              img.src = candidate.url;
+            });
+            if (isStale()) return;
 
-              const lines: string[] = [
-                "Failed to preload image.",
-                `source: ${randomSource}`,
-                `directUrl: ${candidate.url}`,
-              ];
-              if ("proxiedUrl" in candidate && candidate.proxiedUrl) {
-                lines.push(`proxiedUrl: ${candidate.proxiedUrl}`);
-              }
-              if (candidate.sourceUrl) {
-                lines.push(`sourceUrl: ${candidate.sourceUrl}`);
-              }
-              if (candidate.animeName) {
-                lines.push(`animeName: ${candidate.animeName}`);
-              }
-              reject(new Error(lines.join("\n")));
-            };
-            img.src = candidate.url;
-          });
-
-          image = candidate;
-          loadedImg = img;
-          if (candidate.url !== previousUrl && matchesAspectPreference(img)) {
-            break;
+            image = candidate;
+            loadedImg = img;
+            if (candidate.url !== previousUrl && matchesAspectPreference(img)) {
+              break;
+            }
+          } catch (error) {
+            if (isStale()) return;
+            attemptErrors.push(
+              error instanceof Error ? error : new Error(String(error)),
+            );
           }
         }
 
         if (!image || !loadedImg) {
-          throw new Error("No image could be loaded.");
+          throw new AggregateError(
+            attemptErrors,
+            [
+              `No image could be loaded after ${maxAttempts} attempts.`,
+              ...attemptErrors.map(
+                (attemptError, index) =>
+                  `Attempt ${index + 1}: ${attemptError.message}`,
+              ),
+            ].join("\n"),
+          );
         }
 
         // Step 3: Generate thumbhash from the loaded image
@@ -278,6 +326,7 @@ export const ImageBackground = forwardRef<
           setShowThumbhash(true);
           // Wait to show thumbhash
           await new Promise((resolve) => setTimeout(resolve, 500));
+          if (isStale()) return;
         }
 
         // Step 4: Fade to original image
@@ -287,6 +336,7 @@ export const ImageBackground = forwardRef<
         setIsTransitioning(false);
         onImageLoad?.(image);
       } catch (error) {
+        if (isStale()) return;
         console.error("Failed to load image:", error);
         const lines: string[] = [
           "Failed to load image.",
@@ -317,6 +367,7 @@ export const ImageBackground = forwardRef<
     // Load image on mount and when dependencies change (e.g. sources, NSFW)
     useEffect(() => {
       loadNewImage();
+      return () => abortControllerRef.current?.abort();
     }, [loadNewImage]);
 
     useImperativeHandle(

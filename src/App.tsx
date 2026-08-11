@@ -33,6 +33,7 @@ function App() {
   );
 
   const handleRefresh = useCallback(() => {
+    if (isLoadingImage) return;
     const now = Date.now();
     const timeSinceLastRefresh = (now - lastRefreshTime) / 1000;
     const cooldownSeconds = 5;
@@ -49,7 +50,7 @@ function App() {
       autoRefreshTimerRef.current = null;
     }
     imageBackgroundRef.current?.refresh();
-  }, [lastRefreshTime]);
+  }, [isLoadingImage, lastRefreshTime]);
 
   const scheduleAutoRefresh = useCallback(() => {
     // Clear existing timer

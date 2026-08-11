@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   buildDanbooruAspectTags,
   buildWaifuImSearchUrl,
@@ -6,6 +6,8 @@ import {
 } from "./imageApi";
 
 describe("fetchRandomImage", () => {
+  afterEach(() => vi.restoreAllMocks());
+
   it("cache-busts Pic.re requests so refreshes request a new image", async () => {
     const first = await fetchRandomImage({
       source: "pic_re",
@@ -53,5 +55,36 @@ describe("fetchRandomImage", () => {
     expect(buildDanbooruAspectTags({ preference: "portrait" })).toEqual([
       "ratio:<1",
     ]);
+  });
+
+  it("surfaces provider errors instead of silently returning a placeholder", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response("maintenance", {
+        status: 503,
+        statusText: "Service Unavailable",
+      }),
+    );
+
+    await expect(
+      fetchRandomImage({ source: "nekos_best", allowNSFW: false }),
+    ).rejects.toThrow(/503 Service Unavailable/);
+  });
+
+  it("passes cancellation signals to providers", async () => {
+    const controller = new AbortController();
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockRejectedValue(new DOMException("aborted", "AbortError"));
+
+    await expect(
+      fetchRandomImage({
+        source: "nekos_best",
+        signal: controller.signal,
+      }),
+    ).rejects.toMatchObject({ name: "AbortError" });
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({ signal: controller.signal }),
+    );
   });
 });
