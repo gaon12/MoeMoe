@@ -6,9 +6,7 @@ import {
   forwardRef,
   useImperativeHandle,
 } from "react";
-import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
-import { rgbaToThumbHash, thumbHashToDataURL } from "thumbhash";
 import { fetchRandomImage } from "../../services/imageApi";
 import { type AnimeImage, type ImageSource } from "../../types/image";
 import {
@@ -16,6 +14,8 @@ import {
   type ImageFitMode,
   type LetterboxFillMode,
 } from "../../types/settings";
+import { ImageErrorDialog, ImageMetadataDialog } from "./ImageDialogs";
+import { extractEdgeColor, generateThumbhash } from "./imageProcessing";
 import "./ImageBackground.css";
 
 interface ImageBackgroundProps {
@@ -112,45 +112,6 @@ export const ImageBackground = forwardRef<
       [getViewportDimensions, imageAspectPreference],
     );
 
-    // Generate thumbhash from image
-    const generateThumbhash = useCallback(
-      (img: HTMLImageElement): string | null => {
-        try {
-          if (
-            img.crossOrigin !== "anonymous" &&
-            !img.currentSrc.startsWith(window.location.origin)
-          ) {
-            return null;
-          }
-
-          const canvas = document.createElement("canvas");
-          const ctx = canvas.getContext("2d");
-          if (!ctx) return null;
-
-          // Resize to a smaller size for thumbhash (100px max dimension)
-          const maxSize = 100;
-          const scale = Math.min(maxSize / img.width, maxSize / img.height);
-          canvas.width = Math.round(img.width * scale);
-          canvas.height = Math.round(img.height * scale);
-
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-
-          // Convert to thumbhash
-          const hash = rgbaToThumbHash(
-            canvas.width,
-            canvas.height,
-            imageData.data,
-          );
-          return thumbHashToDataURL(hash);
-        } catch (error) {
-          console.error("Failed to generate thumbhash:", error);
-          return null;
-        }
-      },
-      [],
-    );
-
     // Pre-generate thumbhash for local demo image
     useEffect(() => {
       let isMounted = true;
@@ -186,7 +147,7 @@ export const ImageBackground = forwardRef<
           window.clearTimeout(timeoutId);
         }
       };
-    }, [generateThumbhash]);
+    }, []);
 
     const loadNewImage = useCallback(async () => {
       abortControllerRef.current?.abort();
@@ -359,7 +320,6 @@ export const ImageBackground = forwardRef<
       imageAspectPreference,
       onImageLoad,
       onImageError,
-      generateThumbhash,
       getViewportDimensions,
       matchesAspectPreference,
     ]);
@@ -377,61 +337,6 @@ export const ImageBackground = forwardRef<
       }),
       [loadNewImage],
     );
-
-    // Extract edge color from image
-    const extractEdgeColor = useCallback((img: HTMLImageElement) => {
-      try {
-        const canvas = document.createElement("canvas");
-        const ctx = canvas.getContext("2d");
-        if (!ctx) return "#1a1a1a";
-
-        canvas.width = img.width;
-        canvas.height = img.height;
-        ctx.drawImage(img, 0, 0);
-
-        // Sample colors from the edges
-        const sampleSize = 10;
-        const samples: number[][] = [];
-
-        // Top and bottom edges
-        const stepX = Math.max(1, Math.floor(canvas.width / sampleSize));
-        for (let x = 0; x < canvas.width; x += stepX) {
-          const topPixel = ctx.getImageData(x, 0, 1, 1).data;
-          const bottomPixel = ctx.getImageData(x, canvas.height - 1, 1, 1).data;
-          samples.push([topPixel[0], topPixel[1], topPixel[2]]);
-          samples.push([bottomPixel[0], bottomPixel[1], bottomPixel[2]]);
-        }
-
-        // Left and right edges
-        const stepY = Math.max(1, Math.floor(canvas.height / sampleSize));
-        for (let y = 0; y < canvas.height; y += stepY) {
-          const leftPixel = ctx.getImageData(0, y, 1, 1).data;
-          const rightPixel = ctx.getImageData(canvas.width - 1, y, 1, 1).data;
-          samples.push([leftPixel[0], leftPixel[1], leftPixel[2]]);
-          samples.push([rightPixel[0], rightPixel[1], rightPixel[2]]);
-        }
-
-        if (samples.length === 0) {
-          return "#1a1a1a";
-        }
-
-        // Calculate average color
-        const avgR = Math.floor(
-          samples.reduce((sum, s) => sum + s[0], 0) / samples.length,
-        );
-        const avgG = Math.floor(
-          samples.reduce((sum, s) => sum + s[1], 0) / samples.length,
-        );
-        const avgB = Math.floor(
-          samples.reduce((sum, s) => sum + s[2], 0) / samples.length,
-        );
-
-        return `rgb(${avgR}, ${avgG}, ${avgB})`;
-      } catch (error) {
-        console.error("Failed to extract edge color:", error);
-        return "#1a1a1a";
-      }
-    }, []);
 
     const handleImageLoad = () => {
       if (!isLoading) return;
@@ -483,6 +388,8 @@ export const ImageBackground = forwardRef<
       setMetadataCopyState("idle");
       setIsMetadataOpen(true);
     };
+    const handleCloseError = useCallback(() => setHasError(false), []);
+    const handleCloseMetadata = useCallback(() => setIsMetadataOpen(false), []);
 
     const getOriginalUrl = (image: AnimeImage): string =>
       image.sourceUrl || image.artistHref || image.url;
@@ -660,110 +567,22 @@ export const ImageBackground = forwardRef<
             </>
           )}
         </div>
-        {hasError &&
-          createPortal(
-            <div className="error-modal-overlay">
-              <div className="error-modal">
-                <h2 className="error-modal-title">{t("image.error.title")}</h2>
-                <div className="error-modal-content">
-                  <p className="error-modal-text">
-                    {t("image.error.description")}
-                  </p>
-                  <textarea
-                    className="error-modal-message"
-                    value={errorMessage ?? t("image.error.unknown")}
-                    readOnly
-                  />
-                  <div className="error-modal-actions">
-                    <button
-                      type="button"
-                      className="error-modal-button"
-                      onClick={handleCopyError}
-                    >
-                      {copyState === "copied"
-                        ? t("image.error.copied")
-                        : t("image.error.copy")}
-                    </button>
-                    {githubIssueUrl && (
-                      <a
-                        href={githubIssueUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="error-modal-button error-modal-link"
-                      >
-                        {t("image.error.openIssue")}
-                      </a>
-                    )}
-                  </div>
-                  {copyState === "failed" && (
-                    <p className="error-modal-copy-hint">
-                      {t("image.error.copyFailed")}
-                    </p>
-                  )}
-                </div>
-                <div className="error-modal-footer">
-                  <button
-                    type="button"
-                    className="error-modal-button secondary"
-                    onClick={loadNewImage}
-                  >
-                    {t("image.error.retry")}
-                  </button>
-                </div>
-              </div>
-            </div>,
-            document.body,
-          )}
-        {isMetadataOpen &&
-          currentImage &&
-          createPortal(
-            <div
-              className="error-modal-overlay"
-              onClick={() => setIsMetadataOpen(false)}
-            >
-              <div className="error-modal" onClick={(e) => e.stopPropagation()}>
-                <h2 className="error-modal-title">
-                  {t("image.metadata.title")}
-                </h2>
-                <div className="error-modal-content">
-                  <p className="error-modal-text">
-                    {t("image.metadata.description")}
-                  </p>
-                  <textarea
-                    className="error-modal-message"
-                    value={buildMetadataText(currentImage)}
-                    readOnly
-                  />
-                  <div className="error-modal-actions">
-                    <button
-                      type="button"
-                      className="error-modal-button"
-                      onClick={handleCopyMetadata}
-                    >
-                      {metadataCopyState === "copied"
-                        ? t("image.metadata.copied")
-                        : t("image.metadata.copy")}
-                    </button>
-                  </div>
-                  {metadataCopyState === "failed" && (
-                    <p className="error-modal-copy-hint">
-                      {t("image.error.copyFailed")}
-                    </p>
-                  )}
-                </div>
-                <div className="error-modal-footer">
-                  <button
-                    type="button"
-                    className="error-modal-button secondary"
-                    onClick={() => setIsMetadataOpen(false)}
-                  >
-                    {t("image.metadata.close")}
-                  </button>
-                </div>
-              </div>
-            </div>,
-            document.body,
-          )}
+        <ImageErrorDialog
+          isOpen={hasError}
+          errorMessage={errorMessage}
+          copyState={copyState}
+          githubIssueUrl={githubIssueUrl}
+          onCopy={handleCopyError}
+          onRetry={loadNewImage}
+          onClose={handleCloseError}
+        />
+        <ImageMetadataDialog
+          isOpen={isMetadataOpen && Boolean(currentImage)}
+          metadataText={currentImage ? buildMetadataText(currentImage) : ""}
+          copyState={metadataCopyState}
+          onCopy={handleCopyMetadata}
+          onClose={handleCloseMetadata}
+        />
       </>
     );
   },
