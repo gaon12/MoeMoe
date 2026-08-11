@@ -18,6 +18,8 @@ import { SpotlightActions } from "./components/SpotlightActions/SpotlightActions
 import { useWallpaperLibrary } from "./hooks/useWallpaperLibrary";
 import "./App.css";
 
+const IMAGE_CHANGE_COOLDOWN_MS = 5_000;
+
 function App() {
   const { settings, setIsSettingsOpen } = useApp();
   const [isLoadingImage, setIsLoadingImage] = useState(true);
@@ -25,10 +27,14 @@ function App() {
   const [lastRefreshTime, setLastRefreshTime] = useState<number>(0);
   const [isAutoRefreshPaused, setIsAutoRefreshPaused] = useState(false);
   const [isPseudoFullscreen, setIsPseudoFullscreen] = useState(false);
+  const [isImageChangePending, setIsImageChangePending] = useState(false);
   const autoRefreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
   const imageBackgroundRef = useRef<ImageBackgroundHandle | null>(null);
+  const pendingImageChangeTimerRef = useRef<ReturnType<
+    typeof setTimeout
+  > | null>(null);
   const currentTime = useSyncedTime(
     settings.useServerTime,
     settings.serverTimeUpdateIntervalSec,
@@ -36,31 +42,54 @@ function App() {
   const {
     favorites,
     blockedUrls,
+    feedback,
     isFavorite,
     toggleFavorite,
     removeFavorite,
     blockWallpaper,
   } = useWallpaperLibrary();
 
-  const handleRefresh = useCallback(() => {
-    if (isLoadingImage) return;
-    const now = Date.now();
-    const timeSinceLastRefresh = (now - lastRefreshTime) / 1000;
-    const cooldownSeconds = 5;
-
-    // Check if cooldown is still active
-    if (timeSinceLastRefresh < cooldownSeconds && lastRefreshTime > 0) {
-      return;
+  const performImageChange = useCallback(() => {
+    if (pendingImageChangeTimerRef.current) {
+      clearTimeout(pendingImageChangeTimerRef.current);
+      pendingImageChangeTimerRef.current = null;
     }
-
+    setIsImageChangePending(false);
     setIsLoadingImage(true);
-    // Clear auto-refresh timer when manually refreshing
     if (autoRefreshTimerRef.current) {
       clearTimeout(autoRefreshTimerRef.current);
       autoRefreshTimerRef.current = null;
     }
     imageBackgroundRef.current?.refresh();
-  }, [isLoadingImage, lastRefreshTime]);
+  }, []);
+
+  const requestImageChange = useCallback(
+    (deferDuringCooldown = false) => {
+      if (isLoadingImage || isImageChangePending) return false;
+      const elapsed = Date.now() - lastRefreshTime;
+      const remaining =
+        lastRefreshTime > 0
+          ? Math.max(0, IMAGE_CHANGE_COOLDOWN_MS - elapsed)
+          : 0;
+      if (remaining > 0) {
+        if (deferDuringCooldown) {
+          setIsImageChangePending(true);
+          pendingImageChangeTimerRef.current = setTimeout(
+            performImageChange,
+            remaining,
+          );
+        }
+        return false;
+      }
+      performImageChange();
+      return true;
+    },
+    [isImageChangePending, isLoadingImage, lastRefreshTime, performImageChange],
+  );
+
+  const handleRefresh = useCallback(() => {
+    requestImageChange(false);
+  }, [requestImageChange]);
 
   const scheduleAutoRefresh = useCallback(() => {
     // Clear existing timer
@@ -80,22 +109,23 @@ function App() {
   const handleImageLoad = useCallback((image: AnimeImage) => {
     setCurrentImage(image);
     setIsLoadingImage(false);
+    setIsImageChangePending(false);
     // Update lastRefreshTime when image loading is complete
     setLastRefreshTime(Date.now());
   }, []);
 
   const handleImageError = useCallback(() => {
     setIsLoadingImage(false);
+    setIsImageChangePending(false);
   }, []);
 
   const handleDismissWallpaper = useCallback(
     (image: AnimeImage) => {
       if (image.isLocal) return;
       blockWallpaper(image);
-      setIsLoadingImage(true);
-      window.setTimeout(() => imageBackgroundRef.current?.refresh(), 0);
+      requestImageChange(true);
     },
-    [blockWallpaper],
+    [blockWallpaper, requestImageChange],
   );
 
   // Cleanup timer on unmount or interval change
@@ -103,6 +133,9 @@ function App() {
     return () => {
       if (autoRefreshTimerRef.current) {
         clearTimeout(autoRefreshTimerRef.current);
+      }
+      if (pendingImageChangeTimerRef.current) {
+        clearTimeout(pendingImageChangeTimerRef.current);
       }
     };
   }, []);
@@ -268,6 +301,7 @@ function App() {
         onImageLoad={handleImageLoad}
         onImageError={handleImageError}
         excludedUrls={blockedUrls}
+        feedback={feedback}
       />
       <div className="content">
         <Clock currentTime={currentTime} />
@@ -295,6 +329,7 @@ function App() {
           onToggleFavorite={toggleFavorite}
           onRemoveFavorite={removeFavorite}
           onDismiss={handleDismissWallpaper}
+          isChangePending={isImageChangePending}
         />
       </div>
       {settings.imageChangeInterval > 0 && (

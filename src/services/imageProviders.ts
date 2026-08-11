@@ -604,37 +604,40 @@ export async function fetchRandomImage(
 
   switch (source) {
     case "nekos_best":
-      return await fetchFromNekosBest(signal);
+      return { ...(await fetchFromNekosBest(signal)), source };
 
     case "waifu_pics":
-      return await fetchFromWaifuPics(allowNSFW, signal);
+      return { ...(await fetchFromWaifuPics(allowNSFW, signal)), source };
 
     case "nekosia":
-      return await fetchFromNekosia(signal);
+      return { ...(await fetchFromNekosia(signal)), source };
 
     case "waifu_im":
-      return await fetchFromWaifuIm(allowNSFW, aspect, signal);
+      return { ...(await fetchFromWaifuIm(allowNSFW, aspect, signal)), source };
 
     case "nekos_moe":
-      return await fetchFromNekosMoe(allowNSFW, signal);
+      return { ...(await fetchFromNekosMoe(allowNSFW, signal)), source };
 
     case "danbooru":
-      return await fetchFromDanbooru(allowNSFW, aspect, signal);
+      return {
+        ...(await fetchFromDanbooru(allowNSFW, aspect, signal)),
+        source,
+      };
 
     case "pic_re":
-      return await fetchFromPicRe();
+      return { ...(await fetchFromPicRe()), source };
 
     case "nekosapi":
-      return await fetchFromNekosApi(allowNSFW, signal);
+      return { ...(await fetchFromNekosApi(allowNSFW, signal)), source };
 
     case "wallhaven":
-      return await fetchFromWallhaven(aspect, signal);
+      return { ...(await fetchFromWallhaven(aspect, signal)), source };
 
     case "user_uploads":
-      return await fetchRandomUserImage(signal);
+      return { ...(await fetchRandomUserImage(signal)), source };
 
     case "fallback":
-      return getFallbackImage();
+      return { ...getFallbackImage(), source };
 
     default:
       throw new Error(`Unknown image source: ${source}`);

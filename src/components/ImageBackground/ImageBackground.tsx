@@ -16,6 +16,11 @@ import {
 } from "../../types/settings";
 import { ImageErrorDialog, ImageMetadataDialog } from "./ImageDialogs";
 import { extractEdgeColor, generateThumbhash } from "./imageProcessing";
+import {
+  chooseWeightedImageSource,
+  getCandidateAcceptanceProbability,
+  type WallpaperFeedback,
+} from "../../utils/wallpaperPreferences";
 import "./ImageBackground.css";
 
 interface ImageBackgroundProps {
@@ -28,6 +33,7 @@ interface ImageBackgroundProps {
   onImageLoad?: (image: AnimeImage) => void;
   onImageError?: (error: Error) => void;
   excludedUrls?: string[];
+  feedback?: WallpaperFeedback[];
 }
 
 export interface ImageBackgroundHandle {
@@ -49,6 +55,7 @@ export const ImageBackground = forwardRef<
       onImageLoad,
       onImageError,
       excludedUrls = [],
+      feedback = [],
     },
     ref,
   ) => {
@@ -79,10 +86,20 @@ export const ImageBackground = forwardRef<
     const currentImageRef = useRef<AnimeImage | null>(null);
     const requestSequenceRef = useRef(0);
     const abortControllerRef = useRef<AbortController | null>(null);
+    const excludedUrlsRef = useRef(excludedUrls);
+    const feedbackRef = useRef(feedback);
 
     useEffect(() => {
       currentImageRef.current = currentImage;
     }, [currentImage]);
+
+    useEffect(() => {
+      excludedUrlsRef.current = excludedUrls;
+    }, [excludedUrls]);
+
+    useEffect(() => {
+      feedbackRef.current = feedback;
+    }, [feedback]);
 
     const getViewportDimensions = useCallback(
       () => ({
@@ -185,8 +202,10 @@ export const ImageBackground = forwardRef<
 
         for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
           try {
-            randomSource =
-              imageSources[Math.floor(Math.random() * imageSources.length)];
+            randomSource = chooseWeightedImageSource(
+              imageSources,
+              feedbackRef.current,
+            );
             const candidate = await fetchRandomImage({
               source: randomSource,
               allowNSFW,
@@ -195,7 +214,7 @@ export const ImageBackground = forwardRef<
               signal: controller.signal,
             });
             if (isStale()) return;
-            if (excludedUrls.includes(candidate.url)) {
+            if (excludedUrlsRef.current.includes(candidate.url)) {
               throw new Error(`Wallpaper is excluded: ${candidate.url}`);
             }
 
@@ -260,9 +279,18 @@ export const ImageBackground = forwardRef<
 
             image = candidate;
             loadedImg = img;
+            const preferenceAccepted =
+              candidate.isLocal ||
+              attempt === maxAttempts - 1 ||
+              Math.random() <=
+                getCandidateAcceptanceProbability(
+                  candidate,
+                  feedbackRef.current,
+                );
             if (
               candidate.url !== previousUrl &&
-              (candidate.isLocal || matchesAspectPreference(img))
+              (candidate.isLocal || matchesAspectPreference(img)) &&
+              preferenceAccepted
             ) {
               break;
             }
@@ -328,7 +356,6 @@ export const ImageBackground = forwardRef<
       imageAspectPreference,
       onImageLoad,
       onImageError,
-      excludedUrls,
       getViewportDimensions,
       matchesAspectPreference,
     ]);

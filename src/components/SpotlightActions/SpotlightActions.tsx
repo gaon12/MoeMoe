@@ -12,6 +12,7 @@ interface SpotlightActionsProps {
   onToggleFavorite: (image: AnimeImage) => void;
   onRemoveFavorite: (url: string) => void;
   onDismiss: (image: AnimeImage) => void;
+  isChangePending?: boolean;
 }
 
 export function SpotlightActions({
@@ -21,13 +22,16 @@ export function SpotlightActions({
   onToggleFavorite,
   onRemoveFavorite,
   onDismiss,
+  isChangePending = false,
 }: SpotlightActionsProps) {
   const { t } = useTranslation();
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const galleryRef = useRef<HTMLDivElement>(null);
   const closeGallery = useCallback(() => setIsGalleryOpen(false), []);
   useModalAccessibility(isGalleryOpen, galleryRef, closeGallery);
-  const canStoreFeedback = Boolean(currentImage && !currentImage.isLocal);
+  const canStoreFeedback = Boolean(
+    currentImage && !currentImage.isLocal && !isChangePending,
+  );
 
   return (
     <>

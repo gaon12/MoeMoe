@@ -23,6 +23,7 @@ describe("fetchRandomImage", () => {
     expect(second.url).toMatch(/^https:\/\/pic\.re\/image\?_moemoe_refresh=/);
     expect(first.url).not.toBe(second.url);
     expect(first.sourceUrl).toBe(first.url);
+    expect(first.source).toBe("pic_re");
   });
 
   it("builds Waifu.im orientation and resolution filters from the screen", () => {

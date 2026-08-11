@@ -1,13 +1,25 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { AnimeImage } from "../types/image";
+import {
+  ALL_IMAGE_SOURCES,
+  type AnimeImage,
+  type ImageSource,
+} from "../types/image";
+import {
+  createWallpaperFeedback,
+  type WallpaperAspect,
+  type WallpaperFeedback,
+  type WallpaperSentiment,
+} from "../utils/wallpaperPreferences";
 
 const STORAGE_KEY = "moemoe-wallpaper-library";
 const MAX_FAVORITES = 50;
 const MAX_BLOCKED_URLS = 200;
+const MAX_FEEDBACK = 300;
 
 export interface WallpaperLibraryData {
   favorites: AnimeImage[];
   blockedUrls: string[];
+  feedback: WallpaperFeedback[];
 }
 
 function isSafeRemoteUrl(value: unknown): value is string {
@@ -21,7 +33,7 @@ function isSafeRemoteUrl(value: unknown): value is string {
 
 export function sanitizeWallpaperLibrary(value: unknown): WallpaperLibraryData {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
-    return { favorites: [], blockedUrls: [] };
+    return { favorites: [], blockedUrls: [], feedback: [] };
   }
   const candidate = value as Record<string, unknown>;
   const favorites = Array.isArray(candidate.favorites)
@@ -47,6 +59,30 @@ export function sanitizeWallpaperLibrary(value: unknown): WallpaperLibraryData {
           if (typeof image.artistName === "string") {
             sanitized.artistName = image.artistName.slice(0, 500);
           }
+          if (
+            typeof image.source === "string" &&
+            ALL_IMAGE_SOURCES.includes(image.source as ImageSource)
+          ) {
+            sanitized.source = image.source as ImageSource;
+          }
+          if (
+            image.dimensions &&
+            typeof image.dimensions === "object" &&
+            !Array.isArray(image.dimensions)
+          ) {
+            const dimensions = image.dimensions as Record<string, unknown>;
+            if (
+              typeof dimensions.width === "number" &&
+              typeof dimensions.height === "number" &&
+              dimensions.width > 0 &&
+              dimensions.height > 0
+            ) {
+              sanitized.dimensions = {
+                width: dimensions.width,
+                height: dimensions.height,
+              };
+            }
+          }
           return [sanitized];
         })
         .slice(0, MAX_FAVORITES)
@@ -57,7 +93,64 @@ export function sanitizeWallpaperLibrary(value: unknown): WallpaperLibraryData {
         MAX_BLOCKED_URLS,
       )
     : [];
-  return { favorites, blockedUrls };
+  const validSentiments: WallpaperSentiment[] = ["liked", "disliked"];
+  const validAspects: WallpaperAspect[] = ["landscape", "portrait", "square"];
+  const feedback = Array.isArray(candidate.feedback)
+    ? candidate.feedback
+        .flatMap((item): WallpaperFeedback[] => {
+          if (!item || typeof item !== "object" || Array.isArray(item))
+            return [];
+          const entry = item as Record<string, unknown>;
+          if (
+            !isSafeRemoteUrl(entry.url) ||
+            !validSentiments.includes(entry.sentiment as WallpaperSentiment)
+          ) {
+            return [];
+          }
+          return [
+            {
+              url: entry.url,
+              sentiment: entry.sentiment as WallpaperSentiment,
+              source:
+                typeof entry.source === "string" &&
+                ALL_IMAGE_SOURCES.includes(entry.source as ImageSource)
+                  ? (entry.source as ImageSource)
+                  : undefined,
+              artist:
+                typeof entry.artist === "string"
+                  ? entry.artist.trim().toLocaleLowerCase().slice(0, 200) ||
+                    undefined
+                  : undefined,
+              aspect: validAspects.includes(entry.aspect as WallpaperAspect)
+                ? (entry.aspect as WallpaperAspect)
+                : undefined,
+              updatedAt:
+                typeof entry.updatedAt === "number" &&
+                Number.isFinite(entry.updatedAt)
+                  ? entry.updatedAt
+                  : 0,
+            },
+          ];
+        })
+        .sort((a, b) => b.updatedAt - a.updatedAt)
+        .filter(
+          (entry, index, entries) =>
+            entries.findIndex((candidate) => candidate.url === entry.url) ===
+            index,
+        )
+        .slice(0, MAX_FEEDBACK)
+    : [];
+  return { favorites, blockedUrls, feedback };
+}
+
+function upsertFeedback(
+  feedback: readonly WallpaperFeedback[],
+  entry: WallpaperFeedback,
+): WallpaperFeedback[] {
+  return [entry, ...feedback.filter((item) => item.url !== entry.url)].slice(
+    0,
+    MAX_FEEDBACK,
+  );
 }
 
 export function useWallpaperLibrary() {
@@ -66,10 +159,10 @@ export function useWallpaperLibrary() {
       const saved = localStorage.getItem(STORAGE_KEY);
       return saved
         ? sanitizeWallpaperLibrary(JSON.parse(saved))
-        : { favorites: [], blockedUrls: [] };
+        : { favorites: [], blockedUrls: [], feedback: [] };
     } catch (error) {
       console.error("Failed to load wallpaper library:", error);
-      return { favorites: [], blockedUrls: [] };
+      return { favorites: [], blockedUrls: [], feedback: [] };
     }
   });
 
@@ -94,6 +187,17 @@ export function useWallpaperLibrary() {
         favorites: exists
           ? current.favorites.filter((item) => item.url !== image.url)
           : [image, ...current.favorites].slice(0, MAX_FAVORITES),
+        blockedUrls: exists
+          ? current.blockedUrls
+          : current.blockedUrls.filter((url) => url !== image.url),
+        feedback: exists
+          ? current.feedback.filter(
+              (entry) => entry.url !== image.url || entry.sentiment !== "liked",
+            )
+          : upsertFeedback(
+              current.feedback,
+              createWallpaperFeedback(image, "liked"),
+            ),
       };
     });
   }, []);
@@ -102,6 +206,9 @@ export function useWallpaperLibrary() {
     setLibrary((current) => ({
       ...current,
       favorites: current.favorites.filter((image) => image.url !== url),
+      feedback: current.feedback.filter(
+        (entry) => entry.url !== url || entry.sentiment !== "liked",
+      ),
     }));
   }, []);
 
@@ -111,6 +218,10 @@ export function useWallpaperLibrary() {
       blockedUrls: [image.url, ...current.blockedUrls]
         .filter((url, index, urls) => urls.indexOf(url) === index)
         .slice(0, MAX_BLOCKED_URLS),
+      feedback: upsertFeedback(
+        current.feedback,
+        createWallpaperFeedback(image, "disliked"),
+      ),
     }));
   }, []);
 
@@ -122,6 +233,7 @@ export function useWallpaperLibrary() {
   return {
     favorites: library.favorites,
     blockedUrls: library.blockedUrls,
+    feedback: library.feedback,
     isFavorite,
     toggleFavorite,
     removeFavorite,

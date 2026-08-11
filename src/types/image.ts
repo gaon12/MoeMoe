@@ -3,6 +3,8 @@
  */
 export interface AnimeImage {
   url: string;
+  /** Provider that returned this image. Used for transparent preference learning. */
+  source?: ImageSource;
   /**
    * Optional URL routed through a CORS proxy.
    * Used as a fallback only when the direct URL fails.

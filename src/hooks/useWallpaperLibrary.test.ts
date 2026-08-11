@@ -21,6 +21,7 @@ describe("sanitizeWallpaperLibrary", () => {
     ).toEqual({
       favorites: [{ url: "https://images.example/favorite.png" }],
       blockedUrls: ["https://images.example/blocked.png"],
+      feedback: [],
     });
   });
 
