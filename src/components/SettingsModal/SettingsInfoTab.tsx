@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 export const SettingsInfoTab = () => {
   const { t, i18n } = useTranslation();
   const githubUrl = "https://github.com/gaon12/MoeMoe";
+  const sponsorsUrl = "https://github.com/sponsors/gaon12";
   const lang = i18n.language;
 
   const infoText = {
@@ -40,6 +41,12 @@ export const SettingsInfoTab = () => {
         : lang === "en"
           ? "Project license"
           : "프로젝트 라이선스",
+    sponsorLabel:
+      lang === "ja"
+        ? "開発を支援"
+        : lang === "en"
+          ? "Support development"
+          : "개발 후원하기",
   };
 
   const libraries = [
@@ -273,6 +280,20 @@ export const SettingsInfoTab = () => {
               GH
             </span>
             <span className="info-link-text">github.com/gaon12/MoeMoe</span>
+          </a>
+        </div>
+        <div className="settings-option">
+          <label className="settings-label">{infoText.sponsorLabel}</label>
+          <a
+            href={sponsorsUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="info-link"
+          >
+            <span className="info-link-icon" aria-hidden="true">
+              ♥
+            </span>
+            <span className="info-link-text">github.com/sponsors/gaon12</span>
           </a>
         </div>
       </div>

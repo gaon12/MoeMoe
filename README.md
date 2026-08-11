@@ -1,213 +1,87 @@
-<a id="readme-top"></a>
+# MoeMoe
 
-<div align="center">
-  <h1>MoeMoe — Anime Wallpaper Clock</h1>
-  <p>
-    A beautiful, customizable desktop clock with random anime backgrounds, multilingual UI, and rich settings.
-  </p>
-  <!-- Optional screenshot: place at public/images/screenshot.png
-  <img src="images/screenshot.png" alt="Screenshot" width="720" />
-  -->
-</div>
+Windows 잠금 화면에서 영감을 받은 애니메이션 배경화면 시계입니다. 여러 이미지 공급자에서 화면 비율에 맞는 이미지를 불러오고, 시계·날씨·위치·명대사·사용자 문구 위젯을 원하는 위치에 배치할 수 있습니다.
 
-<details>
-  <summary>Table of Contents</summary>
-  <ol>
-    <li>
-      <a href="#about-the-project">About The Project</a>
-      <ul>
-        <li><a href="#features">Features</a></li>
-        <li><a href="#built-with">Built With</a></li>
-      </ul>
-    </li>
-    <li>
-      <a href="#getting-started">Getting Started</a>
-      <ul>
-        <li><a href="#prerequisites">Prerequisites</a></li>
-        <li><a href="#installation">Installation</a></li>
-        <li><a href="#environment">Environment</a></li>
-      </ul>
-    </li>
-    <li><a href="#usage">Usage</a></li>
-    <li><a href="#settings">Settings</a></li>
-    <li><a href="#api-sources">API Sources</a></li>
-    <li><a href="#i18n">Internationalization</a></li>
-    <li><a href="#project-structure">Project Structure</a></li>
-    <li><a href="#scripts">Scripts</a></li>
-    <li><a href="#roadmap">Roadmap</a></li>
-    <li><a href="#contributing">Contributing</a></li>
-    <li><a href="#license">License</a></li>
-    <li><a href="#acknowledgments">Acknowledgments</a></li>
-  </ol>
-</details>
+![MoeMoe 4K demo](public/demo/demo.webp)
 
-## About The Project
+## 주요 기능
 
-MoeMoe is a desktop-style clock inspired by the Windows lock screen. It displays a large, elegant clock over stunning anime/waifu imagery from multiple sources, with smooth transitions, multilingual support, and robust customization. Settings persist locally and the app runs entirely client‑side.
+- 9개 이미지 공급자와 공급자별 장애 격리: Nekos.best, Waifu.pics, Nekosia, Waifu.im, Nekos.moe, Danbooru, Pic.re, NekosAPI, Wallhaven
+- 화면·가로·세로·정사각형 비율 선호, cover/contain 맞춤, 블러·단색 레터박스
+- Windows Spotlight 방식의 즐겨찾기 갤러리와 “이 이미지는 그만 보기” 피드백
+- 12/24시간제, 초 표시, AM/PM 위치, 선택적 서버 시간 동기화
+- 시계·날씨·위치·애니 명대사·사용자 문구 위젯
+- JPG, PNG, WebP, AVIF 다운로드와 원본 출처/작가 메타데이터
+- 한국어, 영어, 일본어 UI 및 키보드·포커스 접근성
+- 설정 내보내기/가져오기, 런타임 검증, 로컬 저장
+- 4K(3840×2160) 오리지널 데모 아트 네 가지 포맷
 
-### Features
+## 시작하기
 
-- Real-time clock with flexible format
-  - 12/24‑hour toggle, optional seconds
-  - AM/PM visibility, style (locale words or AM/PM), and position (before/after)
-- Multiple image sources with randomization and graceful fallback
-- Progressive image loading (Thumbhash preview → full image)
-- Artist and source attribution where available
-- Theme system: Dark, Light, Auto
-- Settings panel with persistence (localStorage)
-- Keyboard shortcuts (R/Space refresh, F fullscreen, S settings)
-- Responsive layout with refined overlays and readability
-- Optional server time sync with network-delay compensation
-
-### Built With
-
-- React 19, TypeScript 5.9, Vite 7
-- i18next (multilingual UI), Thumbhash (image placeholders)
-- Modern CSS with variables and responsive design
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js 18+
-- npm (or yarn/pnpm)
-
-### Installation
+Vite 8의 요구 사항에 따라 Node.js `20.19+` 또는 `22.12+`가 필요합니다.
 
 ```bash
-# Clone
-git clone https://github.com/your-username/moemoe.git
-cd moemoe
-
-# Install deps
+git clone https://github.com/gaon12/MoeMoe.git
+cd MoeMoe
 npm install
-
-# Start dev server
+Copy-Item .env.sample .env   # PowerShell
 npm run dev
+```
 
-# Build production
+macOS/Linux에서는 `cp .env.sample .env`를 사용하세요. `.env`와 `.env.*`는 Git에서 제외되며 `.env.sample`만 공개됩니다.
+
+## 환경 변수
+
+| 변수                                | 용도                               | 기본 권장값         |
+| ----------------------------------- | ---------------------------------- | ------------------- |
+| `VITE_FIX_CORS_API_URL`             | 이미지 다운로드용 CORS 프록시      | 비워 둠             |
+| `VITE_SERVER_TIME_API_URL`          | IANA 시간대를 뒤에 붙이는 시간 API | 비워 둠             |
+| `VITE_GITHUB_REPO_URL`              | 오류 신고 링크                     | 이 저장소 URL       |
+| `VITE_ANIME_QUOTE_API_URL`          | 명대사 위젯                        | `.env.sample` 참고  |
+| `VITE_IP_REVERSE_GEOCODING_API_URL` | 위치 권한 거절 시 IP 위치 조회     | `https://ipinfo.io` |
+
+`VITE_` 값은 빌드 결과에 공개됩니다. 비밀 키를 넣지 마세요. 특히 CORS 프록시는 직접 관리하고 신뢰하는 서버만 사용해야 합니다. WeatherAPI 키는 설정 화면에 입력하며 브라우저 로컬 저장소에만 보관되지만, 클라이언트 앱 특성상 완전한 비밀로 취급할 수 없습니다.
+
+## 단축키
+
+| 키            | 동작                        |
+| ------------- | --------------------------- |
+| `R` / `Space` | 새 배경화면                 |
+| `F`           | 전체 화면                   |
+| `P`           | 자동 새로고침 일시정지/재개 |
+| `S`           | 설정 열기                   |
+
+입력란에 포커스가 있거나 이미지를 불러오는 중에는 충돌하는 단축키가 동작하지 않습니다.
+
+## 품질 검사
+
+```bash
+npm run format:check
+npm run lint
+npm test
 npm run build
-
-# Preview production build
-npm run preview
+npm audit
 ```
 
-### Environment
+`npm run lint`는 warning도 실패로 처리합니다. 네트워크 요청에는 취소와 타임아웃이 적용되며, 설정 파일을 가져올 때 타입·범위·중복 위젯 ID를 검증합니다.
 
-Copy `.env.sample` to `.env` and adjust as needed:
+## 설계와 향후 확장
 
-```
-VITE_FIX_CORS_API_URL=https://test.com/?url=
-VITE_SERVER_TIME_API_URL=https://test.com/?tz=
-```
+MoeMoe는 Waifu Downloader, Catgirl Downloader와 같은 이미지 수집 도구의 편의성과 Windows Spotlight의 잠금 화면 경험을 웹에서 결합합니다. 이번 버전에는 고해상도·비율 필터가 강한 Wallhaven SFW 공급자, 이미지 선호/제외 피드백, 즐겨찾기 갤러리를 추가했습니다.
 
-- CORS proxy is optional; when set, image URLs are proxied automatically.
-- Server time API: the app appends your IANA timezone (e.g., `Asia/Seoul`) to `tz=`, then computes offset using round‑trip midpoint to compensate for delay.
+다음 단계로는 데스크톱 래퍼를 통한 실제 Windows 잠금 화면/바탕 화면 적용, 로컬 폴더 공급자, 시간대별 컬렉션, 공급자 상태 대시보드, 즐겨찾기 동기화를 고려할 수 있습니다. 브라우저만으로는 운영체제 잠금 화면을 직접 변경할 수 없으므로 이 기능은 별도 데스크톱 권한 모델이 필요합니다.
 
-## Usage
+## 기술 스택
 
-- Press `S` to open Settings
-- Press `R` or `Space` to refresh the background
-- Press `F` to toggle fullscreen
+- React 19, TypeScript 6, Vite 8
+- i18next / react-i18next
+- ThumbHash
+- ESLint 10, Prettier 3, Vitest 4
 
-Artist/source links are shown when available; click to open in a new tab.
+## 후원
 
-## Settings
+프로젝트가 마음에 들면 [GitHub Sponsors에서 gaon12 후원하기](https://github.com/sponsors/gaon12)를 이용해 주세요.
 
-Appearance
+## 라이선스
 
-- Language: auto‑initialized from browser (ko/ja/en; falls back to en)
-- Theme: Dark / Light / Auto
-- Clock: 12/24‑hour, seconds on/off, AM/PM style (locale or AM/PM) and position
-
-Images
-
-- Sources: multi‑select with Select All / Deselect All; at least one is required (defaults to all selected)
-- Fit mode: Cover / Contain
-- Letterbox fill: Blur / Edge‑Color / Custom / Solid
-- Auto refresh interval (seconds)
-- Allow NSFW (where supported)
-
-Time
-
-- Use server time (optional)
-- Update interval for server sync (10/30/60/300 seconds)
-
-## API Sources
-
-Integrated
-
-- Nekos.best — rich categories, artist/anime metadata
-- Waifu.pics — simple, reliable SFW/NSFW endpoints
-- Nekosia — curated catgirl images
-- Waifu.im — curated images with artist/source info
-- Nekos.moe — random image id → direct file URL
-- Donmai.us (Danbooru) — random posts (respecting SFW/NSFW setting)
-
-Planned/Requested
-
-- Waifu.it, Pic.re, Neoksapi.com
-
-## Internationalization
-
-Supported languages
-
-- Korean (한국어)
-- English
-- Japanese (日本語)
-
-All strings live under `src/locales/{ko,en,ja}/translation.json`.
-
-## Project Structure
-
-```
-src/
-├─ components/
-│  ├─ Clock/
-│  ├─ ImageBackground/
-│  ├─ RefreshButton/
-│  ├─ DownloadButton/
-│  ├─ SettingsButton/
-│  └─ SettingsModal/
-├─ contexts/           # AppContext (settings/state)
-├─ i18n/               # i18next config
-├─ locales/            # translations
-├─ services/           # imageApi (sources, proxy)
-├─ types/              # image/settings types
-├─ App.tsx, App.css
-├─ index.css
-└─ main.tsx
-```
-
-## Scripts
-
-- `npm run dev` — start dev server
-- `npm run build` — type‑check + build
-- `npm run preview` — preview production build
-- `npm run lint` — run ESLint
-
-## Roadmap
-
-- Additional sources (Waifu.it, Pic.re, Neoksapi.com)
-- Advanced widgets (Weather, Quotes, Custom text)
-- Favorites/history, export/import settings
-
-## Contributing
-
-We welcome contributions of all kinds:
-
-- Open an issue for bugs or feature requests
-  - https://github.com/your-username/moemoe/issues/new/choose
-- Submit a pull request with your changes
-- Donate to support development (GitHub Sponsors/BuyMeACoffee — add your link here)
-
-Please follow common GitHub practices (small, focused PRs; clear descriptions). Thank you!
-
-## License
-
-MIT License — see `LICENSE` in the repository.
-
-## Acknowledgments
-
-- Fonts: RIDIBatang by Ridi Corporation
-- APIs: Nekos.best, Waifu.pics, Nekosia, Waifu.im, Nekos.moe, Danbooru
+MIT. 자세한 내용은 [LICENSE](LICENSE)를 참고하세요.
