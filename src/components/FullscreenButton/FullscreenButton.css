@@ -16,7 +16,7 @@
     color 0.18s ease,
     transform 0.18s ease;
   padding: 0;
-  opacity: 0.86;
+  opacity: 0.55;
 }
 
 .fullscreen-button:focus-visible,
@@ -35,6 +35,11 @@
 .fullscreen-button.active {
   border-color: rgba(255, 255, 255, 0.36);
   background: rgba(255, 255, 255, 0.2);
+  opacity: 0.8;
+}
+
+.fullscreen-button.active:hover,
+.fullscreen-button.active:focus-visible {
   opacity: 1;
 }
 

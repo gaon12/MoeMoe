@@ -137,7 +137,11 @@ function sanitizeImageSources(
       ),
     ),
   ];
-  return unique.length > 0 ? unique : [...fallback];
+  if (unique.length === 0) return fallback;
+  const unchanged =
+    unique.length === fallback.length &&
+    unique.every((source, index) => source === fallback[index]);
+  return unchanged ? fallback : unique;
 }
 
 export function sanitizeSettings(

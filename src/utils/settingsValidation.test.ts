@@ -3,6 +3,16 @@ import { defaultSettings } from "../types/settings";
 import { sanitizeSettings } from "./settingsValidation";
 
 describe("sanitizeSettings", () => {
+  it("preserves image source identity for unrelated setting updates", () => {
+    const current = sanitizeSettings({
+      ...defaultSettings,
+      imageSources: ["pic_re", "wallhaven"],
+    });
+    const updated = sanitizeSettings({ ...current, fontSize: 18 }, current);
+
+    expect(updated.imageSources).toBe(current.imageSources);
+  });
+
   it("preserves a valid cover fit mode across persistence", () => {
     expect(sanitizeSettings({ imageFitMode: "cover" }).imageFitMode).toBe(
       "cover",

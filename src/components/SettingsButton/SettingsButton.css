@@ -20,12 +20,12 @@
     transform 0.18s ease;
   color: #ffffff;
   padding: 0;
-  opacity: 0.86;
+  opacity: 0.55;
 }
 
 .settings-fab:focus-visible,
 .settings-fab:hover {
-  transform: translateY(-1px) rotate(30deg);
+  transform: translateY(-1px);
   border-color: rgba(255, 255, 255, 0.28);
   background: rgba(255, 255, 255, 0.16);
   box-shadow: 0 8px 22px rgba(0, 0, 0, 0.24);
@@ -33,12 +33,25 @@
 }
 
 .settings-fab:active {
-  transform: scale(0.95) rotate(30deg);
+  transform: translateY(0) scale(0.95);
 }
 
 .settings-icon {
   width: 21px;
   height: 21px;
+  transition: transform 0.25s ease;
+}
+
+.settings-fab:focus-visible .settings-icon,
+.settings-fab:hover .settings-icon {
+  transform: rotate(30deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .settings-fab,
+  .settings-icon {
+    transition: none;
+  }
 }
 
 @media (max-width: 768px) {
