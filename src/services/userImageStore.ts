@@ -240,6 +240,59 @@ export async function listUserImages(): Promise<StoredUserImage[]> {
   }
 }
 
+async function countUserImages(): Promise<number> {
+  const database = await openDatabase();
+  try {
+    const transaction = database.transaction(STORE_NAME, "readonly");
+    const count = await requestResult(
+      transaction.objectStore(STORE_NAME).count(),
+    );
+    await transactionDone(transaction);
+    return count;
+  } finally {
+    closeDatabase(database);
+  }
+}
+
+export function getRandomUserImageOffset(
+  count: number,
+  random = Math.random,
+): number {
+  if (!Number.isInteger(count) || count <= 0) return 0;
+  const value = Math.min(0.999999999, Math.max(0, random()));
+  return Math.floor(value * count);
+}
+
+async function getUserImageAtOffset(offset: number): Promise<StoredUserImage> {
+  const database = await openDatabase();
+  try {
+    const transaction = database.transaction(STORE_NAME, "readonly");
+    const request = transaction.objectStore(STORE_NAME).openCursor();
+    const image = await new Promise<StoredUserImage>((resolve, reject) => {
+      let advanced = false;
+      request.onerror = () =>
+        reject(request.error ?? new Error("Failed to read a user image"));
+      request.onsuccess = () => {
+        const cursor = request.result;
+        if (!cursor) {
+          reject(new UserImageStoreError("empty", "No user image was found"));
+          return;
+        }
+        if (!advanced && offset > 0) {
+          advanced = true;
+          cursor.advance(offset);
+          return;
+        }
+        resolve(cursor.value as StoredUserImage);
+      };
+    });
+    await transactionDone(transaction);
+    return image;
+  } finally {
+    closeDatabase(database);
+  }
+}
+
 export async function addUserImages(
   files: readonly File[],
 ): Promise<AddUserImagesResult> {
@@ -345,15 +398,16 @@ export async function fetchRandomUserImage(
   signal?: AbortSignal,
 ): Promise<AnimeImage> {
   if (signal?.aborted) throw signal.reason;
-  const images = await listUserImages();
+  const count = await countUserImages();
   if (signal?.aborted) throw signal.reason;
-  if (images.length === 0) {
+  if (count === 0) {
     throw new UserImageStoreError(
       "empty",
       "No user images are stored. Add images in Settings → Images.",
     );
   }
-  const image = images[Math.floor(Math.random() * images.length)];
+  const image = await getUserImageAtOffset(getRandomUserImageOffset(count));
+  if (signal?.aborted) throw signal.reason;
   return {
     url: getUserImageObjectUrl(image),
     animeName: image.name,

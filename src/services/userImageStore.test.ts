@@ -5,6 +5,7 @@ import {
   MAX_USER_IMAGE_TOTAL_BYTES,
   UserImageStoreError,
   getUserImageFingerprint,
+  getRandomUserImageOffset,
   validateUserImageCandidate,
   type UserImageCandidate,
 } from "./userImageStore";
@@ -20,6 +21,13 @@ const candidate = (
 });
 
 describe("user image validation", () => {
+  it("selects a bounded random cursor offset without loading every blob", () => {
+    expect(getRandomUserImageOffset(50, () => 0)).toBe(0);
+    expect(getRandomUserImageOffset(50, () => 0.5)).toBe(25);
+    expect(getRandomUserImageOffset(50, () => 1)).toBe(49);
+    expect(getRandomUserImageOffset(0, () => 0.5)).toBe(0);
+  });
+
   it("accepts supported images within collection limits", () => {
     expect(() => validateUserImageCandidate(candidate(), 0, 0)).not.toThrow();
   });
