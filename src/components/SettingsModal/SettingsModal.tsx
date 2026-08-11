@@ -9,6 +9,7 @@ import {
 } from "../../types/settings";
 import {
   createSettingsExport,
+  MAX_SETTINGS_IMPORT_BYTES,
   parseSettingsExport,
 } from "../../utils/settingsExport";
 import { useModalAccessibility } from "../../hooks/useModalAccessibility";
@@ -119,6 +120,9 @@ export const SettingsModal = () => {
     if (!file) return;
 
     try {
+      if (file.size > MAX_SETTINGS_IMPORT_BYTES) {
+        throw new Error("Settings import file is too large");
+      }
       const imported = parseSettingsExport(await file.text());
       setLocalSettings((prev) => ({
         ...prev,

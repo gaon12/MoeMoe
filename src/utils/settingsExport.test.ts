@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { defaultSettings } from "../types/settings";
-import { createSettingsExport, parseSettingsExport } from "./settingsExport";
+import {
+  createSettingsExport,
+  MAX_SETTINGS_IMPORT_BYTES,
+  parseSettingsExport,
+} from "./settingsExport";
 
 describe("settings export", () => {
   it("wraps settings with export metadata", () => {
@@ -47,6 +51,9 @@ describe("settings export", () => {
   });
 
   it("rejects invalid payloads", () => {
+    expect(() =>
+      parseSettingsExport(" ".repeat(MAX_SETTINGS_IMPORT_BYTES + 1)),
+    ).toThrow(/size limit/);
     expect(() => parseSettingsExport("[]")).toThrow(/JSON object/);
     expect(() => parseSettingsExport("{")).toThrow();
     expect(() => parseSettingsExport('{"widgets":{}}')).not.toThrow();

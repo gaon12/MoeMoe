@@ -6,6 +6,7 @@ import {
 } from "./settingsValidation";
 
 const EXPORT_VERSION = 1;
+export const MAX_SETTINGS_IMPORT_BYTES = 1_000_000;
 
 interface SettingsExportPayload {
   version: number;
@@ -26,6 +27,9 @@ export function createSettingsExport(settings: AppSettings, now = new Date()) {
 }
 
 export function parseSettingsExport(text: string): AppSettings {
+  if (text.length > MAX_SETTINGS_IMPORT_BYTES) {
+    throw new Error("Settings export exceeds the import size limit.");
+  }
   const parsed: unknown = JSON.parse(text);
   if (!isRecord(parsed)) {
     throw new Error("Settings export must be a JSON object.");
