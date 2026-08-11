@@ -153,72 +153,17 @@ function App() {
 
   const toggleFullscreen = useCallback(() => {
     if (typeof document === "undefined") return;
-
-    const doc = document as Document & {
-      webkitFullscreenElement?: Element | null;
-      mozFullScreenElement?: Element | null;
-      msFullscreenElement?: Element | null;
-      webkitExitFullscreen?: () => Promise<void> | void;
-      mozCancelFullScreen?: () => Promise<void> | void;
-      msExitFullscreen?: () => Promise<void> | void;
-    };
-
-    const docElement = document.documentElement as HTMLElement & {
-      webkitRequestFullscreen?: () => Promise<void> | void;
-      mozRequestFullScreen?: () => Promise<void> | void;
-      msRequestFullscreen?: () => Promise<void> | void;
-    };
-
-    const isFullscreenActive =
-      !!doc.fullscreenElement ||
-      !!doc.webkitFullscreenElement ||
-      !!doc.mozFullScreenElement ||
-      !!doc.msFullscreenElement;
-
-    if (!isFullscreenActive && !isPseudoFullscreen) {
-      const requestFullscreen =
-        docElement.requestFullscreen ||
-        docElement.webkitRequestFullscreen ||
-        docElement.mozRequestFullScreen ||
-        docElement.msRequestFullscreen;
-
-      if (requestFullscreen) {
-        try {
-          const result = requestFullscreen.call(docElement);
-          if (result && typeof (result as Promise<void>).catch === "function") {
-            (result as Promise<void>).catch(() => {
-              setIsPseudoFullscreen(true);
-            });
-          }
-        } catch {
-          setIsPseudoFullscreen(true);
-        }
-      } else {
-        setIsPseudoFullscreen(true);
-      }
-    } else {
-      if (isPseudoFullscreen) {
-        setIsPseudoFullscreen(false);
-        return;
-      }
-
-      const exitFullscreen =
-        doc.exitFullscreen ||
-        doc.webkitExitFullscreen ||
-        doc.mozCancelFullScreen ||
-        doc.msExitFullscreen;
-
-      if (exitFullscreen) {
-        try {
-          const result = exitFullscreen.call(doc);
-          if (result && typeof (result as Promise<void>).catch === "function") {
-            (result as Promise<void>).catch(() => setIsPseudoFullscreen(false));
-          }
-        } catch {
-          setIsPseudoFullscreen(false);
-        }
-      }
+    if (isPseudoFullscreen) {
+      setIsPseudoFullscreen(false);
+      return;
     }
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch(() => setIsPseudoFullscreen(false));
+      return;
+    }
+    document.documentElement
+      .requestFullscreen()
+      .catch(() => setIsPseudoFullscreen(true));
   }, [isPseudoFullscreen]);
 
   useEffect(() => {
