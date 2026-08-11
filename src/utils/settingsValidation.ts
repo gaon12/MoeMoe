@@ -115,8 +115,8 @@ function sanitizeWidgets(value: unknown, fallback: Widget[]): Widget[] {
         type: normalizeWidgetType(widget.type),
         enabled: widget.enabled !== false,
         position: {
-          x: numberValue(position.x, 0, -10_000, 10_000),
-          y: numberValue(position.y, 0, -10_000, 10_000),
+          x: numberValue(position.x, 0, -500, 500),
+          y: numberValue(position.y, 0, -500, 500),
         },
         data: isRecord(widget.data) ? widget.data : {},
       };

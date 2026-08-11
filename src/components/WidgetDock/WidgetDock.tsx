@@ -170,17 +170,24 @@ export const WidgetDock = ({ currentTime }: WidgetDockProps) => {
         // 데스크탑 레이아웃: 카드들을 가로로 나란히 표시
         <div className="widget-cards">
           {activeWidgets.map((widget) => (
-            <WidgetCard
+            <div
               key={widget.id}
-              widget={widget}
-              currentTime={currentTime}
-              settings={settings}
-              weatherState={weatherState}
-              locationState={locationState}
-              animeQuoteState={animeQuoteState}
-              onRefreshAnimeQuote={refreshAnimeQuote}
-              weatherApiKey={weatherApiKey}
-            />
+              className="widget-card-positioner"
+              style={{
+                transform: `translate(${widget.position.x}px, ${widget.position.y}px)`,
+              }}
+            >
+              <WidgetCard
+                widget={widget}
+                currentTime={currentTime}
+                settings={settings}
+                weatherState={weatherState}
+                locationState={locationState}
+                animeQuoteState={animeQuoteState}
+                onRefreshAnimeQuote={refreshAnimeQuote}
+                weatherApiKey={weatherApiKey}
+              />
+            </div>
           ))}
         </div>
       )}

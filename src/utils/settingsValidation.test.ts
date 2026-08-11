@@ -59,4 +59,18 @@ describe("sanitizeSettings", () => {
         .imageSources,
     ).toEqual(["pic_re", "user_uploads"]);
   });
+
+  it("bounds desktop widget offsets to the supported viewport range", () => {
+    const [widget] = sanitizeSettings({
+      widgets: [
+        {
+          id: "offset",
+          type: "clock",
+          position: { x: 9999, y: -9999 },
+        },
+      ],
+    }).widgets;
+
+    expect(widget.position).toEqual({ x: 500, y: -500 });
+  });
 });

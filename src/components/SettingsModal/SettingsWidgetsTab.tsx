@@ -76,6 +76,17 @@ export const SettingsWidgetsTab = ({
     handleWidgetUpdate(id, { data });
   };
 
+  const handleWidgetPosition = (id: string, axis: "x" | "y", value: number) => {
+    const target = localSettings.widgets.find((widget) => widget.id === id);
+    if (!target || !Number.isFinite(value)) return;
+    handleWidgetUpdate(id, {
+      position: {
+        ...target.position,
+        [axis]: Math.min(500, Math.max(-500, value)),
+      },
+    });
+  };
+
   return (
     <>
       {/* Widgets Settings */}
@@ -195,6 +206,53 @@ export const SettingsWidgetsTab = ({
                       </option>
                     ))}
                   </select>
+                </div>
+
+                <div className="widget-config-row">
+                  <span className="widget-config-label">
+                    {t("settings.widgets.position")}
+                  </span>
+                  <div className="widget-position-grid">
+                    <label>
+                      <span>{t("settings.widgets.offsetX")}</span>
+                      <input
+                        className="settings-input"
+                        type="number"
+                        min={-500}
+                        max={500}
+                        step={10}
+                        value={widget.position.x}
+                        onChange={(event) =>
+                          handleWidgetPosition(
+                            widget.id,
+                            "x",
+                            Number(event.target.value),
+                          )
+                        }
+                      />
+                    </label>
+                    <label>
+                      <span>{t("settings.widgets.offsetY")}</span>
+                      <input
+                        className="settings-input"
+                        type="number"
+                        min={-500}
+                        max={500}
+                        step={10}
+                        value={widget.position.y}
+                        onChange={(event) =>
+                          handleWidgetPosition(
+                            widget.id,
+                            "y",
+                            Number(event.target.value),
+                          )
+                        }
+                      />
+                    </label>
+                  </div>
+                  <p className="settings-description">
+                    {t("settings.widgets.positionDescription")}
+                  </p>
                 </div>
 
                 <div className="widget-config-row">
