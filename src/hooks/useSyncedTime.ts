@@ -22,8 +22,7 @@ export function useSyncedTime(
   const fetchServerTime = useCallback(async () => {
     try {
       const baseUrl = import.meta.env.VITE_SERVER_TIME_API_URL as
-        | string
-        | undefined;
+        string | undefined;
       if (!baseUrl) {
         offsetRef.current = 0;
         return;

@@ -444,8 +444,7 @@ export const ImageBackground = forwardRef<
 
     const buildMetadataText = (image: AnimeImage): string => {
       const proxyUrl = import.meta.env.VITE_FIX_CORS_API_URL as
-        | string
-        | undefined;
+        string | undefined;
       let displayUrl = image.url;
       if (proxyUrl && displayUrl.startsWith(proxyUrl)) {
         const encoded = displayUrl.slice(proxyUrl.length);
@@ -487,8 +486,7 @@ export const ImageBackground = forwardRef<
     };
 
     const githubRepoUrl = import.meta.env.VITE_GITHUB_REPO_URL as
-      | string
-      | undefined;
+      string | undefined;
     const normalizedRepoUrl = githubRepoUrl?.replace(/\/$/, "");
     const githubIssueUrl = normalizedRepoUrl
       ? `${normalizedRepoUrl}/issues/new?title=${encodeURIComponent(
