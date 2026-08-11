@@ -180,7 +180,12 @@
   "buttons": {
     "refresh": "새로고침",
     "settings": "설정",
-    "fullscreen": "전체화면"
+    "fullscreen": "전체화면",
+    "refreshImage": "배경 이미지 새로고침",
+    "refreshCooldown": "{{seconds}}초 후 새로고침할 수 있습니다",
+    "refreshShortcut": "배경 이미지 새로고침 (R 또는 스페이스)",
+    "downloadImage": "이미지 다운로드",
+    "selectFormat": "파일 형식 선택"
   },
   "image": {
     "attribution": {

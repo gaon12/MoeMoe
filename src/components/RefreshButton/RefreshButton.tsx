@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import "./RefreshButton.css";
 
 interface RefreshButtonProps {
@@ -23,6 +24,7 @@ export const RefreshButton: React.FC<RefreshButtonProps> = ({
   lastRefreshTime = 0,
   cooldownSeconds = 5,
 }) => {
+  const { t } = useTranslation();
   const [isAnimating, setIsAnimating] = useState(false);
   const [remainingCooldown, setRemainingCooldown] = useState<number>(() =>
     getRemainingCooldown(lastRefreshTime, cooldownSeconds),
@@ -62,11 +64,13 @@ export const RefreshButton: React.FC<RefreshButtonProps> = ({
       className={`refresh-button ${isLoading ? "loading" : ""} ${isAnimating ? "animating" : ""} ${isCooldownActive ? "cooldown" : ""}`}
       onClick={handleClick}
       disabled={isDisabled}
-      aria-label="Refresh image"
+      aria-label={t("buttons.refreshImage")}
       title={
         isCooldownActive
-          ? `Please wait ${Math.ceil(remainingCooldown)}s before refreshing`
-          : "Refresh image (Press R or Space)"
+          ? t("buttons.refreshCooldown", {
+              seconds: Math.ceil(remainingCooldown),
+            })
+          : t("buttons.refreshShortcut")
       }
     >
       {isCooldownActive ? (

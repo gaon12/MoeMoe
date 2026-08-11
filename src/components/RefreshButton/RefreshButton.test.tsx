@@ -4,6 +4,10 @@ import { act, cleanup, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { RefreshButton } from "./RefreshButton";
 
+vi.mock("react-i18next", () => ({
+  useTranslation: () => ({ t: (key: string) => key }),
+}));
+
 describe("RefreshButton", () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -25,7 +29,7 @@ describe("RefreshButton", () => {
     );
 
     const button = screen.getByRole<HTMLButtonElement>("button", {
-      name: "Refresh image",
+      name: "buttons.refreshImage",
     });
     expect(button.disabled).toBe(true);
     expect(button.textContent).toContain("3");

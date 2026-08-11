@@ -179,7 +179,12 @@
   "buttons": {
     "refresh": "更新",
     "settings": "設定",
-    "fullscreen": "フルスクリーン"
+    "fullscreen": "フルスクリーン",
+    "refreshImage": "壁紙を更新",
+    "refreshCooldown": "{{seconds}}秒後に更新できます",
+    "refreshShortcut": "壁紙を更新（R またはスペース）",
+    "downloadImage": "画像をダウンロード",
+    "selectFormat": "ファイル形式を選択"
   },
   "image": {
     "attribution": {

@@ -179,7 +179,12 @@
   "buttons": {
     "refresh": "Refresh",
     "settings": "Settings",
-    "fullscreen": "Fullscreen"
+    "fullscreen": "Fullscreen",
+    "refreshImage": "Refresh wallpaper",
+    "refreshCooldown": "Refresh available in {{seconds}}s",
+    "refreshShortcut": "Refresh wallpaper (R or Space)",
+    "downloadImage": "Download image",
+    "selectFormat": "Select format"
   },
   "image": {
     "attribution": {

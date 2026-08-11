@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import "./DownloadButton.css";
 
 interface DownloadButtonProps {
@@ -12,6 +13,7 @@ export const DownloadButton: React.FC<DownloadButtonProps> = ({
   imageUrl,
   imageName = "anime-image",
 }) => {
+  const { t } = useTranslation();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
@@ -143,8 +145,8 @@ export const DownloadButton: React.FC<DownloadButtonProps> = ({
         className={`download-button ${isDownloading ? "downloading" : ""}`}
         onClick={handleButtonClick}
         disabled={!imageUrl || isDownloading}
-        aria-label="Download image"
-        title="Download image"
+        aria-label={t("buttons.downloadImage")}
+        title={t("buttons.downloadImage")}
       >
         {isDownloading ? (
           <svg
@@ -177,7 +179,9 @@ export const DownloadButton: React.FC<DownloadButtonProps> = ({
 
       {isMenuOpen && (
         <div className="download-menu">
-          <div className="download-menu-header">Select Format</div>
+          <div className="download-menu-header">
+            {t("buttons.selectFormat")}
+          </div>
           <button
             className="download-menu-item"
             onClick={() => handleDownload("jpg")}
