@@ -1,4 +1,12 @@
 {
+  "spotlight": {
+    "favorite": "この壁紙を保存",
+    "gallery": "保存した壁紙",
+    "notForMe": "好みではない",
+    "empty": "保存した壁紙はありません。",
+    "remove": "削除",
+    "close": "閉じる"
+  },
   "app": {
     "title": "モエモエ - アニメ壁紙時計"
   },

@@ -1,4 +1,12 @@
 {
+  "spotlight": {
+    "favorite": "이 배경화면 저장",
+    "gallery": "저장한 배경화면",
+    "notForMe": "내 취향 아님",
+    "empty": "저장한 배경화면이 없습니다.",
+    "remove": "삭제",
+    "close": "닫기"
+  },
   "app": {
     "title": "모에모에 - 애니메이션 배경화면 시계"
   },

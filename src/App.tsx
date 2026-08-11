@@ -14,6 +14,8 @@ import { type AnimeImage } from "./types/image";
 import { useApp } from "./contexts/useApp";
 import { useSyncedTime } from "./hooks/useSyncedTime";
 import { WidgetDock } from "./components/WidgetDock/WidgetDock";
+import { SpotlightActions } from "./components/SpotlightActions/SpotlightActions";
+import { useWallpaperLibrary } from "./hooks/useWallpaperLibrary";
 import "./App.css";
 
 function App() {
@@ -31,6 +33,14 @@ function App() {
     settings.useServerTime,
     settings.serverTimeUpdateIntervalSec,
   );
+  const {
+    favorites,
+    blockedUrls,
+    isFavorite,
+    toggleFavorite,
+    removeFavorite,
+    blockWallpaper,
+  } = useWallpaperLibrary();
 
   const handleRefresh = useCallback(() => {
     if (isLoadingImage) return;
@@ -77,6 +87,15 @@ function App() {
   const handleImageError = useCallback(() => {
     setIsLoadingImage(false);
   }, []);
+
+  const handleDismissWallpaper = useCallback(
+    (image: AnimeImage) => {
+      blockWallpaper(image);
+      setIsLoadingImage(true);
+      window.setTimeout(() => imageBackgroundRef.current?.refresh(), 0);
+    },
+    [blockWallpaper],
+  );
 
   // Cleanup timer on unmount or interval change
   useEffect(() => {
@@ -247,6 +266,7 @@ function App() {
         letterboxCustomColor={settings.letterboxCustomColor}
         onImageLoad={handleImageLoad}
         onImageError={handleImageError}
+        excludedUrls={blockedUrls}
       />
       <div className="content">
         <Clock currentTime={currentTime} />
@@ -266,6 +286,14 @@ function App() {
           onRefresh={handleRefresh}
           isLoading={isLoadingImage}
           lastRefreshTime={lastRefreshTime}
+        />
+        <SpotlightActions
+          currentImage={currentImage}
+          favorites={favorites}
+          isFavorite={isFavorite(currentImage?.url)}
+          onToggleFavorite={toggleFavorite}
+          onRemoveFavorite={removeFavorite}
+          onDismiss={handleDismissWallpaper}
         />
       </div>
       {settings.imageChangeInterval > 0 && (

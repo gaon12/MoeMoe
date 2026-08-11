@@ -27,6 +27,7 @@ interface ImageBackgroundProps {
   letterboxCustomColor?: string;
   onImageLoad?: (image: AnimeImage) => void;
   onImageError?: (error: Error) => void;
+  excludedUrls?: string[];
 }
 
 export interface ImageBackgroundHandle {
@@ -47,6 +48,7 @@ export const ImageBackground = forwardRef<
       letterboxCustomColor = "#1a1a1a",
       onImageLoad,
       onImageError,
+      excludedUrls = [],
     },
     ref,
   ) => {
@@ -193,6 +195,9 @@ export const ImageBackground = forwardRef<
               signal: controller.signal,
             });
             if (isStale()) return;
+            if (excludedUrls.includes(candidate.url)) {
+              throw new Error(`Wallpaper is excluded: ${candidate.url}`);
+            }
 
             const img = new Image();
             await new Promise<void>((resolve, reject) => {
@@ -320,6 +325,7 @@ export const ImageBackground = forwardRef<
       imageAspectPreference,
       onImageLoad,
       onImageError,
+      excludedUrls,
       getViewportDimensions,
       matchesAspectPreference,
     ]);

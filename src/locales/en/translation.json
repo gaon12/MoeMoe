@@ -1,4 +1,12 @@
 {
+  "spotlight": {
+    "favorite": "Save this wallpaper",
+    "gallery": "Saved wallpapers",
+    "notForMe": "Not for me",
+    "empty": "No saved wallpapers yet.",
+    "remove": "Remove",
+    "close": "Close"
+  },
   "app": {
     "title": "MoeMoe - Anime Wallpaper Clock"
   },
