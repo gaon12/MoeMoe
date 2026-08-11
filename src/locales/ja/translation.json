@@ -66,10 +66,32 @@
       "picRe": "Pic.re",
       "nekosapi": "NekosAPI.com",
       "wallhaven": "Wallhaven (SFWアニメ)",
+      "userUploads": "ユーザー画像",
       "random": "ランダム",
       "selectAll": "すべて選択",
       "deselectAll": "すべて解除",
       "atLeastOne": "少なくとも1つのソースを選択してください。"
+    },
+    "userImages": {
+      "title": "ユーザー画像",
+      "description": "JPEG、PNG、WebP、AVIFをこのブラウザーに保存します。1ファイル{{maxSize}}、50件、合計250MBまでです。",
+      "add": "画像を追加",
+      "processing": "処理中…",
+      "count": "{{count}}件保存済み",
+      "added": "{{count}}件を追加し、重複{{duplicates}}件をスキップしました。",
+      "remove": "削除",
+      "removeNamed": "{{name}}を削除",
+      "errors": {
+        "unsupported": "未対応の形式です。JPEG、PNG、WebP、AVIFを選択してください。",
+        "tooLarge": "ファイルが空か、1ファイル25MBの上限を超えています。",
+        "tooMany": "ユーザー画像は50件まで保存できます。",
+        "quota": "ユーザー画像またはブラウザーの保存容量を超えました。",
+        "decode": "実際の画像としてデコードできないファイルです。",
+        "dimensions": "画像サイズが不正か、1億ピクセルの上限を超えています。",
+        "unavailable": "このブラウザーではローカル画像ストレージを利用できません。",
+        "empty": "保存されたユーザー画像がありません。",
+        "unknown": "ユーザー画像を処理できませんでした。コンソールで原因を確認してください。"
+      }
     },
     "image": {
       "title": "画像設定",

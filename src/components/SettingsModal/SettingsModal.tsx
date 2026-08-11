@@ -42,8 +42,25 @@ export const SettingsModal = () => {
     `${n}${i18n.language === "ko" ? "초" : i18n.language === "ja" ? "秒" : "s"}`;
 
   useEffect(() => {
-    setLocalSettings(settings);
-  }, [settings]);
+    if (!isSettingsOpen) setLocalSettings(settings);
+  }, [isSettingsOpen, settings]);
+
+  const handleUserImagesAvailabilityChange = useCallback(
+    (available: boolean) => {
+      const withoutUserImages = settings.imageSources.filter(
+        (source) => source !== "user_uploads",
+      );
+      const imageSources = available
+        ? settings.imageSources.includes("user_uploads")
+          ? settings.imageSources
+          : [...settings.imageSources, "user_uploads" as const]
+        : withoutUserImages.length > 0
+          ? withoutUserImages
+          : ["pic_re" as const];
+      updateSettings({ imageSources });
+    },
+    [settings.imageSources, updateSettings],
+  );
 
   const handleClose = useCallback(() => {
     setIsSettingsOpen(false);
@@ -311,6 +328,9 @@ export const SettingsModal = () => {
             <SettingsImageTab
               localSettings={localSettings}
               setLocalSettings={setLocalSettings}
+              onUserImagesAvailabilityChange={
+                handleUserImagesAvailabilityChange
+              }
             />
           )}
 

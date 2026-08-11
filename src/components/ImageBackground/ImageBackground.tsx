@@ -260,7 +260,10 @@ export const ImageBackground = forwardRef<
 
             image = candidate;
             loadedImg = img;
-            if (candidate.url !== previousUrl && matchesAspectPreference(img)) {
+            if (
+              candidate.url !== previousUrl &&
+              (candidate.isLocal || matchesAspectPreference(img))
+            ) {
               break;
             }
           } catch (error) {
@@ -545,22 +548,34 @@ export const ImageBackground = forwardRef<
               )}
 
               <div className="image-attribution">
-                <a
-                  href={getOriginalUrl(currentImage)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="artwork-link"
-                  title={t("image.attribution.openOriginal")}
-                  aria-label={t("image.attribution.openOriginal")}
-                >
-                  <span className="artwork-title">
-                    {getArtworkTitle(currentImage)}
+                {currentImage.isLocal ? (
+                  <span className="artwork-link">
+                    <span className="artwork-title">
+                      {getArtworkTitle(currentImage)}
+                    </span>
+                    <span className="artwork-separator"> - </span>
+                    <span className="artwork-artist">
+                      {getArtistName(currentImage)}
+                    </span>
                   </span>
-                  <span className="artwork-separator"> - </span>
-                  <span className="artwork-artist">
-                    {getArtistName(currentImage)}
-                  </span>
-                </a>
+                ) : (
+                  <a
+                    href={getOriginalUrl(currentImage)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="artwork-link"
+                    title={t("image.attribution.openOriginal")}
+                    aria-label={t("image.attribution.openOriginal")}
+                  >
+                    <span className="artwork-title">
+                      {getArtworkTitle(currentImage)}
+                    </span>
+                    <span className="artwork-separator"> - </span>
+                    <span className="artwork-artist">
+                      {getArtistName(currentImage)}
+                    </span>
+                  </a>
+                )}
                 {!currentImage.animeName && !currentImage.artistName && (
                   <button
                     type="button"

@@ -1,5 +1,10 @@
 import { useTranslation } from "react-i18next";
-import type { Dispatch, SetStateAction } from "react";
+import {
+  useCallback,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
 import type {
   AppSettings,
   ImageAspectPreference,
@@ -7,21 +12,26 @@ import type {
   LetterboxFillMode,
 } from "../../types/settings";
 import { ALL_IMAGE_SOURCES, type ImageSource } from "../../types/image";
+import { UserImageManager } from "./UserImageManager";
 
 interface SettingsImageTabProps {
   localSettings: AppSettings;
   setLocalSettings: Dispatch<SetStateAction<AppSettings>>;
+  onUserImagesAvailabilityChange: (available: boolean) => void;
 }
 
 export const SettingsImageTab = ({
   localSettings,
   setLocalSettings,
+  onUserImagesAvailabilityChange,
 }: SettingsImageTabProps) => {
   const { t, i18n } = useTranslation();
   const secondsLabel = (value: number) =>
     `${value}${i18n.language === "ko" ? "초" : i18n.language === "ja" ? "秒" : "s"}`;
+  const [userImageCount, setUserImageCount] = useState(0);
 
   const toggleImageSource = (source: ImageSource) => {
+    if (source === "user_uploads" && userImageCount === 0) return;
     const newSources = localSettings.imageSources.includes(source)
       ? localSettings.imageSources.filter((s) => s !== source)
       : [...localSettings.imageSources, source];
@@ -31,7 +41,12 @@ export const SettingsImageTab = ({
   const allSourceValues = ALL_IMAGE_SOURCES;
 
   const selectAllSources = () =>
-    setLocalSettings({ ...localSettings, imageSources: allSourceValues });
+    setLocalSettings({
+      ...localSettings,
+      imageSources: allSourceValues.filter(
+        (source) => source !== "user_uploads" || userImageCount > 0,
+      ),
+    });
   const deselectAllSources = () =>
     setLocalSettings({ ...localSettings, imageSources: [] });
 
@@ -45,7 +60,32 @@ export const SettingsImageTab = ({
     pic_re: "settings.imageSource.picRe",
     nekosapi: "settings.imageSource.nekosapi",
     wallhaven: "settings.imageSource.wallhaven",
+    user_uploads: "settings.imageSource.userUploads",
   };
+
+  const handleUserImagesAdded = useCallback(() => {
+    setLocalSettings((current) => ({
+      ...current,
+      imageSources: current.imageSources.includes("user_uploads")
+        ? current.imageSources
+        : [...current.imageSources, "user_uploads"],
+    }));
+    onUserImagesAvailabilityChange(true);
+  }, [onUserImagesAvailabilityChange, setLocalSettings]);
+
+  const handleLastUserImageRemoved = useCallback(() => {
+    setLocalSettings((current) => {
+      const remainingSources = current.imageSources.filter(
+        (source) => source !== "user_uploads",
+      );
+      return {
+        ...current,
+        imageSources:
+          remainingSources.length > 0 ? remainingSources : ["pic_re"],
+      };
+    });
+    onUserImagesAvailabilityChange(false);
+  }, [onUserImagesAvailabilityChange, setLocalSettings]);
 
   const availableSources: Array<{ value: ImageSource; label: string }> =
     allSourceValues.map((value) => ({
@@ -91,6 +131,9 @@ export const SettingsImageTab = ({
                   id={`source-${source.value}`}
                   className="settings-checkbox"
                   checked={localSettings.imageSources.includes(source.value)}
+                  disabled={
+                    source.value === "user_uploads" && userImageCount === 0
+                  }
                   onChange={() => toggleImageSource(source.value)}
                 />
                 <label
@@ -111,6 +154,12 @@ export const SettingsImageTab = ({
             </p>
           )}
         </div>
+
+        <UserImageManager
+          onCountChange={setUserImageCount}
+          onImagesAdded={handleUserImagesAdded}
+          onLastImageRemoved={handleLastUserImageRemoved}
+        />
 
         {/* NSFW Toggle */}
         <div className="settings-option">

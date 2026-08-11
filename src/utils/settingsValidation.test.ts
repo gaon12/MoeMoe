@@ -42,4 +42,11 @@ describe("sanitizeSettings", () => {
       { id: "same-1", type: "animeQuote" },
     ]);
   });
+
+  it("preserves the IndexedDB-backed user image source", () => {
+    expect(
+      sanitizeSettings({ imageSources: ["pic_re", "user_uploads"] })
+        .imageSources,
+    ).toEqual(["pic_re", "user_uploads"]);
+  });
 });

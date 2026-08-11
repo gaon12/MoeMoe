@@ -12,6 +12,7 @@ import {
   getProxiedImageUrl,
   withCacheBust,
 } from "./imageApiUtils";
+import { fetchRandomUserImage } from "./userImageStore";
 
 /**
  * Response structure from nekos.best API
@@ -628,6 +629,9 @@ export async function fetchRandomImage(
 
     case "wallhaven":
       return await fetchFromWallhaven(aspect, signal);
+
+    case "user_uploads":
+      return await fetchRandomUserImage(signal);
 
     case "fallback":
       return getFallbackImage();

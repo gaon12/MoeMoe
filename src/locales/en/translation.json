@@ -66,10 +66,32 @@
       "picRe": "Pic.re",
       "nekosapi": "NekosAPI.com",
       "wallhaven": "Wallhaven (SFW Anime)",
+      "userUploads": "User images",
       "random": "Random",
       "selectAll": "Select All",
       "deselectAll": "Deselect All",
       "atLeastOne": "Select at least one source."
+    },
+    "userImages": {
+      "title": "User images",
+      "description": "Store JPEG, PNG, WebP, or AVIF files in this browser. Up to {{maxSize}} per file, 50 files, and 250 MB total.",
+      "add": "Add images",
+      "processing": "Processing…",
+      "count": "{{count}} stored",
+      "added": "Added {{count}} and skipped {{duplicates}} duplicate(s).",
+      "remove": "Remove",
+      "removeNamed": "Remove {{name}}",
+      "errors": {
+        "unsupported": "Unsupported file type. Choose a JPEG, PNG, WebP, or AVIF image.",
+        "tooLarge": "The file is empty or exceeds the 25 MB per-file limit.",
+        "tooMany": "You can store up to 50 user images.",
+        "quota": "The user-image collection or browser storage quota was exceeded.",
+        "decode": "The file could not be decoded as a real image.",
+        "dimensions": "The image dimensions are invalid or exceed 100 megapixels.",
+        "unavailable": "Local image storage is unavailable in this browser.",
+        "empty": "No user images are stored.",
+        "unknown": "The user image could not be processed. Check the console for the cause."
+      }
     },
     "image": {
       "title": "Image Settings",

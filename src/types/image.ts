@@ -13,6 +13,9 @@ export interface AnimeImage {
   artistHref?: string;
   sourceUrl?: string;
   dimensions?: ImageDimensions;
+  /** IndexedDB-backed local image. Its blob URL is valid only for this tab. */
+  isLocal?: boolean;
+  localImageId?: string;
 }
 
 export interface ImageDimensions {
@@ -33,6 +36,7 @@ export type ImageSource =
   | "pic_re"
   | "nekosapi"
   | "wallhaven"
+  | "user_uploads"
   | "random"
   | "fallback";
 
@@ -49,6 +53,7 @@ export const ALL_IMAGE_SOURCES: ImageSource[] = [
   "pic_re",
   "nekosapi",
   "wallhaven",
+  "user_uploads",
 ];
 
 /**

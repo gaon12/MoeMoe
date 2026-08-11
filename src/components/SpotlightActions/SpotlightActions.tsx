@@ -27,13 +27,14 @@ export function SpotlightActions({
   const galleryRef = useRef<HTMLDivElement>(null);
   const closeGallery = useCallback(() => setIsGalleryOpen(false), []);
   useModalAccessibility(isGalleryOpen, galleryRef, closeGallery);
+  const canStoreFeedback = Boolean(currentImage && !currentImage.isLocal);
 
   return (
     <>
       <button
         type="button"
         className={`spotlight-action${isFavorite ? " active" : ""}`}
-        disabled={!currentImage}
+        disabled={!canStoreFeedback}
         onClick={() => currentImage && onToggleFavorite(currentImage)}
         aria-label={t("spotlight.favorite")}
         title={t("spotlight.favorite")}
@@ -52,7 +53,7 @@ export function SpotlightActions({
       <button
         type="button"
         className="spotlight-action"
-        disabled={!currentImage}
+        disabled={!canStoreFeedback}
         onClick={() => currentImage && onDismiss(currentImage)}
         aria-label={t("spotlight.notForMe")}
         title={t("spotlight.notForMe")}

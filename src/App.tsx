@@ -90,6 +90,7 @@ function App() {
 
   const handleDismissWallpaper = useCallback(
     (image: AnimeImage) => {
+      if (image.isLocal) return;
       blockWallpaper(image);
       setIsLoadingImage(true);
       window.setTimeout(() => imageBackgroundRef.current?.refresh(), 0);
@@ -290,7 +291,7 @@ function App() {
         <SpotlightActions
           currentImage={currentImage}
           favorites={favorites}
-          isFavorite={isFavorite(currentImage?.url)}
+          isFavorite={!currentImage?.isLocal && isFavorite(currentImage?.url)}
           onToggleFavorite={toggleFavorite}
           onRemoveFavorite={removeFavorite}
           onDismiss={handleDismissWallpaper}
