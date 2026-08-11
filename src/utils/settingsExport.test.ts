@@ -29,9 +29,11 @@ describe("settings export", () => {
           settings: { theme: "light" },
         }),
       ),
-    ).toEqual({ theme: "light" });
+    ).toMatchObject({ theme: "light" });
 
-    expect(parseSettingsExport(JSON.stringify({ theme: "dark" }))).toEqual({
+    expect(
+      parseSettingsExport(JSON.stringify({ theme: "dark" })),
+    ).toMatchObject({
       theme: "dark",
     });
   });
@@ -39,5 +41,9 @@ describe("settings export", () => {
   it("rejects invalid payloads", () => {
     expect(() => parseSettingsExport("[]")).toThrow(/JSON object/);
     expect(() => parseSettingsExport("{")).toThrow();
+    expect(() => parseSettingsExport('{"widgets":{}}')).not.toThrow();
+    expect(() => parseSettingsExport('{"totallyUnknown":true}')).toThrow(
+      /recognized settings/,
+    );
   });
 });

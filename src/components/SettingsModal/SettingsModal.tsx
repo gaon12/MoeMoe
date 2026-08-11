@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect } from "react";
+import { useCallback, useRef, useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useApp } from "../../contexts/useApp";
 import {
@@ -17,6 +17,7 @@ import {
   createSettingsExport,
   parseSettingsExport,
 } from "../../utils/settingsExport";
+import { useModalAccessibility } from "../../hooks/useModalAccessibility";
 import "./SettingsModal.css";
 
 export const SettingsModal = () => {
@@ -36,6 +37,7 @@ export const SettingsModal = () => {
     "idle" | "imported" | "failed"
   >("idle");
   const importInputRef = useRef<HTMLInputElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
 
   const secondsLabel = (n: number) =>
     `${n}${i18n.language === "ko" ? "초" : i18n.language === "ja" ? "秒" : "s"}`;
@@ -214,14 +216,16 @@ export const SettingsModal = () => {
     setLocalSettings(settings);
   }, [settings]);
 
-  if (!isSettingsOpen) return null;
-
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     setIsSettingsOpen(false);
     setLocalSettings(settings);
     setActiveTab("general");
     setSettingsTransferStatus("idle");
-  };
+  }, [setIsSettingsOpen, settings]);
+
+  useModalAccessibility(isSettingsOpen, modalRef, handleClose);
+
+  if (!isSettingsOpen) return null;
 
   const handleSave = () => {
     if (localSettings.imageSources.length === 0) return;
@@ -385,9 +389,18 @@ export const SettingsModal = () => {
 
   return (
     <div className="settings-modal-overlay" onClick={handleOverlayClick}>
-      <div className="settings-modal">
+      <div
+        ref={modalRef}
+        className="settings-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="settings-modal-title"
+        tabIndex={-1}
+      >
         <div className="settings-header">
-          <h2 className="settings-title">{t("settings.title")}</h2>
+          <h2 id="settings-modal-title" className="settings-title">
+            {t("settings.title")}
+          </h2>
           <button
             className="settings-close"
             onClick={handleClose}

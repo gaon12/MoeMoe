@@ -1,0 +1,45 @@
+import { describe, expect, it } from "vitest";
+import { defaultSettings } from "../types/settings";
+import { sanitizeSettings } from "./settingsValidation";
+
+describe("sanitizeSettings", () => {
+  it("preserves a valid cover fit mode across persistence", () => {
+    expect(sanitizeSettings({ imageFitMode: "cover" }).imageFitMode).toBe(
+      "cover",
+    );
+  });
+
+  it("filters untrusted values and clamps numeric settings", () => {
+    const result = sanitizeSettings({
+      theme: "neon",
+      fontSize: Infinity,
+      imageSources: ["pic_re", "javascript:"],
+      imageChangeInterval: -100,
+      letterboxCustomColor: "url(evil)",
+      widgets: {},
+    });
+
+    expect(result).toMatchObject({
+      theme: defaultSettings.theme,
+      fontSize: defaultSettings.fontSize,
+      imageSources: ["pic_re"],
+      imageChangeInterval: 0,
+      letterboxCustomColor: defaultSettings.letterboxCustomColor,
+      widgets: defaultSettings.widgets,
+    });
+  });
+
+  it("migrates legacy widgets and removes duplicate IDs", () => {
+    const result = sanitizeSettings({
+      widgets: [
+        { id: "same", type: "date", enabled: true },
+        { id: "same", type: "quote", enabled: true },
+      ],
+    });
+
+    expect(result.widgets.map(({ id, type }) => ({ id, type }))).toEqual([
+      { id: "same", type: "clock" },
+      { id: "same-1", type: "animeQuote" },
+    ]);
+  });
+});
