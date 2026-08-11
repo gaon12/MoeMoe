@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { fetchWithTimeout } from "../utils/fetchWithTimeout";
 
 export function useSyncedTime(
   useServerTime: boolean,
@@ -30,7 +31,9 @@ export function useSyncedTime(
       const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
       const requestUrl = `${baseUrl}${encodeURIComponent(tz)}`;
       const t0 = Date.now();
-      const response = await fetch(requestUrl, { cache: "no-store" });
+      const response = await fetchWithTimeout(requestUrl, {
+        cache: "no-store",
+      });
       const t3 = Date.now();
       if (!response.ok) {
         const snippet = await response

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { fetchWithTimeout } from "../../utils/fetchWithTimeout";
 import type {
   LocationData,
   LocationState,
@@ -7,7 +8,15 @@ import type {
   WeatherState,
 } from "./widgetTypes";
 
-const DEFAULT_COORDS = { latitude: 37.5665, longitude: 126.978 };
+type Coordinates = { latitude: number; longitude: number };
+type ReverseGeocodeResult = {
+  name?: string;
+  region: string;
+  country: string;
+} | null;
+
+let coordinatesRequest: Promise<Coordinates> | null = null;
+const reverseGeocodeRequests = new Map<string, Promise<ReverseGeocodeResult>>();
 
 export function useWeatherData(
   shouldFetch: boolean,
@@ -187,7 +196,7 @@ async function fetchWeatherApi(
     aqi: "no",
   });
 
-  const response = await fetch(
+  const response = await fetchWithTimeout(
     `https://api.weatherapi.com/v1/current.json?${params.toString()}`,
     {
       cache: "no-store",
@@ -248,7 +257,22 @@ async function fetchWeatherApi(
  * OpenStreetMap Nominatim API를 사용하여 위도/경도로부터 대략적인 주소를 가져오는 함수
  * - name, region, country 정도만 사용한다.
  */
-async function reverseGeocode(coords: { latitude: number; longitude: number }) {
+function reverseGeocode(coords: Coordinates) {
+  const cacheKey = `${coords.latitude.toFixed(4)},${coords.longitude.toFixed(4)}`;
+  const cachedRequest = reverseGeocodeRequests.get(cacheKey);
+  if (cachedRequest) return cachedRequest;
+
+  const request = requestReverseGeocode(coords).catch((error) => {
+    reverseGeocodeRequests.delete(cacheKey);
+    throw error;
+  });
+  reverseGeocodeRequests.set(cacheKey, request);
+  return request;
+}
+
+async function requestReverseGeocode(
+  coords: Coordinates,
+): Promise<ReverseGeocodeResult> {
   try {
     const params = new URLSearchParams({
       format: "jsonv2",
@@ -259,7 +283,7 @@ async function reverseGeocode(coords: { latitude: number; longitude: number }) {
       email: "support@moemoe.app",
     });
 
-    const response = await fetch(
+    const response = await fetchWithTimeout(
       `https://nominatim.openstreetmap.org/reverse?${params.toString()}`,
       {
         headers: { Accept: "application/json" },
@@ -356,12 +380,19 @@ function formatTimezoneLabel(tz?: string) {
  * 브라우저의 Geolocation API를 사용하여 현재 좌표를 가져온다.
  * - 우선 사용자에게 권한을 요청하여 실제 위치를 사용한다.
  * - 권한을 얻지 못하거나 실패한 경우, IP 기반 역지오코딩 API를 사용해 대략적인 위치를 얻는다.
- * - 둘 다 실패하면 DEFAULT_COORDS(서울 좌표)를 반환한다.
+ * - 둘 다 실패하면 잘못된 기본 위치를 보여 주지 않고 원인을 포함한 오류를 반환한다.
  */
-async function getCoordinates(): Promise<{
-  latitude: number;
-  longitude: number;
-}> {
+function getCoordinates(): Promise<Coordinates> {
+  if (!coordinatesRequest) {
+    coordinatesRequest = resolveCoordinates().catch((error) => {
+      coordinatesRequest = null;
+      throw error;
+    });
+  }
+  return coordinatesRequest;
+}
+
+async function resolveCoordinates(): Promise<Coordinates> {
   // 1) Geolocation API 시도
   if (typeof navigator !== "undefined" && navigator.geolocation) {
     try {
@@ -403,59 +434,66 @@ async function getCoordinates(): Promise<{
         ipApiUrl = `${ipApiUrl}/json`;
       }
 
-      const response = await fetch(ipApiUrl, { cache: "no-store" });
-      if (response.ok) {
-        const data = await response.json();
-        // ipinfo.io 형식(lat, lon이 있는 loc 문자열 등)을 가정하되,
-        // 안전하게 파싱하여 lat/lon을 얻는다.
-        let latitude: number | null = null;
-        let longitude: number | null = null;
+      const response = await fetchWithTimeout(ipApiUrl, {
+        cache: "no-store",
+      });
+      if (!response.ok) {
+        throw new Error(`IP geolocation error: ${response.status}`);
+      }
 
-        if (typeof data?.loc === "string") {
-          const [latStr, lonStr] = data.loc.split(",");
-          const lat = Number(latStr);
-          const lon = Number(lonStr);
-          if (Number.isFinite(lat) && Number.isFinite(lon)) {
-            latitude = lat;
-            longitude = lon;
-          }
-        }
+      const data = await response.json();
+      // ipinfo.io 형식(lat, lon이 있는 loc 문자열 등)을 가정하되,
+      // 안전하게 파싱하여 lat/lon을 얻는다.
+      let latitude: number | null = null;
+      let longitude: number | null = null;
 
-        if (
-          latitude == null ||
-          longitude == null ||
-          !Number.isFinite(latitude) ||
-          !Number.isFinite(longitude)
-        ) {
-          // 다른 구조를 가진 API를 사용할 수도 있으니, 일반적인 lat/lon 필드도 시도한다.
-          const lat =
-            typeof data?.latitude === "number"
-              ? data.latitude
-              : Number(data?.latitude);
-          const lon =
-            typeof data?.longitude === "number"
-              ? data.longitude
-              : Number(data?.longitude);
-          if (Number.isFinite(lat) && Number.isFinite(lon)) {
-            latitude = lat;
-            longitude = lon;
-          }
-        }
-
-        if (
-          latitude != null &&
-          longitude != null &&
-          Number.isFinite(latitude) &&
-          Number.isFinite(longitude)
-        ) {
-          return { latitude, longitude };
+      if (typeof data?.loc === "string") {
+        const [latStr, lonStr] = data.loc.split(",");
+        const lat = Number(latStr);
+        const lon = Number(lonStr);
+        if (Number.isFinite(lat) && Number.isFinite(lon)) {
+          latitude = lat;
+          longitude = lon;
         }
       }
+
+      if (
+        latitude == null ||
+        longitude == null ||
+        !Number.isFinite(latitude) ||
+        !Number.isFinite(longitude)
+      ) {
+        // 다른 구조를 가진 API를 사용할 수도 있으니, 일반적인 lat/lon 필드도 시도한다.
+        const lat =
+          typeof data?.latitude === "number"
+            ? data.latitude
+            : Number(data?.latitude);
+        const lon =
+          typeof data?.longitude === "number"
+            ? data.longitude
+            : Number(data?.longitude);
+        if (Number.isFinite(lat) && Number.isFinite(lon)) {
+          latitude = lat;
+          longitude = lon;
+        }
+      }
+
+      if (
+        latitude != null &&
+        longitude != null &&
+        Number.isFinite(latitude) &&
+        Number.isFinite(longitude)
+      ) {
+        return { latitude, longitude };
+      }
+
+      throw new Error("IP geolocation response did not include coordinates");
     }
   } catch (error) {
     console.warn("IP-based reverse geocoding failed:", error);
   }
 
-  // 3) 모든 시도가 실패한 경우 기본 좌표(서울) 사용
-  return DEFAULT_COORDS;
+  throw new Error(
+    "Location unavailable: allow browser location access or configure VITE_IP_REVERSE_GEOCODING_API_URL",
+  );
 }

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { fetchWithTimeout } from "../../utils/fetchWithTimeout";
 import type { AnimeQuoteState } from "./widgetTypes";
 
 export function useAnimeQuoteData(shouldFetch: boolean) {
@@ -51,7 +52,7 @@ export function useAnimeQuoteData(shouldFetch: boolean) {
     setState({ status: "loading" });
 
     try {
-      const response = await fetch(apiUrl, {
+      const response = await fetchWithTimeout(apiUrl, {
         cache: "no-store",
       });
 
