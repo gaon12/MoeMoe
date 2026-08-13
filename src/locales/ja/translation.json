@@ -182,6 +182,7 @@
     "fullscreen": "フルスクリーン",
     "refreshImage": "壁紙を更新",
     "refreshCooldown": "{{seconds}}秒後に更新できます",
+    "refreshLoading": "別の壁紙を読み込んでいます",
     "refreshShortcut": "壁紙を更新（R またはスペース）",
     "downloadImage": "画像をダウンロード",
     "selectFormat": "ファイル形式を選択"

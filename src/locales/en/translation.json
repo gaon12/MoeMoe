@@ -182,6 +182,7 @@
     "fullscreen": "Fullscreen",
     "refreshImage": "Refresh wallpaper",
     "refreshCooldown": "Refresh available in {{seconds}}s",
+    "refreshLoading": "Loading another wallpaper",
     "refreshShortcut": "Refresh wallpaper (R or Space)",
     "downloadImage": "Download image",
     "selectFormat": "Select format"
