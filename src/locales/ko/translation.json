@@ -167,7 +167,7 @@
     "time": {
       "title": "시간 소스",
       "useServerTime": "서버 시간 사용",
-      "useServerTimeDesc": "서버 시간 API에서 현재 시간을 받아 약간의 네트워크 지연을 보정합니다.",
+      "useServerTimeDesc": "배포 서버 또는 설정한 시간 API에 요청해 현재 시간을 받고 네트워크 지연을 보정합니다.",
       "updateInterval": "업데이트 주기"
     },
     "info": {

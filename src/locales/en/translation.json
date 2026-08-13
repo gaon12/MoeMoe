@@ -166,7 +166,7 @@
     "time": {
       "title": "Time Source",
       "useServerTime": "Use Server Time",
-      "useServerTimeDesc": "Fetch current time from a server API and compensate for network delay.",
+      "useServerTimeDesc": "Request the current time from the deployment server or configured API and compensate for network delay.",
       "updateInterval": "Update Interval"
     },
     "info": {

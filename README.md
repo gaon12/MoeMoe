@@ -33,15 +33,17 @@ macOS/Linux에서는 `cp .env.sample .env`를 사용하세요. `.env`와 `.env.*
 
 ## 환경 변수
 
-| 변수                                | 용도                               | 기본 권장값         |
-| ----------------------------------- | ---------------------------------- | ------------------- |
-| `VITE_FIX_CORS_API_URL`             | 이미지 다운로드용 CORS 프록시      | 비워 둠             |
-| `VITE_SERVER_TIME_API_URL`          | IANA 시간대를 뒤에 붙이는 시간 API | 비워 둠             |
-| `VITE_GITHUB_REPO_URL`              | 오류 신고 링크                     | 이 저장소 URL       |
-| `VITE_ANIME_QUOTE_API_URL`          | 명대사 위젯                        | `.env.sample` 참고  |
-| `VITE_IP_REVERSE_GEOCODING_API_URL` | 위치 권한 거절 시 IP 위치 조회     | `https://ipinfo.io` |
+| 변수                                | 용도                           | 기본 권장값         |
+| ----------------------------------- | ------------------------------ | ------------------- |
+| `VITE_FIX_CORS_API_URL`             | 이미지 다운로드용 CORS 프록시  | 비워 둠             |
+| `VITE_SERVER_TIME_API_URL`          | 선택적 외부 시간 API URL       | 비워 둠             |
+| `VITE_GITHUB_REPO_URL`              | 오류 신고 링크                 | 이 저장소 URL       |
+| `VITE_ANIME_QUOTE_API_URL`          | 명대사 위젯                    | `.env.sample` 참고  |
+| `VITE_IP_REVERSE_GEOCODING_API_URL` | 위치 권한 거절 시 IP 위치 조회 | `https://ipinfo.io` |
 
 `VITE_` 값은 빌드 결과에 공개됩니다. 비밀 키를 넣지 마세요. 외부 설정 URL은 HTTPS만 허용하며, CORS 프록시는 직접 관리하고 신뢰하는 서버만 사용해야 합니다. WeatherAPI 키는 설정 화면에 입력하며 브라우저 로컬 저장소에만 보관되지만, 클라이언트 앱 특성상 완전한 비밀로 취급할 수 없습니다. 설정 내보내기와 가져오기에서는 API 키를 제외합니다.
+
+서버 시간 사용 시 외부 시간 API URL이 비어 있으면 현재 배포 서버에 `HEAD` 요청을 보내 HTTP `Date` 헤더로 동기화합니다. 외부 API를 사용하려면 URL에 `{timezone}` 자리표시자를 넣거나 `timeZone`·`timezone`·`tz` 쿼리 매개변수를 사용할 수 있습니다.
 
 `npm run build`는 현재 빌드에 사용한 공개 `VITE_` 변수만 모아 `dist/.env`도 생성합니다. 따라서 서버에 `dist` 폴더를 그대로 업로드할 수 있습니다. 이 파일은 배포 설정을 함께 보관하기 위한 산출물이며, Vite 정적 앱은 런타임에 `.env`를 다시 읽지 않습니다. 값을 바꾼 뒤에는 반드시 다시 빌드하세요.
 

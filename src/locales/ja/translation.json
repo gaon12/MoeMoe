@@ -166,7 +166,7 @@
     "time": {
       "title": "時刻ソース",
       "useServerTime": "サーバー時刻を使用",
-      "useServerTimeDesc": "サーバーAPIから現在時刻を取得し、ネットワーク遅延を補正します。",
+      "useServerTimeDesc": "配信サーバーまたは設定した時刻APIから現在時刻を取得し、ネットワーク遅延を補正します。",
       "updateInterval": "更新間隔"
     },
     "info": {
