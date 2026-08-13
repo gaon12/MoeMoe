@@ -6,6 +6,7 @@ import {
   type ThemeMode,
 } from "../types/settings";
 import { sanitizeSettings } from "../utils/settingsValidation";
+import { resolveTheme, THEME_COLORS } from "../utils/theme";
 import { AppContext } from "./appContextValue";
 
 const STORAGE_KEY = "moemoe-settings";
@@ -39,15 +40,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const applyTheme = (theme: ThemeMode) => {
       const root = document.documentElement;
-
-      if (theme === "auto") {
-        const prefersDark = window.matchMedia(
-          "(prefers-color-scheme: dark)",
-        ).matches;
-        root.setAttribute("data-theme", prefersDark ? "dark" : "light");
-      } else {
-        root.setAttribute("data-theme", theme);
-      }
+      const prefersDark = window.matchMedia(
+        "(prefers-color-scheme: dark)",
+      ).matches;
+      const resolvedTheme = resolveTheme(theme, prefersDark);
+      root.setAttribute("data-theme", resolvedTheme);
+      document
+        .querySelector<HTMLMetaElement>('meta[name="theme-color"]')
+        ?.setAttribute("content", THEME_COLORS[resolvedTheme]);
     };
 
     applyTheme(settings.theme);
@@ -65,10 +65,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // Apply language
   useEffect(() => {
     if (i18n.language !== settings.language) {
-      i18n.changeLanguage(settings.language);
+      void i18n.changeLanguage(settings.language).catch((error: unknown) => {
+        console.error("Failed to change language:", error);
+      });
     }
     document.documentElement.lang = settings.language;
-    localStorage.setItem("moemoe-language", settings.language);
+    try {
+      localStorage.setItem("moemoe-language", settings.language);
+    } catch (error) {
+      console.error("Failed to save language:", error);
+    }
   }, [i18n, settings.language]);
 
   // Apply font size
@@ -91,7 +97,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const resetSettings = () => {
     setSettings(defaultSettings);
-    localStorage.removeItem(STORAGE_KEY);
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch (error) {
+      console.error("Failed to remove saved settings:", error);
+    }
   };
 
   return (

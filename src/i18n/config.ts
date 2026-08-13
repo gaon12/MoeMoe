@@ -18,7 +18,12 @@ const resources = {
 };
 
 // Get saved language from localStorage or detect browser language
-const savedLanguage = localStorage.getItem("moemoe-language");
+let savedLanguage: string | null = null;
+try {
+  savedLanguage = localStorage.getItem("moemoe-language");
+} catch (error) {
+  console.error("Failed to load the saved language:", error);
+}
 const browserLanguage = navigator.language.split("-")[0];
 const defaultLanguage =
   savedLanguage ||
@@ -26,16 +31,21 @@ const defaultLanguage =
     ? browserLanguage
     : "en");
 
-i18n.use(initReactI18next).init({
-  resources,
-  lng: defaultLanguage,
-  fallbackLng: "en",
-  interpolation: {
-    escapeValue: false,
-  },
-  react: {
-    useSuspense: false,
-  },
-});
+void i18n
+  .use(initReactI18next)
+  .init({
+    resources,
+    lng: defaultLanguage,
+    fallbackLng: "en",
+    interpolation: {
+      escapeValue: false,
+    },
+    react: {
+      useSuspense: false,
+    },
+  })
+  .catch((error: unknown) => {
+    console.error("Failed to initialize translations:", error);
+  });
 
 export default i18n;
