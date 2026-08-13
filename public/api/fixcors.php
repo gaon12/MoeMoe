@@ -130,6 +130,20 @@ function isAllowedNekosApiQuery(string $query): bool
     return true;
 }
 
+/** @param array<mixed> $value */
+function isListArray(array $value): bool
+{
+    $expectedKey = 0;
+    foreach ($value as $key => $_item) {
+        if ($key !== $expectedKey) {
+            return false;
+        }
+        ++$expectedKey;
+    }
+
+    return true;
+}
+
 /**
  * @return array{kind: 'image'|'json', maxBytes: int}|null
  */
@@ -410,7 +424,9 @@ if ($classification['kind'] === 'json') {
         rewind($body);
         $json = stream_get_contents($body);
         $decoded = is_string($json) ? json_decode($json, true) : null;
-        if (!is_array($decoded) || json_last_error() !== JSON_ERROR_NONE) {
+        $hasExpectedShape = is_array($decoded)
+            && (isListArray($decoded) || (isset($decoded['items']) && is_array($decoded['items'])));
+        if (!$hasExpectedShape || json_last_error() !== JSON_ERROR_NONE) {
             fclose($body);
             sendError(502, 'invalid_upstream_response', true);
         }
