@@ -15,7 +15,7 @@ import {
   type LetterboxFillMode,
 } from "../../types/settings";
 import { ImageErrorDialog, ImageMetadataDialog } from "./ImageDialogs";
-import { extractEdgeColor } from "./imageProcessing";
+import { extractEdgeColor, loadReadableImage } from "./imageProcessing";
 import {
   chooseWeightedImageSource,
   shouldAcceptWallpaperCandidate,
@@ -68,7 +68,6 @@ export const ImageBackground = forwardRef<
   ) => {
     const { t } = useTranslation();
     const [currentImage, setCurrentImage] = useState<AnimeImage | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
     const [hasError, setHasError] = useState(false);
     const [isTransitioning, setIsTransitioning] = useState(false);
     const [letterboxColor, setLetterboxColor] = useState<string>("#1a1a1a");
@@ -80,7 +79,7 @@ export const ImageBackground = forwardRef<
     const [metadataCopyState, setMetadataCopyState] = useState<
       "idle" | "copied" | "failed"
     >("idle");
-    const imageRef = useRef<HTMLImageElement>(null);
+    const preloadedImageRef = useRef<HTMLImageElement | null>(null);
     const currentImageRef = useRef<AnimeImage | null>(null);
     const requestSequenceRef = useRef(0);
     const abortControllerRef = useRef<AbortController | null>(null);
@@ -98,6 +97,42 @@ export const ImageBackground = forwardRef<
     useEffect(() => {
       feedbackRef.current = feedback;
     }, [feedback]);
+
+    useEffect(() => {
+      if (
+        imageFitMode !== "contain" ||
+        letterboxFillMode !== "edge-color" ||
+        !currentImage
+      ) {
+        return;
+      }
+
+      const controller = new AbortController();
+      const updateEdgeColor = async () => {
+        try {
+          let readableImage = preloadedImageRef.current;
+          if (
+            !readableImage ||
+            (!currentImage.isLocal && readableImage.crossOrigin !== "anonymous")
+          ) {
+            readableImage = await loadReadableImage(
+              currentImage.proxiedUrl ?? currentImage.url,
+              controller.signal,
+            );
+          }
+          if (!controller.signal.aborted) {
+            setLetterboxColor(extractEdgeColor(readableImage));
+          }
+        } catch (error) {
+          if (controller.signal.aborted) return;
+          console.warn("Edge-color sampling unavailable:", error);
+          setLetterboxColor("#1a1a1a");
+        }
+      };
+
+      void updateEdgeColor();
+      return () => controller.abort();
+    }, [currentImage, imageFitMode, letterboxFillMode]);
 
     const getViewportDimensions = useCallback(
       () => ({
@@ -150,8 +185,6 @@ export const ImageBackground = forwardRef<
         setIsTransitioning(true);
         await new Promise((resolve) => setTimeout(resolve, 300));
         if (isStale()) return;
-
-        setIsLoading(true);
 
         // Step 2: Fetch and preload new image
         const previousUrl = currentImageRef.current?.url;
@@ -319,8 +352,8 @@ export const ImageBackground = forwardRef<
         }
 
         // Step 3: Fade to the already preloaded image without an artificial wait.
+        preloadedImageRef.current = loadedImg;
         setCurrentImage(image);
-        setIsLoading(false);
         setIsTransitioning(false);
         onImageLoad?.(image);
       } catch (error) {
@@ -335,7 +368,6 @@ export const ImageBackground = forwardRef<
           lines.push("--- inner error ---", error.message);
         }
         setErrorMessage(lines.join("\n"));
-        setIsLoading(false);
         setHasError(true);
         setIsTransitioning(false);
         onImageError?.(error as Error);
@@ -365,23 +397,10 @@ export const ImageBackground = forwardRef<
     );
 
     const handleImageLoad = () => {
-      if (!isLoading) return;
-      setIsLoading(false);
       setHasError(false);
-
-      // Extract edge color if needed
-      if (
-        imageFitMode === "contain" &&
-        letterboxFillMode === "edge-color" &&
-        imageRef.current
-      ) {
-        const color = extractEdgeColor(imageRef.current);
-        setLetterboxColor(color);
-      }
     };
 
     const handleImageError = () => {
-      setIsLoading(false);
       setHasError(true);
       const lines: string[] = ["Failed to display image element."];
       if (currentImage) {
@@ -527,7 +546,6 @@ export const ImageBackground = forwardRef<
               )}
 
               <img
-                ref={imageRef}
                 src={currentImage.url}
                 alt="Anime Background"
                 className={`background-image ${isTransitioning ? "transitioning" : ""}`}
