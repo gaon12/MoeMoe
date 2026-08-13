@@ -1,9 +1,11 @@
 import { useState, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { fetchImageBlobWithFallback } from "./downloadImage";
 import "./DownloadButton.css";
 
 interface DownloadButtonProps {
   imageUrl: string | null;
+  fallbackImageUrl?: string | null;
   imageName?: string;
 }
 
@@ -11,6 +13,7 @@ type ImageFormat = "jpg" | "png" | "webp" | "avif";
 
 export const DownloadButton: React.FC<DownloadButtonProps> = ({
   imageUrl,
+  fallbackImageUrl,
   imageName = "anime-image",
 }) => {
   const { t } = useTranslation();
@@ -47,14 +50,11 @@ export const DownloadButton: React.FC<DownloadButtonProps> = ({
     let sourceObjectUrl: string | null = null;
 
     try {
-      // Fetch the image
-      const response = await fetch(imageUrl, { signal: controller.signal });
-      if (!response.ok) {
-        throw new Error(
-          `Image download failed (${response.status} ${response.statusText})`,
-        );
-      }
-      const blob = await response.blob();
+      const blob = await fetchImageBlobWithFallback(
+        imageUrl,
+        fallbackImageUrl,
+        controller.signal,
+      );
 
       // Create an image element
       const img = new Image();

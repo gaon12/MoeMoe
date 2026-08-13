@@ -263,6 +263,7 @@ function App() {
         />
         <DownloadButton
           imageUrl={currentImage?.url || null}
+          fallbackImageUrl={currentImage?.proxiedUrl || null}
           imageName={currentImage?.animeName || "anime-image"}
         />
         <RefreshButton
