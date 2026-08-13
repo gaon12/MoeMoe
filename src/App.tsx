@@ -251,46 +251,59 @@ function App() {
         excludedUrls={blockedUrls}
         feedback={feedback}
       />
-      <div className="content">
-        <Clock currentTime={currentTime} />
-      </div>
+      {settings.uiVisibility.clock && (
+        <div className="content">
+          <Clock currentTime={currentTime} />
+        </div>
+      )}
 
       <div className="control-dock" aria-label="Wallpaper controls">
         <SettingsButton />
-        <FullscreenButton
-          onToggle={toggleFullscreen}
-          isPseudoFullscreen={isPseudoFullscreen}
-        />
-        <DownloadButton
-          imageUrl={currentImage?.url || null}
-          fallbackImageUrl={currentImage?.proxiedUrl || null}
-          imageName={currentImage?.animeName || "anime-image"}
-        />
-        <RefreshButton
-          onRefresh={handleRefresh}
-          isLoading={isLoadingImage}
-          lastRefreshTime={lastImageAttemptTime}
-        />
-        <SpotlightActions
-          currentImage={currentImage}
-          favorites={favorites}
-          isFavorite={!currentImage?.isLocal && isFavorite(currentImage?.url)}
-          onToggleFavorite={toggleFavorite}
-          onRemoveFavorite={removeFavorite}
-          onDismiss={handleDismissWallpaper}
-          isChangePending={isImageChangePending}
-        />
+        {settings.uiVisibility.fullscreenButton && (
+          <FullscreenButton
+            onToggle={toggleFullscreen}
+            isPseudoFullscreen={isPseudoFullscreen}
+          />
+        )}
+        {settings.uiVisibility.downloadButton && (
+          <DownloadButton
+            imageUrl={currentImage?.url || null}
+            fallbackImageUrl={currentImage?.proxiedUrl || null}
+            imageName={currentImage?.animeName || "anime-image"}
+          />
+        )}
+        {settings.uiVisibility.refreshButton && (
+          <RefreshButton
+            onRefresh={handleRefresh}
+            isLoading={isLoadingImage}
+            lastRefreshTime={lastImageAttemptTime}
+          />
+        )}
+        {settings.uiVisibility.wallpaperActions && (
+          <SpotlightActions
+            currentImage={currentImage}
+            favorites={favorites}
+            isFavorite={!currentImage?.isLocal && isFavorite(currentImage?.url)}
+            onToggleFavorite={toggleFavorite}
+            onRemoveFavorite={removeFavorite}
+            onDismiss={handleDismissWallpaper}
+            isChangePending={isImageChangePending}
+          />
+        )}
       </div>
-      {settings.imageChangeInterval > 0 && (
-        <AutoRefreshIndicator
-          intervalSeconds={settings.imageChangeInterval}
-          lastRefreshTime={lastImageAttemptTime}
-          isPaused={isAutoRefreshPaused}
-          isLoading={isLoadingImage}
-          onTogglePause={toggleAutoRefreshPause}
-        />
+      {settings.uiVisibility.autoRefreshIndicator &&
+        settings.imageChangeInterval > 0 && (
+          <AutoRefreshIndicator
+            intervalSeconds={settings.imageChangeInterval}
+            lastRefreshTime={lastImageAttemptTime}
+            isPaused={isAutoRefreshPaused}
+            isLoading={isLoadingImage}
+            onTogglePause={toggleAutoRefreshPause}
+          />
+        )}
+      {settings.uiVisibility.widgets && (
+        <WidgetDock currentTime={currentTime} />
       )}
-      <WidgetDock currentTime={currentTime} />
       <SettingsModal />
     </div>
   );

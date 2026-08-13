@@ -21,6 +21,7 @@ describe("settings export", () => {
         imageSources: ["pic_re"],
         imageFitMode: "contain",
         imageAspectPreference: "screen",
+        uiVisibility: defaultSettings.uiVisibility,
       },
     });
     expect(JSON.parse(exported).settings).not.toHaveProperty("weatherApiKey");

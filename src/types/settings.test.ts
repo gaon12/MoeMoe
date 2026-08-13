@@ -18,4 +18,10 @@ describe("defaultSettings", () => {
   it("prefers images matching the current screen ratio by default", () => {
     expect(defaultSettings.imageAspectPreference).toBe("screen");
   });
+
+  it("keeps every optional interface element visible by default", () => {
+    expect(Object.values(defaultSettings.uiVisibility)).toEqual(
+      Array(7).fill(true),
+    );
+  });
 });

@@ -135,6 +135,40 @@
   margin-bottom: 0;
 }
 
+.settings-fieldset {
+  min-width: 0;
+  padding: 0;
+  border: 0;
+}
+
+.settings-visibility-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.settings-visibility-item {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 0;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.settings-visibility-item:hover {
+  border-color: var(--accent);
+  color: var(--text-primary);
+}
+
+.settings-visibility-item .settings-checkbox {
+  flex: 0 0 auto;
+}
+
 .settings-section-title {
   font-size: 1.1rem;
   font-weight: 600;
@@ -732,5 +766,9 @@
 
   .settings-button {
     width: 100%;
+  }
+
+  .settings-visibility-grid {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

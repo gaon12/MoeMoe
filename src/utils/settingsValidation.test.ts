@@ -73,4 +73,28 @@ describe("sanitizeSettings", () => {
 
     expect(widget.position).toEqual({ x: 500, y: -500 });
   });
+
+  it("migrates settings saved before per-element visibility was added", () => {
+    const result = sanitizeSettings({ theme: "light" });
+
+    expect(result.uiVisibility).toEqual(defaultSettings.uiVisibility);
+  });
+
+  it("preserves valid visibility choices and repairs invalid fields", () => {
+    const result = sanitizeSettings({
+      uiVisibility: {
+        clock: false,
+        widgets: false,
+        autoRefreshIndicator: "hidden",
+        fullscreenButton: false,
+      },
+    });
+
+    expect(result.uiVisibility).toEqual({
+      ...defaultSettings.uiVisibility,
+      clock: false,
+      widgets: false,
+      fullscreenButton: false,
+    });
+  });
 });

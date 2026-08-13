@@ -44,6 +44,19 @@
       "dark": "ダークモード",
       "auto": "システム設定"
     },
+    "visibility": {
+      "title": "画面要素の表示",
+      "description": "壁紙の上に表示する要素を選択します。非表示にした要素を元に戻せるよう、設定ボタンは常に表示されます。",
+      "items": {
+        "clock": "時計",
+        "widgets": "ウィジェット",
+        "autoRefreshIndicator": "自動更新インジケーター",
+        "fullscreenButton": "フルスクリーンボタン",
+        "downloadButton": "ダウンロードボタン",
+        "refreshButton": "更新ボタン",
+        "wallpaperActions": "壁紙アクション"
+      }
+    },
     "management": {
       "title": "設定管理",
       "description": "現在の設定をJSONファイルとして保存したり、以前に保存した設定を読み込んだりできます。",

@@ -13,6 +13,15 @@ const mocks = vi.hoisted(() => ({
   imageChangeInterval: 30,
   refresh: vi.fn(),
   setIsSettingsOpen: vi.fn(),
+  uiVisibility: {
+    clock: true,
+    widgets: true,
+    autoRefreshIndicator: true,
+    fullscreenButton: true,
+    downloadButton: true,
+    refreshButton: true,
+    wallpaperActions: true,
+  },
 }));
 
 vi.mock("./contexts/useApp", () => ({
@@ -27,6 +36,7 @@ vi.mock("./contexts/useApp", () => ({
       imageChangeInterval: mocks.imageChangeInterval,
       useServerTime: false,
       serverTimeUpdateIntervalSec: 60,
+      uiVisibility: mocks.uiVisibility,
     },
     isSettingsOpen: false,
     setIsSettingsOpen: mocks.setIsSettingsOpen,
@@ -69,30 +79,32 @@ vi.mock("./hooks/useWallpaperLibrary", () => ({
   }),
 }));
 
-vi.mock("./components/Clock/Clock", () => ({ Clock: () => null }));
+vi.mock("./components/Clock/Clock", () => ({
+  Clock: () => <div data-testid="clock" />,
+}));
 vi.mock("./components/RefreshButton/RefreshButton", () => ({
-  RefreshButton: () => null,
+  RefreshButton: () => <div data-testid="refresh-button" />,
 }));
 vi.mock("./components/DownloadButton/DownloadButton", () => ({
-  DownloadButton: () => null,
+  DownloadButton: () => <div data-testid="download-button" />,
 }));
 vi.mock("./components/SettingsButton/SettingsButton", () => ({
-  SettingsButton: () => null,
+  SettingsButton: () => <div data-testid="settings-button" />,
 }));
 vi.mock("./components/SettingsModal/SettingsModal", () => ({
   SettingsModal: () => null,
 }));
 vi.mock("./components/FullscreenButton/FullscreenButton", () => ({
-  FullscreenButton: () => null,
+  FullscreenButton: () => <div data-testid="fullscreen-button" />,
 }));
 vi.mock("./components/AutoRefreshIndicator/AutoRefreshIndicator", () => ({
-  AutoRefreshIndicator: () => null,
+  AutoRefreshIndicator: () => <div data-testid="auto-refresh-indicator" />,
 }));
 vi.mock("./components/WidgetDock/WidgetDock", () => ({
-  WidgetDock: () => null,
+  WidgetDock: () => <div data-testid="widget-dock" />,
 }));
 vi.mock("./components/SpotlightActions/SpotlightActions", () => ({
-  SpotlightActions: () => null,
+  SpotlightActions: () => <div data-testid="wallpaper-actions" />,
 }));
 
 import App from "./App";
@@ -102,6 +114,15 @@ describe("App image recovery", () => {
     vi.useFakeTimers();
     mocks.imageChangeInterval = 30;
     mocks.refresh.mockReset();
+    Object.assign(mocks.uiVisibility, {
+      clock: true,
+      widgets: true,
+      autoRefreshIndicator: true,
+      fullscreenButton: true,
+      downloadButton: true,
+      refreshButton: true,
+      wallpaperActions: true,
+    });
   });
 
   afterEach(() => {
@@ -127,5 +148,28 @@ describe("App image recovery", () => {
 
     act(() => vi.advanceTimersByTime(60_000));
     expect(mocks.refresh).not.toHaveBeenCalled();
+  });
+
+  it("hides every optional interface element while keeping settings visible", () => {
+    Object.assign(mocks.uiVisibility, {
+      clock: false,
+      widgets: false,
+      autoRefreshIndicator: false,
+      fullscreenButton: false,
+      downloadButton: false,
+      refreshButton: false,
+      wallpaperActions: false,
+    });
+
+    render(<App />);
+
+    expect(screen.getByTestId("settings-button")).not.toBeNull();
+    expect(screen.queryByTestId("clock")).toBeNull();
+    expect(screen.queryByTestId("widget-dock")).toBeNull();
+    expect(screen.queryByTestId("auto-refresh-indicator")).toBeNull();
+    expect(screen.queryByTestId("fullscreen-button")).toBeNull();
+    expect(screen.queryByTestId("download-button")).toBeNull();
+    expect(screen.queryByTestId("refresh-button")).toBeNull();
+    expect(screen.queryByTestId("wallpaper-actions")).toBeNull();
   });
 });

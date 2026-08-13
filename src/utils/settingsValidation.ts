@@ -2,6 +2,7 @@ import { ALL_IMAGE_SOURCES, type ImageSource } from "../types/image";
 import {
   defaultSettings,
   type AppSettings,
+  type UiVisibilitySettings,
   type Widget,
   type WidgetType,
 } from "../types/settings";
@@ -47,6 +48,7 @@ const SETTINGS_KEYS = new Set<keyof AppSettings>([
   "serverTimeUpdateIntervalSec",
   "widgets",
   "weatherApiKey",
+  "uiVisibility",
   "customText",
 ]);
 
@@ -72,6 +74,37 @@ function enumValue<const T extends readonly string[]>(
 
 function booleanValue(value: unknown, fallback: boolean): boolean {
   return typeof value === "boolean" ? value : fallback;
+}
+
+function sanitizeUiVisibility(
+  value: unknown,
+  fallback: UiVisibilitySettings,
+): UiVisibilitySettings {
+  const candidate = isRecord(value) ? value : {};
+  return {
+    clock: booleanValue(candidate.clock, fallback.clock),
+    widgets: booleanValue(candidate.widgets, fallback.widgets),
+    autoRefreshIndicator: booleanValue(
+      candidate.autoRefreshIndicator,
+      fallback.autoRefreshIndicator,
+    ),
+    fullscreenButton: booleanValue(
+      candidate.fullscreenButton,
+      fallback.fullscreenButton,
+    ),
+    downloadButton: booleanValue(
+      candidate.downloadButton,
+      fallback.downloadButton,
+    ),
+    refreshButton: booleanValue(
+      candidate.refreshButton,
+      fallback.refreshButton,
+    ),
+    wallpaperActions: booleanValue(
+      candidate.wallpaperActions,
+      fallback.wallpaperActions,
+    ),
+  };
 }
 
 function numberValue(
@@ -208,6 +241,10 @@ export function sanitizeSettings(
       typeof candidate.weatherApiKey === "string"
         ? candidate.weatherApiKey.trim().slice(0, 500)
         : fallback.weatherApiKey,
+    uiVisibility: sanitizeUiVisibility(
+      candidate.uiVisibility,
+      fallback.uiVisibility,
+    ),
     customText:
       typeof candidate.customText === "string"
         ? candidate.customText.slice(0, 2_000)

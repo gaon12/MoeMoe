@@ -47,6 +47,20 @@ export interface Widget {
 }
 
 /**
+ * Visibility of optional interface elements. The settings button is
+ * intentionally excluded so users always have a way to restore hidden UI.
+ */
+export interface UiVisibilitySettings {
+  clock: boolean;
+  widgets: boolean;
+  autoRefreshIndicator: boolean;
+  fullscreenButton: boolean;
+  downloadButton: boolean;
+  refreshButton: boolean;
+  wallpaperActions: boolean;
+}
+
+/**
  * Application settings
  */
 export interface AppSettings {
@@ -79,6 +93,9 @@ export interface AppSettings {
   widgets: Widget[];
   weatherApiKey: string;
 
+  // Interface visibility
+  uiVisibility: UiVisibilitySettings;
+
   // Custom
   customText?: string;
 }
@@ -106,4 +123,13 @@ export const defaultSettings: AppSettings = {
   serverTimeUpdateIntervalSec: 60,
   widgets: [],
   weatherApiKey: "",
+  uiVisibility: {
+    clock: true,
+    widgets: true,
+    autoRefreshIndicator: true,
+    fullscreenButton: true,
+    downloadButton: true,
+    refreshButton: true,
+    wallpaperActions: true,
+  },
 };

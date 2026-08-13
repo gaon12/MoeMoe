@@ -5,6 +5,7 @@ import {
   type ThemeMode,
   type Language,
   type AppSettings,
+  type UiVisibilitySettings,
   defaultSettings,
 } from "../../types/settings";
 import {
@@ -19,6 +20,15 @@ import { SettingsWidgetsTab } from "./SettingsWidgetsTab";
 import "./SettingsModal.css";
 
 const MAX_WIDGETS = 4;
+const UI_VISIBILITY_KEYS = [
+  "clock",
+  "widgets",
+  "autoRefreshIndicator",
+  "fullscreenButton",
+  "downloadButton",
+  "refreshButton",
+  "wallpaperActions",
+] as const satisfies readonly (keyof UiVisibilitySettings)[];
 
 export const SettingsModal = () => {
   const { t, i18n } = useTranslation();
@@ -140,6 +150,19 @@ export const SettingsModal = () => {
     resetSettings();
     setLocalSettings(defaultSettings);
     setSettingsTransferStatus("idle");
+  };
+
+  const handleUiVisibilityChange = (
+    key: keyof UiVisibilitySettings,
+    visible: boolean,
+  ) => {
+    setLocalSettings((previous) => ({
+      ...previous,
+      uiVisibility: {
+        ...previous.uiVisibility,
+        [key]: visible,
+      },
+    }));
   };
 
   return (
@@ -273,6 +296,30 @@ export const SettingsModal = () => {
                   </select>
                 </div>
               </div>
+
+              <fieldset className="settings-section settings-fieldset">
+                <legend className="settings-section-title">
+                  {t("settings.visibility.title")}
+                </legend>
+                <p className="settings-description">
+                  {t("settings.visibility.description")}
+                </p>
+                <div className="settings-visibility-grid">
+                  {UI_VISIBILITY_KEYS.map((key) => (
+                    <label className="settings-visibility-item" key={key}>
+                      <input
+                        type="checkbox"
+                        className="settings-checkbox"
+                        checked={localSettings.uiVisibility[key]}
+                        onChange={(event) =>
+                          handleUiVisibilityChange(key, event.target.checked)
+                        }
+                      />
+                      <span>{t(`settings.visibility.items.${key}`)}</span>
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
 
               <div className="settings-section">
                 <h3 className="settings-section-title">

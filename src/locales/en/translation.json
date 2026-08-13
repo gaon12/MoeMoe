@@ -44,6 +44,19 @@
       "dark": "Dark Mode",
       "auto": "System Default"
     },
+    "visibility": {
+      "title": "Interface visibility",
+      "description": "Choose which elements appear over the wallpaper. The settings button always remains visible so hidden elements can be restored.",
+      "items": {
+        "clock": "Clock",
+        "widgets": "Widgets",
+        "autoRefreshIndicator": "Auto-refresh indicator",
+        "fullscreenButton": "Fullscreen button",
+        "downloadButton": "Download button",
+        "refreshButton": "Refresh button",
+        "wallpaperActions": "Wallpaper actions"
+      }
+    },
     "management": {
       "title": "Settings Management",
       "description": "Save the current settings as JSON or import a settings file you exported earlier.",
