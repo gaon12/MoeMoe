@@ -2,12 +2,22 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 import { loadEnv } from "vite";
+import deploymentEnvironment from "../config/deployment-env.json" with { type: "json" };
 
 const mode = process.argv[2] || "production";
 const projectRoot = process.cwd();
 const outputDirectory = path.join(projectRoot, "dist");
 const outputPath = path.join(outputDirectory, ".env");
-const publicEnvironment = loadEnv(mode, projectRoot, "VITE_");
+const loadedEnvironment = loadEnv(mode, projectRoot, "VITE_");
+const publicEnvironment = {
+  ...loadedEnvironment,
+  ...Object.fromEntries(
+    Object.entries(deploymentEnvironment).map(([key, fallback]) => [
+      key,
+      loadedEnvironment[key]?.trim() || fallback,
+    ]),
+  ),
+};
 
 const serializedEnvironment = Object.keys(publicEnvironment)
   .filter((key) => /^VITE_[A-Z0-9_]+$/.test(key))

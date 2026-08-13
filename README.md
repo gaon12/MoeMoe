@@ -35,8 +35,8 @@ macOS/Linux에서는 `cp .env.sample .env`를 사용하세요. `.env`와 `.env.*
 
 | 변수                                | 용도                           | 기본 권장값         |
 | ----------------------------------- | ------------------------------ | ------------------- |
-| `VITE_FIX_CORS_API_URL`             | 이미지 다운로드용 CORS 프록시  | 비워 둠             |
-| `VITE_SERVER_TIME_API_URL`          | 선택적 외부 시간 API URL       | 비워 둠             |
+| `VITE_FIX_CORS_API_URL`             | 이미지 다운로드용 CORS 프록시  | 배포 설정 사용      |
+| `VITE_SERVER_TIME_API_URL`          | 서버 시간 API URL              | 배포 설정 사용      |
 | `VITE_GITHUB_REPO_URL`              | 오류 신고 링크                 | 이 저장소 URL       |
 | `VITE_ANIME_QUOTE_API_URL`          | 명대사 위젯                    | `.env.sample` 참고  |
 | `VITE_IP_REVERSE_GEOCODING_API_URL` | 위치 권한 거절 시 IP 위치 조회 | `https://ipinfo.io` |
