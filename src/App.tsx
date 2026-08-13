@@ -25,7 +25,7 @@ function App() {
   const { settings, isSettingsOpen, setIsSettingsOpen } = useApp();
   const [isLoadingImage, setIsLoadingImage] = useState(true);
   const [currentImage, setCurrentImage] = useState<AnimeImage | null>(null);
-  const [lastRefreshTime, setLastRefreshTime] = useState<number>(0);
+  const [lastImageAttemptTime, setLastImageAttemptTime] = useState<number>(0);
   const [isAutoRefreshPaused, setIsAutoRefreshPaused] = useState(false);
   const [isPseudoFullscreen, setIsPseudoFullscreen] = useState(false);
   const [isImageChangePending, setIsImageChangePending] = useState(false);
@@ -67,9 +67,9 @@ function App() {
   const requestImageChange = useCallback(
     (deferDuringCooldown = false) => {
       if (isLoadingImage || isImageChangePending) return false;
-      const elapsed = Date.now() - lastRefreshTime;
+      const elapsed = Date.now() - lastImageAttemptTime;
       const remaining =
-        lastRefreshTime > 0
+        lastImageAttemptTime > 0
           ? Math.max(0, IMAGE_CHANGE_COOLDOWN_MS - elapsed)
           : 0;
       if (remaining > 0) {
@@ -85,7 +85,12 @@ function App() {
       performImageChange();
       return true;
     },
-    [isImageChangePending, isLoadingImage, lastRefreshTime, performImageChange],
+    [
+      isImageChangePending,
+      isLoadingImage,
+      lastImageAttemptTime,
+      performImageChange,
+    ],
   );
 
   const handleRefresh = useCallback(() => {
@@ -111,13 +116,15 @@ function App() {
     setCurrentImage(image);
     setIsLoadingImage(false);
     setIsImageChangePending(false);
-    // Update lastRefreshTime when image loading is complete
-    setLastRefreshTime(Date.now());
+    setLastImageAttemptTime(Date.now());
   }, []);
 
   const handleImageError = useCallback(() => {
     setIsLoadingImage(false);
     setIsImageChangePending(false);
+    // Anchor the next automatic attempt even when the first provider request
+    // fails, so an enabled refresh interval can recover without user input.
+    setLastImageAttemptTime(Date.now());
   }, []);
 
   const handleDismissWallpaper = useCallback(
@@ -143,10 +150,10 @@ function App() {
 
   // Re-schedule when interval setting changes
   useEffect(() => {
-    if (lastRefreshTime > 0) {
+    if (lastImageAttemptTime > 0) {
       scheduleAutoRefresh();
     }
-  }, [settings.imageChangeInterval, scheduleAutoRefresh, lastRefreshTime]);
+  }, [settings.imageChangeInterval, scheduleAutoRefresh, lastImageAttemptTime]);
 
   const toggleAutoRefreshPause = useCallback(() => {
     setIsAutoRefreshPaused((prev) => !prev);
@@ -261,7 +268,7 @@ function App() {
         <RefreshButton
           onRefresh={handleRefresh}
           isLoading={isLoadingImage}
-          lastRefreshTime={lastRefreshTime}
+          lastRefreshTime={lastImageAttemptTime}
         />
         <SpotlightActions
           currentImage={currentImage}
@@ -276,7 +283,7 @@ function App() {
       {settings.imageChangeInterval > 0 && (
         <AutoRefreshIndicator
           intervalSeconds={settings.imageChangeInterval}
-          lastRefreshTime={lastRefreshTime}
+          lastRefreshTime={lastImageAttemptTime}
           isPaused={isAutoRefreshPaused}
           isLoading={isLoadingImage}
           onTogglePause={toggleAutoRefreshPause}
