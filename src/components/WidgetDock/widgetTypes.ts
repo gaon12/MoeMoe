@@ -38,7 +38,6 @@ export interface LocationData {
   region: string;
   country: string;
   tzId: string;
-  localTime?: Date;
   lat: number;
   lon: number;
   timezoneLabel?: string;

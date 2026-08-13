@@ -9,12 +9,18 @@ import type {
   WeatherState,
 } from "./widgetTypes";
 
-type Coordinates = { latitude: number; longitude: number };
+export type Coordinates = { latitude: number; longitude: number };
 type ReverseGeocodeResult = {
   name?: string;
   region: string;
   country: string;
 } | null;
+
+type JsonRecord = Record<string, unknown>;
+
+const MIN_TEMPERATURE_C = -100;
+const MAX_TEMPERATURE_C = 70;
+const MAX_TEXT_LENGTH = 200;
 
 let coordinatesRequest: Promise<Coordinates> | null = null;
 const reverseGeocodeRequests = new Map<string, Promise<ReverseGeocodeResult>>();
@@ -153,14 +159,11 @@ export function useLocationData(shouldFetch: boolean): LocationState {
             ? (Intl.DateTimeFormat().resolvedOptions().timeZone ?? "")
             : "";
 
-        const now = new Date();
-
         const data: LocationData = {
           name: reverseInfo?.name ?? "Location",
           region: reverseInfo?.region ?? "",
           country: reverseInfo?.country ?? "",
           tzId: resolvedTimeZone,
-          localTime: now,
           lat: coords.latitude,
           lon: coords.longitude,
           timezoneLabel: resolvedTimeZone || "Local time",
@@ -208,49 +211,70 @@ async function fetchWeatherApi(
     throw new Error(`WeatherAPI error: ${response.status}`);
   }
 
-  const data = await response.json();
+  const data: unknown = await response.json();
+  return parseWeatherApiResponse(data, new Date());
+}
 
-  const conditionCode: number = data?.current?.condition?.code ?? 1000;
+export function parseWeatherApiResponse(
+  value: unknown,
+  updatedAt: Date,
+): WeatherData {
+  const data = requireRecord(value, "WeatherAPI response");
+  const current = requireRecord(data.current, "WeatherAPI current data");
+  const condition = requireRecord(
+    current.condition,
+    "WeatherAPI condition data",
+  );
+  const apiLocation = requireRecord(data.location, "WeatherAPI location data");
+
+  const temperature = requireNumber(current.temp_c, "Weather temperature");
+  if (temperature < MIN_TEMPERATURE_C || temperature > MAX_TEMPERATURE_C) {
+    throw new Error("Weather temperature is outside the supported range");
+  }
+
+  const conditionCode = requireInteger(
+    condition.code,
+    "Weather condition code",
+  );
+  if (conditionCode < 0 || conditionCode > 9_999) {
+    throw new Error("Weather condition code is outside the supported range");
+  }
+
+  const coordinates = parseCoordinatePair(apiLocation.lat, apiLocation.lon);
+  if (!coordinates) {
+    throw new Error("Weather location coordinates are invalid");
+  }
+
   const conditionKey = mapWeatherCode(conditionCode);
   const icon = WEATHER_ICONS[conditionKey] ?? WEATHER_ICONS.unknown;
-  const timezoneLabel = formatTimezoneLabel(data?.location?.tz_id);
+  const tzId = readOptionalString(apiLocation.tz_id, "Weather timezone");
+  const localTimeEpoch = readOptionalNumber(
+    apiLocation.localtime_epoch,
+    "Weather local time",
+  );
+  const localTime = parseEpochSeconds(localTimeEpoch);
 
-  const location = data?.location
-    ? {
-        name: data.location.name ?? "Location",
-        region: data.location.region ?? "",
-        country: data.location.country ?? "",
-        tzId: data.location.tz_id ?? "",
-        localTime: data.location.localtime_epoch
-          ? new Date(data.location.localtime_epoch * 1000)
-          : undefined,
-        lat:
-          typeof data.location.lat === "number"
-            ? data.location.lat
-            : coords.latitude,
-        lon:
-          typeof data.location.lon === "number"
-            ? data.location.lon
-            : coords.longitude,
-      }
-    : {
-        name: "Location",
-        region: "",
-        country: "",
-        tzId: "",
-        localTime: undefined,
-        lat: coords.latitude,
-        lon: coords.longitude,
-      };
+  if (!Number.isFinite(updatedAt.getTime())) {
+    throw new Error("Weather update time is invalid");
+  }
 
   return {
-    temperature:
-      typeof data?.current?.temp_c === "number" ? data.current.temp_c : 0,
+    temperature,
     conditionKey,
     icon,
-    timezoneLabel,
-    updatedAt: new Date(),
-    location,
+    timezoneLabel: formatTimezoneLabel(tzId),
+    updatedAt,
+    location: {
+      name:
+        readOptionalString(apiLocation.name, "Weather location name") ||
+        "Location",
+      region: readOptionalString(apiLocation.region, "Weather region"),
+      country: readOptionalString(apiLocation.country, "Weather country"),
+      tzId,
+      localTime,
+      lat: coordinates.latitude,
+      lon: coordinates.longitude,
+    },
   };
 }
 
@@ -258,68 +282,103 @@ async function fetchWeatherApi(
  * OpenStreetMap Nominatim API를 사용하여 위도/경도로부터 대략적인 주소를 가져오는 함수
  * - name, region, country 정도만 사용한다.
  */
-function reverseGeocode(coords: Coordinates) {
-  const cacheKey = `${coords.latitude.toFixed(4)},${coords.longitude.toFixed(4)}`;
+export function reverseGeocode(coords: Coordinates) {
+  const validCoordinates = parseCoordinatePair(
+    coords.latitude,
+    coords.longitude,
+  );
+  if (!validCoordinates) return Promise.resolve(null);
+
+  const cacheKey = `${validCoordinates.latitude.toFixed(4)},${validCoordinates.longitude.toFixed(4)}`;
   const cachedRequest = reverseGeocodeRequests.get(cacheKey);
   if (cachedRequest) return cachedRequest;
 
-  const request = requestReverseGeocode(coords).catch((error) => {
-    reverseGeocodeRequests.delete(cacheKey);
-    throw error;
-  });
+  const request = requestReverseGeocode(validCoordinates).catch(
+    (error: unknown) => {
+      console.warn("Reverse geocoding failed:", error);
+      return null;
+    },
+  );
   reverseGeocodeRequests.set(cacheKey, request);
+  void request.then((result) => {
+    if (result === null && reverseGeocodeRequests.get(cacheKey) === request) {
+      reverseGeocodeRequests.delete(cacheKey);
+    }
+  });
   return request;
 }
 
 async function requestReverseGeocode(
   coords: Coordinates,
 ): Promise<ReverseGeocodeResult> {
-  try {
-    const params = new URLSearchParams({
-      format: "jsonv2",
-      lat: coords.latitude.toString(),
-      lon: coords.longitude.toString(),
-      zoom: "10",
-      addressdetails: "1",
-      email: "support@moemoe.app",
-    });
+  const params = new URLSearchParams({
+    format: "jsonv2",
+    lat: coords.latitude.toString(),
+    lon: coords.longitude.toString(),
+    zoom: "10",
+    addressdetails: "1",
+    email: "support@moemoe.app",
+  });
 
-    const response = await fetchWithTimeout(
-      `https://nominatim.openstreetmap.org/reverse?${params.toString()}`,
-      {
-        headers: { Accept: "application/json" },
-      },
-    );
+  const response = await fetchWithTimeout(
+    `https://nominatim.openstreetmap.org/reverse?${params.toString()}`,
+    {
+      headers: { Accept: "application/json" },
+    },
+  );
 
-    if (!response.ok) {
-      throw new Error(`Reverse geocode error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    const address = data?.address ?? {};
-
-    // 도시/마을/동 등 적당한 이름을 하나 골라서 name으로 사용한다.
-    const primaryName =
-      data?.name ||
-      address.city ||
-      address.town ||
-      address.village ||
-      address.hamlet ||
-      address.suburb ||
-      (typeof data?.display_name === "string"
-        ? data.display_name.split(",")[0]?.trim()
-        : undefined);
-
-    return {
-      name: primaryName,
-      region: address.state || address.county || "",
-      country: address.country || "",
-    };
-  } catch (error) {
-    // 역지오코딩은 부가 정보이므로 실패해도 치명적이지 않다. 콘솔 경고만 남기고 null을 반환한다.
-    console.warn("Reverse geocoding failed:", error);
-    return null;
+  if (!response.ok) {
+    throw new Error(`Reverse geocode error: ${response.status}`);
   }
+
+  const data: unknown = await response.json();
+  return parseReverseGeocodeResponse(data);
+}
+
+export function parseReverseGeocodeResponse(
+  value: unknown,
+): Exclude<ReverseGeocodeResult, null> {
+  const data = requireRecord(value, "Reverse geocode response");
+  const coordinates = parseCoordinatePair(
+    parseNumericValue(data.lat),
+    parseNumericValue(data.lon),
+  );
+  if (!coordinates) {
+    throw new Error("Reverse geocode coordinates are invalid");
+  }
+  const address = requireRecord(data.address, "Reverse geocode address");
+  const displayName = readOptionalString(
+    data.display_name,
+    "Reverse geocode display name",
+  );
+
+  const primaryName = firstNonEmptyString([
+    readOptionalString(data.name, "Reverse geocode name"),
+    readOptionalString(address.city, "Reverse geocode city"),
+    readOptionalString(address.town, "Reverse geocode town"),
+    readOptionalString(address.village, "Reverse geocode village"),
+    readOptionalString(address.hamlet, "Reverse geocode hamlet"),
+    readOptionalString(address.suburb, "Reverse geocode suburb"),
+    displayName.split(",")[0]?.trim() ?? "",
+  ]);
+  const region = firstNonEmptyString([
+    readOptionalString(address.state, "Reverse geocode state"),
+    readOptionalString(address.county, "Reverse geocode county"),
+  ]);
+  const country = readOptionalString(
+    address.country,
+    "Reverse geocode country",
+  );
+
+  if (!primaryName && !region && !country) {
+    throw new Error("Reverse geocode response did not include an address");
+  }
+
+  return {
+    name: primaryName || undefined,
+    region,
+    country,
+  };
 }
 
 /**
@@ -348,8 +407,7 @@ function mapWeatherCode(code: number): WeatherConditionKey {
     return "snow";
   }
   if ([1087, 1273, 1276, 1279, 1282].includes(code)) return "thunderstorm";
-  // 알 수 없는 코드는 기본적으로 흐림으로 처리한다.
-  return "cloudy";
+  return "unknown";
 }
 
 /**
@@ -375,6 +433,134 @@ const WEATHER_ICONS: Record<WeatherConditionKey, string> = {
 function formatTimezoneLabel(tz?: string) {
   if (!tz || typeof tz !== "string") return "UTC";
   return tz.replace(/_/g, " ").replace(/\//g, " · ");
+}
+
+export function formatLocationLocalTime(
+  currentTime: Date,
+  language: string,
+  timeZone: string,
+): string {
+  if (!Number.isFinite(currentTime.getTime())) return "";
+
+  const normalizedLanguage = language.toLowerCase();
+  const locale = normalizedLanguage.startsWith("ko")
+    ? "ko-KR"
+    : normalizedLanguage.startsWith("ja")
+      ? "ja-JP"
+      : "en-US";
+  const options: Intl.DateTimeFormatOptions = {
+    dateStyle: "medium",
+    timeStyle: "short",
+  };
+
+  try {
+    return new Intl.DateTimeFormat(locale, {
+      ...options,
+      ...(timeZone ? { timeZone } : {}),
+    }).format(currentTime);
+  } catch {
+    return new Intl.DateTimeFormat(locale, options).format(currentTime);
+  }
+}
+
+function requireRecord(value: unknown, label: string): JsonRecord {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    throw new Error(`${label} must be an object`);
+  }
+  return value as JsonRecord;
+}
+
+function requireNumber(value: unknown, label: string): number {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    throw new Error(`${label} must be a finite number`);
+  }
+  return value;
+}
+
+function requireInteger(value: unknown, label: string): number {
+  const number = requireNumber(value, label);
+  if (!Number.isInteger(number)) {
+    throw new Error(`${label} must be an integer`);
+  }
+  return number;
+}
+
+function readOptionalNumber(value: unknown, label: string): number | undefined {
+  if (value == null) return undefined;
+  return requireNumber(value, label);
+}
+
+function readOptionalString(value: unknown, label: string): string {
+  if (value == null) return "";
+  if (typeof value !== "string") {
+    throw new Error(`${label} must be a string`);
+  }
+  return value.trim().slice(0, MAX_TEXT_LENGTH);
+}
+
+function firstNonEmptyString(values: readonly string[]): string {
+  return values.find(Boolean) ?? "";
+}
+
+function parseEpochSeconds(value: number | undefined): Date | undefined {
+  if (value == null) return undefined;
+  if (!Number.isInteger(value) || value < 0) {
+    throw new Error("Weather local time must be a positive Unix timestamp");
+  }
+
+  const date = new Date(value * 1_000);
+  if (!Number.isFinite(date.getTime())) {
+    throw new Error("Weather local time is outside the supported range");
+  }
+  return date;
+}
+
+function parseCoordinatePair(
+  latitudeValue: unknown,
+  longitudeValue: unknown,
+): Coordinates | null {
+  if (
+    typeof latitudeValue !== "number" ||
+    typeof longitudeValue !== "number" ||
+    !Number.isFinite(latitudeValue) ||
+    !Number.isFinite(longitudeValue) ||
+    latitudeValue < -90 ||
+    latitudeValue > 90 ||
+    longitudeValue < -180 ||
+    longitudeValue > 180
+  ) {
+    return null;
+  }
+  return { latitude: latitudeValue, longitude: longitudeValue };
+}
+
+function parseNumericValue(value: unknown): number | null {
+  if (typeof value === "number") return Number.isFinite(value) ? value : null;
+  if (typeof value !== "string" || value.trim() === "") return null;
+
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+
+export function parseIpCoordinates(value: unknown): Coordinates | null {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return null;
+  }
+  const data = value as JsonRecord;
+
+  if (typeof data.loc === "string") {
+    const parts = data.loc.split(",");
+    if (parts.length === 2) {
+      const latitude = parseNumericValue(parts[0]);
+      const longitude = parseNumericValue(parts[1]);
+      const coordinates = parseCoordinatePair(latitude, longitude);
+      if (coordinates) return coordinates;
+    }
+  }
+
+  const latitude = parseNumericValue(data.latitude ?? data.lat);
+  const longitude = parseNumericValue(data.longitude ?? data.lon);
+  return parseCoordinatePair(latitude, longitude);
 }
 
 /**
@@ -407,10 +593,12 @@ async function resolveCoordinates(): Promise<Coordinates> {
         },
       );
 
-      return {
-        latitude: geoPosition.coords.latitude,
-        longitude: geoPosition.coords.longitude,
-      };
+      const coordinates = parseCoordinatePair(
+        geoPosition.coords.latitude,
+        geoPosition.coords.longitude,
+      );
+      if (!coordinates) throw new Error("Browser location is invalid");
+      return coordinates;
     } catch {
       // 무시하고 다음 단계(IP 기반)로 진행
     }
@@ -441,51 +629,9 @@ async function resolveCoordinates(): Promise<Coordinates> {
         throw new Error(`IP geolocation error: ${response.status}`);
       }
 
-      const data = await response.json();
-      // ipinfo.io 형식(lat, lon이 있는 loc 문자열 등)을 가정하되,
-      // 안전하게 파싱하여 lat/lon을 얻는다.
-      let latitude: number | null = null;
-      let longitude: number | null = null;
-
-      if (typeof data?.loc === "string") {
-        const [latStr, lonStr] = data.loc.split(",");
-        const lat = Number(latStr);
-        const lon = Number(lonStr);
-        if (Number.isFinite(lat) && Number.isFinite(lon)) {
-          latitude = lat;
-          longitude = lon;
-        }
-      }
-
-      if (
-        latitude == null ||
-        longitude == null ||
-        !Number.isFinite(latitude) ||
-        !Number.isFinite(longitude)
-      ) {
-        // 다른 구조를 가진 API를 사용할 수도 있으니, 일반적인 lat/lon 필드도 시도한다.
-        const lat =
-          typeof data?.latitude === "number"
-            ? data.latitude
-            : Number(data?.latitude);
-        const lon =
-          typeof data?.longitude === "number"
-            ? data.longitude
-            : Number(data?.longitude);
-        if (Number.isFinite(lat) && Number.isFinite(lon)) {
-          latitude = lat;
-          longitude = lon;
-        }
-      }
-
-      if (
-        latitude != null &&
-        longitude != null &&
-        Number.isFinite(latitude) &&
-        Number.isFinite(longitude)
-      ) {
-        return { latitude, longitude };
-      }
+      const data: unknown = await response.json();
+      const coordinates = parseIpCoordinates(data);
+      if (coordinates) return coordinates;
 
       throw new Error("IP geolocation response did not include coordinates");
     }

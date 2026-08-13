@@ -3,7 +3,11 @@ import { useTranslation } from "react-i18next";
 import { useApp } from "../../contexts/useApp";
 import { type AppSettings, type Widget } from "../../types/settings";
 import { getFormattedTimeParts, getFullDateString } from "../../utils/time";
-import { useLocationData, useWeatherData } from "./widgetData";
+import {
+  formatLocationLocalTime,
+  useLocationData,
+  useWeatherData,
+} from "./widgetData";
 import { useAnimeQuoteData } from "./animeQuoteData";
 import type {
   AnimeQuoteState,
@@ -402,17 +406,11 @@ const WidgetCard = ({
     const subtitleParts = [location.region, location.country].filter(Boolean);
     const timezoneText = location.timezoneLabel || location.tzId;
 
-    // 사용자의 언어 설정에 따라 현지 시간을 포맷팅한다.
-    const localTime =
-      location.localTime != null
-        ? new Intl.DateTimeFormat(
-            language === "ko" ? "ko-KR" : language === "ja" ? "ja-JP" : "en-US",
-            {
-              dateStyle: "medium",
-              timeStyle: "short",
-            },
-          ).format(location.localTime)
-        : null;
+    const localTime = formatLocationLocalTime(
+      currentTime,
+      language,
+      location.tzId,
+    );
 
     return (
       <article className="widget-card widget-card-location">
