@@ -16,12 +16,13 @@ import { useSyncedTime } from "./hooks/useSyncedTime";
 import { WidgetDock } from "./components/WidgetDock/WidgetDock";
 import { SpotlightActions } from "./components/SpotlightActions/SpotlightActions";
 import { useWallpaperLibrary } from "./hooks/useWallpaperLibrary";
+import { shouldIgnoreGlobalShortcut } from "./utils/keyboardShortcuts";
 import "./App.css";
 
 const IMAGE_CHANGE_COOLDOWN_MS = 5_000;
 
 function App() {
-  const { settings, setIsSettingsOpen } = useApp();
+  const { settings, isSettingsOpen, setIsSettingsOpen } = useApp();
   const [isLoadingImage, setIsLoadingImage] = useState(true);
   const [currentImage, setCurrentImage] = useState<AnimeImage | null>(null);
   const [lastRefreshTime, setLastRefreshTime] = useState<number>(0);
@@ -185,13 +186,7 @@ function App() {
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      // Prevent actions if user is typing in an input
-      if (
-        event.target instanceof HTMLInputElement ||
-        event.target instanceof HTMLTextAreaElement
-      ) {
-        return;
-      }
+      if (shouldIgnoreGlobalShortcut(event, isSettingsOpen)) return;
 
       // R key or Space key to refresh
       if (event.key === "r" || event.key === "R" || event.key === " ") {
@@ -231,6 +226,7 @@ function App() {
     setIsSettingsOpen,
     settings.imageChangeInterval,
     toggleAutoRefreshPause,
+    isSettingsOpen,
   ]);
 
   return (
