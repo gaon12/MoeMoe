@@ -19,7 +19,7 @@ Windows 잠금 화면에서 영감을 받은 애니메이션 배경화면 시계
 
 ## 시작하기
 
-Vite 8의 요구 사항에 따라 Node.js `20.19+` 또는 `22.12+`가 필요합니다.
+잠긴 개발 도구 전체의 지원 범위에 따라 Node.js `22.22.2+`, `24.15+` 또는 `26+`와 npm `12.0.2+`가 필요합니다.
 
 ```bash
 git clone https://github.com/gaon12/MoeMoe.git
@@ -92,9 +92,9 @@ MoeMoe는 Waifu Downloader, Catgirl Downloader와 같은 이미지 수집 도구
 
 ## 기술 스택
 
-- React 19, TypeScript 6, Vite 8
+- React 19, TypeScript 7 네이티브 컴파일러, Vite 8
 - i18next / react-i18next
-- ThumbHash
+- TypeScript 6 API 호환 패키지 (ESLint 도구 연동)
 - ESLint 10, Prettier 3, Vitest 4
 
 ## 후원
