@@ -7,7 +7,7 @@
  * match is deleted on activation, so a bump is also how stale entries are
  * evicted.
  */
-const CACHE_NAME = "moemoe-shell-v1";
+const CACHE_NAME = "moemoe-shell-v2";
 
 /** The document to fall back to when a navigation cannot reach the network. */
 const APP_SHELL_URL = "/index.html";
