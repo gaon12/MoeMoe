@@ -1,7 +1,9 @@
 import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
 import packageJson from "./package.json" with { type: "json" };
-import deploymentEnvironment from "./config/deployment-env.json" with { type: "json" };
+import deploymentEnvironment from "./config/deployment-env.json" with {
+  type: "json",
+};
 
 const appVersion = packageJson.version ?? "0.0.0";
 

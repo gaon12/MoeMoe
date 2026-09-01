@@ -2,7 +2,9 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import process from "node:process";
 import { loadEnv } from "vite";
-import deploymentEnvironment from "../config/deployment-env.json" with { type: "json" };
+import deploymentEnvironment from "../config/deployment-env.json" with {
+  type: "json",
+};
 
 const PUBLIC_ENVIRONMENT_KEY_PATTERN = /^VITE_[A-Z0-9_]+$/;
 const mode = process.argv[2] || "production";

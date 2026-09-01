@@ -64,7 +64,8 @@ export const SettingsImageTab = ({
   const handleImageSourceChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
       const source = event.currentTarget.dataset.source as
-        ImageSource | undefined;
+        | ImageSource
+        | undefined;
       if (source) {
         toggleImageSource(source);
       }

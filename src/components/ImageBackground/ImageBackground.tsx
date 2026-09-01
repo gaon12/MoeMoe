@@ -486,7 +486,8 @@ export const ImageBackground = ({
 
   const buildMetadataText = (image: AnimeImage): string => {
     const proxyUrl = import.meta.env.VITE_FIX_CORS_API_URL as
-      string | undefined;
+      | string
+      | undefined;
     let displayUrl = image.url;
     if (proxyUrl && displayUrl.startsWith(proxyUrl)) {
       const encoded = displayUrl.slice(proxyUrl.length);

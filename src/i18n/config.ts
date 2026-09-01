@@ -1,9 +1,15 @@
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 
-import enTranslation from "../locales/en/translation.json" with { type: "json" };
-import koTranslation from "../locales/ko/translation.json" with { type: "json" };
-import jaTranslation from "../locales/ja/translation.json" with { type: "json" };
+import enTranslation from "../locales/en/translation.json" with {
+  type: "json",
+};
+import koTranslation from "../locales/ko/translation.json" with {
+  type: "json",
+};
+import jaTranslation from "../locales/ja/translation.json" with {
+  type: "json",
+};
 
 const resources = {
   en: {

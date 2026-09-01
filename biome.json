@@ -10,7 +10,21 @@
     ]
   },
   "formatter": {
-    "enabled": false
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 80
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "double",
+      "jsxQuoteStyle": "double",
+      "semicolons": "always",
+      "trailingCommas": "all",
+      "arrowParentheses": "always",
+      "bracketSameLine": false,
+      "bracketSpacing": true
+    }
   },
   "linter": {
     "enabled": true,
@@ -163,7 +177,7 @@
       }
     },
     {
-      "includes": ["eslint.config.js", "vite.config.ts", "scripts/**/*.mjs"],
+      "includes": ["vite.config.ts", "scripts/**/*.mjs"],
       "linter": {
         "rules": {
           "correctness": {

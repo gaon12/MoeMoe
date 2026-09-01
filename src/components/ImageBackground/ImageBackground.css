@@ -195,7 +195,7 @@
   background: rgba(255, 255, 255, 0.08);
   color: rgba(255, 255, 255, 0.82);
   font:
-    700 0.72rem/1 system-ui,
+    700 0.72rem / 1 system-ui,
     sans-serif;
   cursor: pointer;
 }

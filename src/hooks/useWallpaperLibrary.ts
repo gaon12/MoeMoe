@@ -101,10 +101,12 @@ function sanitizeWallpaperLibrary(value: unknown): WallpaperLibraryData {
             return [];
           }
           const entry = item as Record<string, unknown>;
-          if (!(
-            isSafeRemoteUrl(entry.url) &&
-            validSentiments.includes(entry.sentiment as WallpaperSentiment)
-          )) {
+          if (
+            !(
+              isSafeRemoteUrl(entry.url) &&
+              validSentiments.includes(entry.sentiment as WallpaperSentiment)
+            )
+          ) {
             return [];
           }
           return [

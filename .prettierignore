@@ -1,5 +1,0 @@
-dist
-node_modules
-.git
-.playwright-mcp
-*.log

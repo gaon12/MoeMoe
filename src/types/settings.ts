@@ -19,7 +19,11 @@ export type ImageFitMode = "cover" | "contain";
  * Preferred source image aspect before CSS fitting is applied
  */
 export type ImageAspectPreference =
-  "any" | "screen" | "landscape" | "portrait" | "square";
+  | "any"
+  | "screen"
+  | "landscape"
+  | "portrait"
+  | "square";
 
 /**
  * Letterbox fill mode options (for 'contain' mode)
@@ -30,7 +34,11 @@ export type LetterboxFillMode = "blur" | "edge-color" | "custom" | "solid";
  * Widget types
  */
 export type WidgetType =
-  "clock" | "weather" | "location" | "animeQuote" | "customText";
+  | "clock"
+  | "weather"
+  | "location"
+  | "animeQuote"
+  | "customText";
 
 /**
  * Widget configuration
