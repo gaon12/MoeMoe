@@ -109,6 +109,9 @@ export interface AppSettings {
   amPmPosition: "before" | "after"; // Only applies when showAmPm is true
   amPmStyle: "locale" | "latin"; // Non-English: locale words vs AM/PM
 
+  /** Poll the repository for a newer build and reload when one appears. */
+  autoUpdate: boolean;
+
   // Time source
   useServerTime: boolean;
   serverTimeUpdateIntervalSec: number; // How often to resync server offset
@@ -145,6 +148,7 @@ export const defaultSettings: AppSettings = {
   showAmPm: true,
   amPmPosition: "after",
   amPmStyle: "locale",
+  autoUpdate: true,
   useServerTime: false,
   serverTimeUpdateIntervalSec: 60,
   widgets: [],

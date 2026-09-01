@@ -200,6 +200,10 @@
       "label": "저장한 배경화면을 눌렀을 때",
       "apply": "배경화면으로 적용",
       "openSource": "원본을 새 탭에서 열기"
+    },
+    "autoUpdate": {
+      "title": "자동 업데이트",
+      "description": "30분마다 프로젝트 저장소를 확인하고, 새 빌드가 배포되면 새로고침합니다."
     }
   },
   "buttons": {
@@ -320,5 +324,9 @@
   "history": {
     "previous": "이전 배경화면",
     "next": "다음 배경화면"
+  },
+  "update": {
+    "available": "업데이트가 있습니다. {{countdown}} 후 새로고침합니다.",
+    "reloadNow": "지금 새로고침"
   }
 }

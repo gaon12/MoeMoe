@@ -141,6 +141,10 @@ export const SettingsModal = () => {
         const amPmPosition = event.target.value as AppSettings["amPmPosition"];
         setLocalSettings((previous) => ({ ...previous, amPmPosition }));
       },
+      autoUpdate: (event: React.ChangeEvent<HTMLInputElement>) => {
+        const autoUpdate = event.target.checked;
+        setLocalSettings((previous) => ({ ...previous, autoUpdate }));
+      },
       useServerTime: (event: React.ChangeEvent<HTMLInputElement>) => {
         const useServerTime = event.target.checked;
         setLocalSettings((previous) => ({ ...previous, useServerTime }));
@@ -329,6 +333,32 @@ export const SettingsModal = () => {
                   onChange={handleUiVisibilityChange}
                 />
               </fieldset>
+
+              <div className="settings-section">
+                <h3 className="settings-section-title">
+                  {t("settings.autoUpdate.title")}
+                </h3>
+                <div className="settings-option">
+                  <div className="settings-checkbox-group">
+                    <input
+                      type="checkbox"
+                      id={`${idPrefix}-auto-update`}
+                      className="settings-checkbox"
+                      checked={localSettings.autoUpdate}
+                      onChange={fieldHandlers.autoUpdate}
+                    />
+                    <label
+                      htmlFor={`${idPrefix}-auto-update`}
+                      className="settings-checkbox-label"
+                    >
+                      {t("settings.autoUpdate.title")}
+                    </label>
+                  </div>
+                  <p className="settings-description">
+                    {t("settings.autoUpdate.description")}
+                  </p>
+                </div>
+              </div>
 
               <div className="settings-section">
                 <h3 className="settings-section-title">

@@ -24,6 +24,8 @@ import { SpotlightActions } from "./components/SpotlightActions/SpotlightActions
 import { useWallpaperLibrary } from "./hooks/useWallpaperLibrary.ts";
 import { useWallpaperHistory } from "./hooks/useWallpaperHistory.ts";
 import { HistoryNav } from "./components/HistoryNav/HistoryNav.tsx";
+import { UpdateNotice } from "./components/UpdateNotice/UpdateNotice.tsx";
+import { useAppUpdate } from "./hooks/useAppUpdate.ts";
 import {
   resolveGlobalShortcut,
   shouldIgnoreGlobalShortcut,
@@ -92,6 +94,9 @@ export function App() {
     goBack,
     goForward,
   } = useWallpaperHistory();
+  const { isUpdatePending, msRemaining, applyUpdate } = useAppUpdate(
+    settings.autoUpdate,
+  );
 
   const performImageChange = useCallback(() => {
     clearTimer(pendingImageChangeTimerRef);
@@ -419,6 +424,9 @@ export function App() {
       ) : null}
       {settings.uiVisibility.widgets ? (
         <WidgetDock currentTime={currentTime} />
+      ) : null}
+      {isUpdatePending ? (
+        <UpdateNotice msRemaining={msRemaining} onApply={applyUpdate} />
       ) : null}
       {isSettingsOpen ? (
         <Suspense fallback={null}>

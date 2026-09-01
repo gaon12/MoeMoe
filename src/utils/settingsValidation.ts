@@ -53,6 +53,7 @@ const SETTINGS_KEYS = new Set<keyof AppSettings>([
   "showAmPm",
   "amPmPosition",
   "amPmStyle",
+  "autoUpdate",
   "useServerTime",
   "serverTimeUpdateIntervalSec",
   "widgets",
@@ -267,6 +268,7 @@ function sanitizeSettings(
       fallback.amPmPosition,
     ),
     amPmStyle: enumValue(candidate.amPmStyle, AM_PM_STYLES, fallback.amPmStyle),
+    autoUpdate: booleanValue(candidate.autoUpdate, fallback.autoUpdate),
     useServerTime: booleanValue(
       candidate.useServerTime,
       fallback.useServerTime,

@@ -200,6 +200,10 @@
       "label": "Clicking a saved wallpaper",
       "apply": "Set it as the wallpaper",
       "openSource": "Open the source in a new tab"
+    },
+    "autoUpdate": {
+      "title": "Automatic updates",
+      "description": "Checks the project repository every 30 minutes and reloads when a newer build is published."
     }
   },
   "buttons": {
@@ -320,5 +324,9 @@
   "history": {
     "previous": "Previous wallpaper",
     "next": "Next wallpaper"
+  },
+  "update": {
+    "available": "An update is available. Reloading in {{countdown}}.",
+    "reloadNow": "Reload now"
   }
 }
