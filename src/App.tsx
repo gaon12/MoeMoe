@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { Clock } from "./components/Clock/Clock.tsx";
 import {
   ImageBackground,
@@ -7,7 +14,6 @@ import {
 import { RefreshButton } from "./components/RefreshButton/RefreshButton.tsx";
 import { DownloadButton } from "./components/DownloadButton/DownloadButton.tsx";
 import { SettingsButton } from "./components/SettingsButton/SettingsButton.tsx";
-import { SettingsModal } from "./components/SettingsModal/SettingsModal.tsx";
 import { FullscreenButton } from "./components/FullscreenButton/FullscreenButton.tsx";
 import { AutoRefreshIndicator } from "./components/AutoRefreshIndicator/AutoRefreshIndicator.tsx";
 import type { AnimeImage } from "./types/image.ts";
@@ -20,7 +26,19 @@ import { shouldIgnoreGlobalShortcut } from "./utils/keyboardShortcuts.ts";
 import "./App.css";
 
 const IMAGE_CHANGE_COOLDOWN_MS = 5000;
+const SETTINGS_PRELOAD_DELAY_MS = 2000;
 const MILLISECONDS_PER_SECOND = 1000;
+
+const importSettingsModal = () =>
+  import("./components/SettingsModal/SettingsModal.tsx");
+
+/**
+ * The settings UI and its five tab modules are the largest thing in the tree
+ * and nothing renders them until the user asks, so they load on demand.
+ */
+const SettingsModal = lazy(async () => ({
+  default: (await importSettingsModal()).SettingsModal,
+}));
 
 interface TimerRef {
   current: ReturnType<typeof setTimeout> | null;
@@ -196,6 +214,22 @@ export function App() {
     };
   }, [isPseudoFullscreen]);
 
+  // Warm the settings chunk once the browser is idle, so the first press of
+  // the settings button never waits on a network round trip.
+  useEffect(() => {
+    const preload = () => {
+      importSettingsModal().catch(() => undefined);
+    };
+
+    if (typeof requestIdleCallback === "function") {
+      const handle = requestIdleCallback(preload);
+      return () => cancelIdleCallback(handle);
+    }
+
+    const timer = setTimeout(preload, SETTINGS_PRELOAD_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, []);
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -317,7 +351,11 @@ export function App() {
       {settings.uiVisibility.widgets ? (
         <WidgetDock currentTime={currentTime} />
       ) : null}
-      <SettingsModal />
+      {isSettingsOpen ? (
+        <Suspense fallback={null}>
+          <SettingsModal />
+        </Suspense>
+      ) : null}
     </div>
   );
 }
