@@ -1,25 +1,37 @@
-import { useCallback, useRef, useState, useEffect } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useApp } from "../../contexts/useApp";
+import { useApp } from "../../contexts/useApp.ts";
 import {
   type ThemeMode,
   type Language,
   type AppSettings,
   type UiVisibilitySettings,
   defaultSettings,
-} from "../../types/settings";
+} from "../../types/settings.ts";
 import {
   createSettingsExport,
   MAX_SETTINGS_IMPORT_BYTES,
   parseSettingsExport,
-} from "../../utils/settingsExport";
-import { useModalAccessibility } from "../../hooks/useModalAccessibility";
-import { SettingsImageTab } from "./SettingsImageTab";
-import { SettingsInfoTab } from "./SettingsInfoTab";
-import { SettingsWidgetsTab } from "./SettingsWidgetsTab";
+} from "../../utils/settingsExport.ts";
+import { useModalAccessibility } from "../../hooks/useModalAccessibility.ts";
+import { SettingsImageTab } from "./SettingsImageTab.tsx";
+import { SettingsInfoTab } from "./SettingsInfoTab.tsx";
+import { SettingsWidgetsTab } from "./SettingsWidgetsTab.tsx";
 import "./SettingsModal.css";
 
 const MAX_WIDGETS = 4;
+const SERVER_TIME_UPDATE_INTERVAL_OPTIONS = ["10", "30", "60", "300"];
+
+const getSecondsSuffix = (language: string) => {
+  if (language === "ko") {
+    return "초";
+  }
+  if (language === "ja") {
+    return "秒";
+  }
+  return "s";
+};
+
 const UI_VISIBILITY_KEYS = [
   "clock",
   "widgets",
@@ -46,14 +58,16 @@ export const SettingsModal = () => {
   const [settingsTransferStatus, setSettingsTransferStatus] = useState<
     "idle" | "imported" | "failed"
   >("idle");
+  const idPrefix = useId();
   const importInputRef = useRef<HTMLInputElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
 
-  const secondsLabel = (n: number) =>
-    `${n}${i18n.language === "ko" ? "초" : i18n.language === "ja" ? "秒" : "s"}`;
+  const secondsLabel = (n: number) => `${n}${getSecondsSuffix(i18n.language)}`;
 
   useEffect(() => {
-    if (!isSettingsOpen) setLocalSettings(settings);
+    if (!isSettingsOpen) {
+      setLocalSettings(settings);
+    }
   }, [isSettingsOpen, settings]);
 
   const handleUserImagesAvailabilityChange = useCallback(
@@ -61,13 +75,15 @@ export const SettingsModal = () => {
       const withoutUserImages = settings.imageSources.filter(
         (source) => source !== "user_uploads",
       );
-      const imageSources = available
-        ? settings.imageSources.includes("user_uploads")
+      let imageSources: AppSettings["imageSources"];
+      if (available) {
+        imageSources = settings.imageSources.includes("user_uploads")
           ? settings.imageSources
-          : [...settings.imageSources, "user_uploads" as const]
-        : withoutUserImages.length > 0
-          ? withoutUserImages
-          : ["pic_re" as const];
+          : [...settings.imageSources, "user_uploads"];
+      } else {
+        imageSources =
+          withoutUserImages.length > 0 ? withoutUserImages : ["pic_re"];
+      }
       updateSettings({ imageSources });
     },
     [settings.imageSources, updateSettings],
@@ -82,25 +98,23 @@ export const SettingsModal = () => {
 
   useModalAccessibility(isSettingsOpen, modalRef, handleClose);
 
-  if (!isSettingsOpen) return null;
+  if (!isSettingsOpen) {
+    return null;
+  }
 
   const handleSave = () => {
-    if (localSettings.imageSources.length === 0) return;
+    if (localSettings.imageSources.length === 0) {
+      return;
+    }
     const widgetLimit = localSettings.widgets.slice(0, MAX_WIDGETS);
     updateSettings({
       ...localSettings,
       widgets: widgetLimit,
-      weatherApiKey: (localSettings.weatherApiKey ?? "").trim(),
+      weatherApiKey: localSettings.weatherApiKey.trim(),
     });
     setIsSettingsOpen(false);
     setActiveTab("general");
     setSettingsTransferStatus("idle");
-  };
-
-  const handleOverlayClick = (e: React.MouseEvent) => {
-    if (e.target === e.currentTarget) {
-      handleClose();
-    }
   };
 
   const handleExportSettings = () => {
@@ -127,7 +141,9 @@ export const SettingsModal = () => {
   ) => {
     const file = event.target.files?.[0];
     event.target.value = "";
-    if (!file) return;
+    if (!file) {
+      return;
+    }
 
     try {
       if (file.size > MAX_SETTINGS_IMPORT_BYTES) {
@@ -140,8 +156,7 @@ export const SettingsModal = () => {
         weatherApiKey: prev.weatherApiKey,
       }));
       setSettingsTransferStatus("imported");
-    } catch (error) {
-      console.error("Failed to import settings:", error);
+    } catch {
       setSettingsTransferStatus("failed");
     }
   };
@@ -166,25 +181,33 @@ export const SettingsModal = () => {
   };
 
   return (
-    <div className="settings-modal-overlay" onClick={handleOverlayClick}>
+    <div className="settings-modal-overlay">
+      <button
+        type="button"
+        className="settings-modal-backdrop"
+        onClick={handleClose}
+        aria-label={t("settings.close")}
+        tabIndex={-1}
+      />
       <div
         ref={modalRef}
         className="settings-modal"
         role="dialog"
         aria-modal="true"
-        aria-labelledby="settings-modal-title"
+        aria-labelledby={`${idPrefix}-title`}
         tabIndex={-1}
       >
         <div className="settings-header">
-          <h2 id="settings-modal-title" className="settings-title">
+          <h2 id={`${idPrefix}-title`} className="settings-title">
             {t("settings.title")}
           </h2>
           <button
+            type="button"
             className="settings-close"
             onClick={handleClose}
             aria-label={t("settings.close")}
           >
-            ✕
+            {"✕"}
           </button>
         </div>
 
@@ -249,10 +272,14 @@ export const SettingsModal = () => {
                   {t("settings.language.title")}
                 </h3>
                 <div className="settings-option">
-                  <label className="settings-label">
+                  <label
+                    className="settings-label"
+                    htmlFor={`${idPrefix}-language`}
+                  >
                     {t("settings.language.title")}
                   </label>
                   <select
+                    id={`${idPrefix}-language`}
                     className="settings-select"
                     value={localSettings.language}
                     onChange={(e) =>
@@ -277,10 +304,14 @@ export const SettingsModal = () => {
                   {t("settings.theme.title")}
                 </h3>
                 <div className="settings-option">
-                  <label className="settings-label">
+                  <label
+                    className="settings-label"
+                    htmlFor={`${idPrefix}-theme`}
+                  >
                     {t("settings.theme.title")}
                   </label>
                   <select
+                    id={`${idPrefix}-theme`}
                     className="settings-select"
                     value={localSettings.theme}
                     onChange={(e) =>
@@ -393,7 +424,7 @@ export const SettingsModal = () => {
                   <div className="settings-checkbox-group">
                     <input
                       type="checkbox"
-                      id="showSeconds"
+                      id={`${idPrefix}-show-seconds`}
                       className="settings-checkbox"
                       checked={localSettings.showSeconds}
                       onChange={(e) =>
@@ -404,7 +435,7 @@ export const SettingsModal = () => {
                       }
                     />
                     <label
-                      htmlFor="showSeconds"
+                      htmlFor={`${idPrefix}-show-seconds`}
                       className="settings-checkbox-label"
                     >
                       {t("settings.appearance.showSeconds")}
@@ -416,7 +447,7 @@ export const SettingsModal = () => {
                   <div className="settings-checkbox-group">
                     <input
                       type="checkbox"
-                      id="use24Hour"
+                      id={`${idPrefix}-use-24-hour`}
                       className="settings-checkbox"
                       checked={localSettings.use24Hour}
                       onChange={(e) =>
@@ -427,7 +458,7 @@ export const SettingsModal = () => {
                       }
                     />
                     <label
-                      htmlFor="use24Hour"
+                      htmlFor={`${idPrefix}-use-24-hour`}
                       className="settings-checkbox-label"
                     >
                       {t("settings.appearance.use24Hour")}
@@ -441,7 +472,7 @@ export const SettingsModal = () => {
                     <div className="settings-checkbox-group">
                       <input
                         type="checkbox"
-                        id="showAmPm"
+                        id={`${idPrefix}-show-am-pm`}
                         className="settings-checkbox"
                         checked={localSettings.showAmPm}
                         onChange={(e) =>
@@ -452,7 +483,7 @@ export const SettingsModal = () => {
                         }
                       />
                       <label
-                        htmlFor="showAmPm"
+                        htmlFor={`${idPrefix}-show-am-pm`}
                         className="settings-checkbox-label"
                       >
                         {t("settings.appearance.showAmPm")}
@@ -465,10 +496,14 @@ export const SettingsModal = () => {
                   <>
                     {(i18n.language === "ko" || i18n.language === "ja") && (
                       <div className="settings-option">
-                        <label className="settings-label">
+                        <label
+                          className="settings-label"
+                          htmlFor={`${idPrefix}-am-pm-style`}
+                        >
                           {t("settings.appearance.amPmStyle.title")}
                         </label>
                         <select
+                          id={`${idPrefix}-am-pm-style`}
                           className="settings-select"
                           value={localSettings.amPmStyle}
                           onChange={(e) =>
@@ -493,10 +528,14 @@ export const SettingsModal = () => {
                     )}
 
                     <div className="settings-option">
-                      <label className="settings-label">
+                      <label
+                        className="settings-label"
+                        htmlFor={`${idPrefix}-am-pm-position`}
+                      >
                         {t("settings.appearance.amPmPosition")}
                       </label>
                       <select
+                        id={`${idPrefix}-am-pm-position`}
                         className="settings-select"
                         value={localSettings.amPmPosition}
                         onChange={(e) =>
@@ -528,7 +567,7 @@ export const SettingsModal = () => {
                   <div className="settings-checkbox-group">
                     <input
                       type="checkbox"
-                      id="useServerTime"
+                      id={`${idPrefix}-use-server-time`}
                       className="settings-checkbox"
                       checked={localSettings.useServerTime}
                       onChange={(e) =>
@@ -539,7 +578,7 @@ export const SettingsModal = () => {
                       }
                     />
                     <label
-                      htmlFor="useServerTime"
+                      htmlFor={`${idPrefix}-use-server-time`}
                       className="settings-checkbox-label"
                     >
                       {t("settings.time.useServerTime")}
@@ -550,12 +589,16 @@ export const SettingsModal = () => {
                   </p>
                 </div>
 
-                {localSettings.useServerTime && (
+                {localSettings.useServerTime ? (
                   <div className="settings-option">
-                    <label className="settings-label">
+                    <label
+                      className="settings-label"
+                      htmlFor={`${idPrefix}-server-time-interval`}
+                    >
                       {t("settings.time.updateInterval")}
                     </label>
                     <select
+                      id={`${idPrefix}-server-time-interval`}
                       className="settings-select"
                       value={localSettings.serverTimeUpdateIntervalSec}
                       onChange={(e) =>
@@ -565,13 +608,14 @@ export const SettingsModal = () => {
                         })
                       }
                     >
-                      <option value="10">{secondsLabel(10)}</option>
-                      <option value="30">{secondsLabel(30)}</option>
-                      <option value="60">{secondsLabel(60)}</option>
-                      <option value="300">{secondsLabel(300)}</option>
+                      {SERVER_TIME_UPDATE_INTERVAL_OPTIONS.map((interval) => (
+                        <option key={interval} value={interval}>
+                          {secondsLabel(Number(interval))}
+                        </option>
+                      ))}
                     </select>
                   </div>
-                )}
+                ) : null}
               </div>
             </>
           )}
@@ -588,12 +632,14 @@ export const SettingsModal = () => {
 
         <div className="settings-footer">
           <button
+            type="button"
             className="settings-button settings-button-secondary"
             onClick={handleClose}
           >
             {t("settings.close")}
           </button>
           <button
+            type="button"
             className="settings-button settings-button-primary"
             onClick={handleSave}
             disabled={localSettings.imageSources.length === 0}

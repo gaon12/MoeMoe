@@ -1,5 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { fetchWithTimeout } from "./fetchWithTimeout";
+import { fetchWithTimeout } from "./fetchWithTimeout.ts";
+
+const HTTP_OK = 200;
+const SHORT_TIMEOUT_MS = 250;
 
 describe("fetchWithTimeout", () => {
   afterEach(() => {
@@ -8,7 +11,7 @@ describe("fetchWithTimeout", () => {
   });
 
   it("returns successful fetch responses", async () => {
-    const response = new Response("ok", { status: 200 });
+    const response = new Response("ok", { status: HTTP_OK });
     const fetchMock = vi.fn().mockResolvedValue(response);
     vi.stubGlobal("fetch", fetchMock);
 
@@ -23,22 +26,23 @@ describe("fetchWithTimeout", () => {
     vi.useFakeTimers();
     vi.stubGlobal(
       "fetch",
-      vi.fn((_input: RequestInfo | URL, init?: RequestInit) => {
-        return new Promise<Response>((_resolve, reject) => {
-          init?.signal?.addEventListener(
-            "abort",
-            () => reject(init.signal?.reason),
-            { once: true },
-          );
-        });
-      }),
+      vi.fn(
+        (_input: RequestInfo | URL, init?: RequestInit) =>
+          new Promise<Response>((_resolve, reject) => {
+            init?.signal?.addEventListener(
+              "abort",
+              () => reject(init.signal?.reason),
+              { once: true },
+            );
+          }),
+      ),
     );
 
     const request = expect(
-      fetchWithTimeout("https://example.com/slow", {}, 250),
+      fetchWithTimeout("https://example.com/slow", {}, SHORT_TIMEOUT_MS),
     ).rejects.toThrow("Request timed out after 250ms");
 
-    await vi.advanceTimersByTimeAsync(250);
+    await vi.advanceTimersByTimeAsync(SHORT_TIMEOUT_MS);
     await request;
   });
 });

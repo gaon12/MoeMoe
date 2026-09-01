@@ -9,8 +9,13 @@ import {
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+const AUTO_REFRESH_INTERVAL_SECONDS = 30;
+const ALMOST_ONE_REFRESH_INTERVAL_MS = 29_999;
+const FINAL_INTERVAL_MILLISECOND = 1;
+const ONE_MINUTE_MS = 60_000;
+
 const mocks = vi.hoisted(() => ({
-  imageChangeInterval: 30,
+  imageChangeInterval: 0,
   refresh: vi.fn(),
   setIsSettingsOpen: vi.fn(),
   uiVisibility: {
@@ -49,14 +54,15 @@ vi.mock("./components/ImageBackground/ImageBackground", async () => {
     ImageBackground: React.forwardRef<
       { refresh: () => void },
       { onImageError?: (error: Error) => void }
-    >((props, ref) => {
+    >(({ onImageError }, ref) => {
       React.useImperativeHandle(ref, () => ({ refresh: mocks.refresh }));
+      const handleFailure = React.useCallback(
+        () => onImageError?.(new Error("provider failed")),
+        [onImageError],
+      );
       return (
-        <button
-          type="button"
-          onClick={() => props.onImageError?.(new Error("provider failed"))}
-        >
-          Fail image
+        <button type="button" onClick={handleFailure}>
+          {"Fail image"}
         </button>
       );
     }),
@@ -107,12 +113,12 @@ vi.mock("./components/SpotlightActions/SpotlightActions", () => ({
   SpotlightActions: () => <div data-testid="wallpaper-actions" />,
 }));
 
-import App from "./App";
+import { App } from "./App.tsx";
 
 describe("App image recovery", () => {
   beforeEach(() => {
     vi.useFakeTimers();
-    mocks.imageChangeInterval = 30;
+    mocks.imageChangeInterval = AUTO_REFRESH_INTERVAL_SECONDS;
     mocks.refresh.mockReset();
     Object.assign(mocks.uiVisibility, {
       clock: true,
@@ -134,10 +140,10 @@ describe("App image recovery", () => {
     render(<App />);
     fireEvent.click(screen.getByRole("button", { name: "Fail image" }));
 
-    act(() => vi.advanceTimersByTime(29_999));
+    act(() => vi.advanceTimersByTime(ALMOST_ONE_REFRESH_INTERVAL_MS));
     expect(mocks.refresh).not.toHaveBeenCalled();
 
-    act(() => vi.advanceTimersByTime(1));
+    act(() => vi.advanceTimersByTime(FINAL_INTERVAL_MILLISECOND));
     expect(mocks.refresh).toHaveBeenCalledOnce();
   });
 
@@ -146,7 +152,7 @@ describe("App image recovery", () => {
     render(<App />);
     fireEvent.click(screen.getByRole("button", { name: "Fail image" }));
 
-    act(() => vi.advanceTimersByTime(60_000));
+    act(() => vi.advanceTimersByTime(ONE_MINUTE_MS));
     expect(mocks.refresh).not.toHaveBeenCalled();
   });
 

@@ -2,12 +2,11 @@
   position: relative;
   width: 100vw;
   height: 100vh;
-  height: 100dvh;
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #000;
+  background: rgb(0 0 0);
 }
 
 .app.pseudo-fullscreen {
@@ -16,7 +15,13 @@
   z-index: 2147483647;
   width: 100vw;
   height: 100vh;
-  height: 100dvh;
+}
+
+@supports (height: 100dvh) {
+  .app,
+  .app.pseudo-fullscreen {
+    height: 100dvh;
+  }
 }
 
 .pseudo-fullscreen-root {

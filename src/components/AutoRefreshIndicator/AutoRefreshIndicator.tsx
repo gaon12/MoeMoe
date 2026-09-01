@@ -1,6 +1,9 @@
-import { useState, useEffect, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import "./AutoRefreshIndicator.css";
+
+const MILLISECONDS_PER_SECOND = 1000;
+const COUNTDOWN_UPDATE_INTERVAL_MS = 500;
 
 interface AutoRefreshIndicatorProps {
   intervalSeconds: number;
@@ -19,7 +22,6 @@ export function AutoRefreshIndicator({
 }: AutoRefreshIndicatorProps) {
   const { t } = useTranslation();
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
-  const [isExpanded, setIsExpanded] = useState(false);
 
   useEffect(() => {
     if (intervalSeconds <= 0 || lastRefreshTime <= 0 || isPaused) {
@@ -32,33 +34,29 @@ export function AutoRefreshIndicator({
       // 자동 새로고침이 꺼져 있거나, 오랫동안 꺼져 있다가
       // 다시 켜진 경우에는 다음 새로고침까지의 남은 시간을
       // "지금부터 intervalSeconds" 기준으로 계산해준다.
-      const elapsedSinceLast = (now - lastRefreshTime) / 1000;
+      const elapsedSinceLast =
+        (now - lastRefreshTime) / MILLISECONDS_PER_SECOND;
       const baseTime =
         elapsedSinceLast >= intervalSeconds ? now : lastRefreshTime;
-      const elapsed = (now - baseTime) / 1000;
+      const elapsed = (now - baseTime) / MILLISECONDS_PER_SECOND;
       const remaining = Math.max(0, intervalSeconds - elapsed);
       setTimeLeft(remaining);
     };
 
     updateRemaining();
-    const timer = window.setInterval(updateRemaining, 500);
-    return () => window.clearInterval(timer);
+    const timer = globalThis.setInterval(
+      updateRemaining,
+      COUNTDOWN_UPDATE_INTERVAL_MS,
+    );
+    return () => globalThis.clearInterval(timer);
   }, [intervalSeconds, lastRefreshTime, isPaused]);
 
-  const handleMouseEnter = () => setIsExpanded(true);
-  const handleMouseLeave = () => setIsExpanded(false);
-
-  const handleFocus = () => setIsExpanded(true);
-  const handleBlur = useCallback((event: React.FocusEvent<HTMLDivElement>) => {
-    if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
-      setIsExpanded(false);
-    }
-  }, []);
-
-  const handleToggle = () => {
-    if (intervalSeconds <= 0) return;
-    onTogglePause();
-  };
+  let dotClassName = "indicator-dot";
+  if (intervalSeconds <= 0) {
+    dotClassName += " disabled";
+  } else if (isPaused) {
+    dotClassName += " paused";
+  }
 
   let summaryText: string;
   let detailText: string | null = null;
@@ -68,47 +66,45 @@ export function AutoRefreshIndicator({
     summaryText = t("autoRefresh.status.paused");
   } else if (isLoading) {
     summaryText = t("autoRefresh.status.refreshing");
-  } else if (timeLeft != null) {
+  } else if (timeLeft === null) {
+    summaryText = t("autoRefresh.status.waiting");
+  } else {
     const seconds = Math.max(1, Math.ceil(timeLeft));
     // 기본(축소) 상태에서는 짧은 문구를, 호버/포커스 확장 시에는
     // 기존의 자세한 문구(다음 새로고침까지 N초)를 함께 보여준다.
     summaryText = t("autoRefresh.status.shortNext", { seconds });
     detailText = t("autoRefresh.status.next", { seconds });
-  } else {
-    summaryText = t("autoRefresh.status.waiting");
   }
 
+  const containerClassName = detailText
+    ? "auto-refresh-indicator has-detail"
+    : "auto-refresh-indicator";
+
   return (
-    <div
-      className={`auto-refresh-indicator${isExpanded ? " expanded" : " collapsed"}`}
-      role="status"
-      aria-live="polite"
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-      onFocus={handleFocus}
-      onBlur={handleBlur}
-      tabIndex={0}
-    >
+    <section className={containerClassName}>
+      <span className={dotClassName} />
       <span
-        className={`indicator-dot${intervalSeconds <= 0 ? " disabled" : isPaused ? " paused" : ""}`}
-      />
-      {(!detailText || !isExpanded) && (
+        className="indicator-status"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+      >
         <span className="indicator-summary">{summaryText}</span>
-      )}
-      {detailText && isExpanded && (
-        <span className="indicator-detail">{detailText}</span>
-      )}
-      {intervalSeconds > 0 && (
+        {detailText ? (
+          <span className="indicator-detail">{detailText}</span>
+        ) : null}
+      </span>
+      {intervalSeconds > 0 ? (
         <button
           type="button"
           className="indicator-toggle"
-          onClick={handleToggle}
+          onClick={onTogglePause}
         >
           {isPaused
             ? t("autoRefresh.actions.resume")
             : t("autoRefresh.actions.pause")}
         </button>
-      )}
-    </div>
+      ) : null}
+    </section>
   );
 }

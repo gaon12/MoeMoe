@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { WallpaperFeedback } from "./wallpaperPreferences";
+import type { WallpaperFeedback } from "./wallpaperPreferences.ts";
 import {
   chooseWeightedImageSource,
   createWallpaperFeedback,
@@ -7,7 +7,7 @@ import {
   getSourceWeight,
   getWallpaperAspect,
   shouldAcceptWallpaperCandidate,
-} from "./wallpaperPreferences";
+} from "./wallpaperPreferences.ts";
 
 describe("wallpaper preference learning", () => {
   it("extracts reusable provider, artist, and aspect traits", () => {

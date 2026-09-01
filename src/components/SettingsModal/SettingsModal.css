@@ -13,6 +13,14 @@
   animation: fadeIn 0.2s ease;
 }
 
+.settings-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -23,6 +31,7 @@
 }
 
 .settings-modal {
+  position: relative;
   background: var(--bg-secondary);
   border-radius: 16px;
   width: 90%;
@@ -165,10 +174,6 @@
   color: var(--text-primary);
 }
 
-.settings-visibility-item .settings-checkbox {
-  flex: 0 0 auto;
-}
-
 .settings-section-title {
   font-size: 1.1rem;
   font-weight: 600;
@@ -230,6 +235,10 @@
   accent-color: var(--accent);
 }
 
+.settings-visibility-item .settings-checkbox {
+  flex: 0 0 auto;
+}
+
 .settings-checkbox-label {
   font-size: 0.95rem;
   color: var(--text-secondary);
@@ -287,7 +296,7 @@
 
 .settings-button-danger {
   background: rgba(255, 99, 99, 0.12);
-  color: #ff6b6b;
+  color: rgb(255 107 107);
   border: 1px solid rgba(255, 99, 99, 0.35);
 }
 
@@ -306,11 +315,11 @@
 }
 
 .settings-status-success {
-  color: #65d18b;
+  color: rgb(101 209 139);
 }
 
 .settings-status-error {
-  color: #ff6b6b;
+  color: rgb(255 107 107);
 }
 
 .user-image-manager {
@@ -475,7 +484,7 @@
 
 .widget-config-action.danger {
   border-color: rgba(255, 99, 99, 0.4);
-  color: #ff6b6b;
+  color: rgb(255 107 107);
 }
 
 .widget-config-row {
@@ -667,7 +676,7 @@
 }
 
 .nsfw-checkbox:checked {
-  accent-color: #ff4444;
+  accent-color: rgb(255 68 68);
 }
 
 .nsfw-warning-icon {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { sanitizeWallpaperLibrary } from "./useWallpaperLibrary";
+import { sanitizeWallpaperLibrary } from "./useWallpaperLibrary.ts";
 
 describe("sanitizeWallpaperLibrary", () => {
   it("keeps safe remote images and removes unsafe URLs", () => {

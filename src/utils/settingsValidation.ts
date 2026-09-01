@@ -1,11 +1,11 @@
-import { ALL_IMAGE_SOURCES, type ImageSource } from "../types/image";
+import { ALL_IMAGE_SOURCES, type ImageSource } from "../types/image.ts";
 import {
   defaultSettings,
   type AppSettings,
   type UiVisibilitySettings,
   type Widget,
   type WidgetType,
-} from "../types/settings";
+} from "../types/settings.ts";
 
 const THEMES = ["light", "dark", "auto"] as const;
 const LANGUAGES = ["ko", "en", "ja"] as const;
@@ -20,6 +20,7 @@ const ASPECT_PREFERENCES = [
 const LETTERBOX_MODES = ["blur", "edge-color", "custom", "solid"] as const;
 const AM_PM_POSITIONS = ["before", "after"] as const;
 const AM_PM_STYLES = ["locale", "latin"] as const;
+const SIX_DIGIT_HEX_COLOR_PATTERN = /^#[\da-f]{6}$/i;
 const WIDGET_TYPES: WidgetType[] = [
   "clock",
   "weather",
@@ -52,11 +53,11 @@ const SETTINGS_KEYS = new Set<keyof AppSettings>([
   "customText",
 ]);
 
-export function isRecord(value: unknown): value is Record<string, unknown> {
+function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
-export function hasSettingsFields(value: Record<string, unknown>): boolean {
+function hasSettingsFields(value: Record<string, unknown>): boolean {
   return Object.keys(value).some((key) =>
     SETTINGS_KEYS.has(key as keyof AppSettings),
   );
@@ -119,8 +120,12 @@ function numberValue(
 }
 
 function normalizeWidgetType(value: unknown): WidgetType {
-  if (value === "date") return "clock";
-  if (value === "quote") return "animeQuote";
+  if (value === "date") {
+    return "clock";
+  }
+  if (value === "quote") {
+    return "animeQuote";
+  }
   return typeof value === "string" && WIDGET_TYPES.includes(value as WidgetType)
     ? (value as WidgetType)
     : "clock";
@@ -139,7 +144,9 @@ function sanitizeWidgets(value: unknown, fallback: Widget[]): Widget[] {
           ? widget.id.trim().slice(0, 100)
           : `widget-${index}`;
       let id = requestedId;
-      while (ids.has(id)) id = `${requestedId}-${index}`;
+      while (ids.has(id)) {
+        id = `${requestedId}-${index}`;
+      }
       ids.add(id);
 
       const position = isRecord(widget.position) ? widget.position : {};
@@ -160,7 +167,9 @@ function sanitizeImageSources(
   value: unknown,
   fallback: ImageSource[],
 ): ImageSource[] {
-  if (!Array.isArray(value)) return [...fallback];
+  if (!Array.isArray(value)) {
+    return [...fallback];
+  }
   const unique = [
     ...new Set(
       value.filter(
@@ -170,14 +179,16 @@ function sanitizeImageSources(
       ),
     ),
   ];
-  if (unique.length === 0) return fallback;
+  if (unique.length === 0) {
+    return fallback;
+  }
   const unchanged =
     unique.length === fallback.length &&
     unique.every((source, index) => source === fallback[index]);
   return unchanged ? fallback : unique;
 }
 
-export function sanitizeSettings(
+function sanitizeSettings(
   value: unknown,
   fallback: AppSettings = defaultSettings,
 ): AppSettings {
@@ -208,7 +219,7 @@ export function sanitizeSettings(
     ),
     letterboxCustomColor:
       typeof candidate.letterboxCustomColor === "string" &&
-      /^#[\da-f]{6}$/i.test(candidate.letterboxCustomColor)
+      SIX_DIGIT_HEX_COLOR_PATTERN.test(candidate.letterboxCustomColor)
         ? candidate.letterboxCustomColor
         : fallback.letterboxCustomColor,
     imageChangeInterval: numberValue(
@@ -247,7 +258,9 @@ export function sanitizeSettings(
     ),
     customText:
       typeof candidate.customText === "string"
-        ? candidate.customText.slice(0, 2_000)
+        ? candidate.customText.slice(0, 2000)
         : fallback.customText,
   };
 }
+
+export { hasSettingsFields, isRecord, sanitizeSettings };

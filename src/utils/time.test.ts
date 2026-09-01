@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { defaultSettings } from "../types/settings";
-import { getFormattedTimeParts, getFullDateString } from "./time";
+import { defaultSettings } from "../types/settings.ts";
+import { getFormattedTimeParts, getFullDateString } from "./time.ts";
 
 describe("time formatting", () => {
   const sample = new Date("2026-06-02T14:05:09");

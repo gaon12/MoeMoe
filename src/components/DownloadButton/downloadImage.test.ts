@@ -1,10 +1,14 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { fetchImageBlobWithFallback } from "./downloadImage";
+import { fetchImageBlobWithFallback } from "./downloadImage.ts";
+
+const HTTP_OK = 200;
+const HTTP_SERVER_ERROR = 500;
+const HTTP_FORBIDDEN = 403;
 
 function response(
   ok: boolean,
   blob: Blob,
-  status = ok ? 200 : 500,
+  status = ok ? HTTP_OK : HTTP_SERVER_ERROR,
   statusText = ok ? "OK" : "Server Error",
 ): Response {
   return {
@@ -60,7 +64,9 @@ describe("fetchImageBlobWithFallback", () => {
   it("reports all failures when neither source can be downloaded", async () => {
     const fetchMock = vi
       .fn()
-      .mockResolvedValue(response(false, new Blob(), 403, "Forbidden"));
+      .mockResolvedValue(
+        response(false, new Blob(), HTTP_FORBIDDEN, "Forbidden"),
+      );
     vi.stubGlobal("fetch", fetchMock);
 
     const promise = fetchImageBlobWithFallback(

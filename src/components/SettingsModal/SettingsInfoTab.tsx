@@ -1,5 +1,23 @@
 import { useTranslation } from "react-i18next";
 
+declare const __APP_VERSION__: string;
+
+interface LocalizedText {
+  ko: string;
+  en: string;
+  ja: string;
+}
+
+const localize = (language: string, text: LocalizedText) => {
+  if (language === "ja") {
+    return text.ja;
+  }
+  if (language === "en") {
+    return text.en;
+  }
+  return text.ko;
+};
+
 export const SettingsInfoTab = () => {
   const { t, i18n } = useTranslation();
   const githubUrl = "https://github.com/gaon12/MoeMoe";
@@ -7,46 +25,57 @@ export const SettingsInfoTab = () => {
   const lang = i18n.language;
 
   const infoText = {
-    librariesTitle:
-      lang === "ja"
-        ? "使用ライブラリ"
-        : lang === "en"
-          ? "Libraries Used"
-          : "사용한 라이브러리",
-    librariesDescription:
-      lang === "ja"
-        ? "このプロジェクトで利用している主なオープンソースライブラリです。"
-        : lang === "en"
-          ? "Major open-source libraries used in this project."
-          : "이 프로젝트를 구성하는 주요 오픈 소스 라이브러리입니다.",
-    librariesNameHeader:
-      lang === "ja" ? "ライブラリ" : lang === "en" ? "Library" : "라이브러리",
-    librariesLicenseHeader:
-      lang === "ja" ? "ライセンス" : lang === "en" ? "License" : "라이선스",
-    apisTitle:
-      lang === "ja" ? "利用API" : lang === "en" ? "APIs Used" : "사용한 API",
-    apisDescription:
-      lang === "ja"
-        ? "背景画像、天気、位置情報、時刻同期などに外部APIを利用しています。"
-        : lang === "en"
-          ? "External APIs used for wallpapers, weather, location and time sync."
-          : "배경 이미지, 날씨, 위치, 시간 동기화 등에 사용하는 외부 API입니다.",
-    apisNameHeader: lang === "ja" ? "API" : lang === "en" ? "API" : "API",
-    apisUsageHeader: lang === "ja" ? "用途" : lang === "en" ? "Usage" : "용도",
-    licenseTitle:
-      lang === "ja" ? "ライセンス" : lang === "en" ? "License" : "라이선스",
-    projectLicenseLabel:
-      lang === "ja"
-        ? "プロジェクトライセンス"
-        : lang === "en"
-          ? "Project license"
-          : "프로젝트 라이선스",
-    sponsorLabel:
-      lang === "ja"
-        ? "開発を支援"
-        : lang === "en"
-          ? "Support development"
-          : "개발 후원하기",
+    librariesTitle: localize(lang, {
+      ko: "사용한 라이브러리",
+      en: "Libraries Used",
+      ja: "使用ライブラリ",
+    }),
+    librariesDescription: localize(lang, {
+      ko: "이 프로젝트를 구성하는 주요 오픈 소스 라이브러리입니다.",
+      en: "Major open-source libraries used in this project.",
+      ja: "このプロジェクトで利用している主なオープンソースライブラリです。",
+    }),
+    librariesNameHeader: localize(lang, {
+      ko: "라이브러리",
+      en: "Library",
+      ja: "ライブラリ",
+    }),
+    librariesLicenseHeader: localize(lang, {
+      ko: "라이선스",
+      en: "License",
+      ja: "ライセンス",
+    }),
+    apisTitle: localize(lang, {
+      ko: "사용한 API",
+      en: "APIs Used",
+      ja: "利用API",
+    }),
+    apisDescription: localize(lang, {
+      ko: "배경 이미지, 날씨, 위치, 시간 동기화 등에 사용하는 외부 API입니다.",
+      en: "External APIs used for wallpapers, weather, location and time sync.",
+      ja: "背景画像、天気、位置情報、時刻同期などに外部APIを利用しています。",
+    }),
+    apisNameHeader: "API",
+    apisUsageHeader: localize(lang, {
+      ko: "용도",
+      en: "Usage",
+      ja: "用途",
+    }),
+    licenseTitle: localize(lang, {
+      ko: "라이선스",
+      en: "License",
+      ja: "ライセンス",
+    }),
+    projectLicenseLabel: localize(lang, {
+      ko: "프로젝트 라이선스",
+      en: "Project license",
+      ja: "プロジェクトライセンス",
+    }),
+    sponsorLabel: localize(lang, {
+      ko: "개발 후원하기",
+      en: "Support development",
+      ja: "開発を支援",
+    }),
   };
 
   const libraries = [
@@ -61,129 +90,115 @@ export const SettingsInfoTab = () => {
   const apis = [
     {
       name: "Nekos.best",
-      usage:
-        lang === "ja"
-          ? "アニメ画像 (SFW)"
-          : lang === "en"
-            ? "Anime images (SFW)"
-            : "애니메이션 이미지 (SFW)",
+      usage: localize(lang, {
+        ko: "애니메이션 이미지 (SFW)",
+        en: "Anime images (SFW)",
+        ja: "アニメ画像 (SFW)",
+      }),
     },
     {
       name: "Waifu.pics",
-      usage:
-        lang === "ja"
-          ? "アニメ画像 (SFW/NSFW)"
-          : lang === "en"
-            ? "Anime images (SFW/NSFW)"
-            : "애니메이션 이미지 (SFW/NSFW)",
+      usage: localize(lang, {
+        ko: "애니메이션 이미지 (SFW/NSFW)",
+        en: "Anime images (SFW/NSFW)",
+        ja: "アニメ画像 (SFW/NSFW)",
+      }),
     },
     {
       name: "Nekosia",
-      usage:
-        lang === "ja"
-          ? "アニメ画像"
-          : lang === "en"
-            ? "Anime images"
-            : "애니메이션 이미지",
+      usage: localize(lang, {
+        ko: "애니메이션 이미지",
+        en: "Anime images",
+        ja: "アニメ画像",
+      }),
     },
     {
       name: "Waifu.im",
-      usage:
-        lang === "ja"
-          ? "アニメ画像 + 作者情報"
-          : lang === "en"
-            ? "Anime images with artist info"
-            : "애니메이션 이미지 및 작가 정보",
+      usage: localize(lang, {
+        ko: "애니메이션 이미지 및 작가 정보",
+        en: "Anime images with artist info",
+        ja: "アニメ画像 + 作者情報",
+      }),
     },
     {
       name: "Nekos.moe",
-      usage:
-        lang === "ja"
-          ? "アニメ画像 (IDベース)"
-          : lang === "en"
-            ? "Anime images by ID"
-            : "ID 기반 애니메이션 이미지",
+      usage: localize(lang, {
+        ko: "ID 기반 애니메이션 이미지",
+        en: "Anime images by ID",
+        ja: "アニメ画像 (IDベース)",
+      }),
     },
     {
       name: "Danbooru (donmai.us)",
-      usage:
-        lang === "ja"
-          ? "ランダムアニメ画像 (safe/NSFW)"
-          : lang === "en"
-            ? "Random anime images (safe/NSFW)"
-            : "랜덤 애니메이션 이미지 (safe/NSFW)",
+      usage: localize(lang, {
+        ko: "랜덤 애니메이션 이미지 (safe/NSFW)",
+        en: "Random anime images (safe/NSFW)",
+        ja: "ランダムアニメ画像 (safe/NSFW)",
+      }),
     },
     {
       name: "Pic.re",
-      usage:
-        lang === "ja"
-          ? "ランダム SFW アニメ画像"
-          : lang === "en"
-            ? "Random SFW anime images"
-            : "랜덤 SFW 애니메이션 이미지",
+      usage: localize(lang, {
+        ko: "랜덤 SFW 애니메이션 이미지",
+        en: "Random SFW anime images",
+        ja: "ランダム SFW アニメ画像",
+      }),
     },
     {
       name: "Nekos API (api.nekosapi.com)",
-      usage:
-        lang === "ja"
-          ? "アニメ画像 (safe/NSFW)"
-          : lang === "en"
-            ? "Anime images (safe/NSFW)"
-            : "애니메이션 이미지 (safe/NSFW)",
+      usage: localize(lang, {
+        ko: "애니메이션 이미지 (safe/NSFW)",
+        en: "Anime images (safe/NSFW)",
+        ja: "アニメ画像 (safe/NSFW)",
+      }),
     },
     {
       name: "Wallhaven",
-      usage:
-        lang === "ja"
-          ? "高解像度SFWアニメ壁紙"
-          : lang === "en"
-            ? "High-resolution SFW anime wallpapers"
-            : "고해상도 SFW 애니 배경화면",
+      usage: localize(lang, {
+        ko: "고해상도 SFW 애니 배경화면",
+        en: "High-resolution SFW anime wallpapers",
+        ja: "高解像度SFWアニメ壁紙",
+      }),
     },
     {
       name: "WeatherAPI.com",
-      usage:
-        lang === "ja"
-          ? "天気・現在地ウィジェットの天気情報"
-          : lang === "en"
-            ? "Weather data for weather/location widgets"
-            : "날씨/위치 위젯의 날씨 데이터",
+      usage: localize(lang, {
+        ko: "날씨/위치 위젯의 날씨 데이터",
+        en: "Weather data for weather/location widgets",
+        ja: "天気・現在地ウィジェットの天気情報",
+      }),
     },
     {
       name: "OpenStreetMap Nominatim",
-      usage:
-        lang === "ja"
-          ? "緯度/経度からの住所の逆ジオコーディング"
-          : lang === "en"
-            ? "Reverse geocoding from latitude/longitude"
-            : "위도/경도 기반 역지오코딩",
+      usage: localize(lang, {
+        ko: "위도/경도 기반 역지오코딩",
+        en: "Reverse geocoding from latitude/longitude",
+        ja: "緯度/経度からの住所の逆ジオコーディング",
+      }),
     },
     {
       name: "Anime Quote API",
-      usage:
-        lang === "ja"
-          ? "アニメ名言ウィジェット (環境変数でURL指定)"
-          : lang === "en"
-            ? "Anime quote widget (URL via env var)"
-            : "애니 명대사 위젯 (환경 변수로 URL 설정)",
+      usage: localize(lang, {
+        ko: "애니 명대사 위젯 (환경 변수로 URL 설정)",
+        en: "Anime quote widget (URL via env var)",
+        ja: "アニメ名言ウィジェット (環境変数でURL指定)",
+      }),
     },
     {
       name: "Server Time API",
-      usage:
-        lang === "ja"
-          ? "サーバー時刻同期 (環境変数でURL指定)"
-          : lang === "en"
-            ? "Server time sync (URL via env var)"
-            : "서버 시간 동기화 (환경 변수로 URL 설정)",
+      usage: localize(lang, {
+        ko: "서버 시간 동기화 (환경 변수로 URL 설정)",
+        en: "Server time sync (URL via env var)",
+        ja: "サーバー時刻同期 (環境変数でURL指定)",
+      }),
     },
     {
       name: "IP-based Reverse Geocoding API",
-      usage:
-        lang === "ja"
-          ? "IPベースのおおまかな現在地推定"
-          : lang === "en"
-            ? "Approximate location from IP (env var)"
-            : "IP 기반 대략적인 위치 추정 (환경 변수)",
+      usage: localize(lang, {
+        ko: "IP 기반 대략적인 위치 추정 (환경 변수)",
+        en: "Approximate location from IP (env var)",
+        ja: "IPベースのおおまかな現在地推定",
+      }),
     },
   ];
 
@@ -193,14 +208,14 @@ export const SettingsInfoTab = () => {
         <h3 className="settings-section-title">{t("settings.info.title")}</h3>
 
         <div className="settings-option">
-          <label className="settings-label">
+          <span className="settings-label">
             {t("settings.info.projectName")}
-          </label>
+          </span>
           <p className="settings-description">{t("app.title")}</p>
         </div>
 
         <div className="settings-option">
-          <label className="settings-label">{t("settings.info.version")}</label>
+          <span className="settings-label">{t("settings.info.version")}</span>
           <p className="settings-description">{__APP_VERSION__}</p>
         </div>
       </div>
@@ -262,13 +277,11 @@ export const SettingsInfoTab = () => {
           <h3 className="settings-section-title">{infoText.licenseTitle}</h3>
         </div>
         <div className="settings-option">
-          <label className="settings-label">
-            {infoText.projectLicenseLabel}
-          </label>
+          <span className="settings-label">{infoText.projectLicenseLabel}</span>
           <p className="settings-description">MIT License</p>
         </div>
         <div className="settings-option">
-          <label className="settings-label">{t("settings.info.github")}</label>
+          <span className="settings-label">{t("settings.info.github")}</span>
           <a
             href={githubUrl}
             target="_blank"
@@ -276,13 +289,13 @@ export const SettingsInfoTab = () => {
             className="info-link"
           >
             <span className="info-link-icon" aria-hidden="true">
-              GH
+              {"GH"}
             </span>
-            <span className="info-link-text">github.com/gaon12/MoeMoe</span>
+            <span className="info-link-text">{"github.com/gaon12/MoeMoe"}</span>
           </a>
         </div>
         <div className="settings-option">
-          <label className="settings-label">{infoText.sponsorLabel}</label>
+          <span className="settings-label">{infoText.sponsorLabel}</span>
           <a
             href={sponsorsUrl}
             target="_blank"
@@ -290,9 +303,11 @@ export const SettingsInfoTab = () => {
             className="info-link"
           >
             <span className="info-link-icon" aria-hidden="true">
-              ♥
+              {"♥"}
             </span>
-            <span className="info-link-text">github.com/sponsors/gaon12</span>
+            <span className="info-link-text">
+              {"github.com/sponsors/gaon12"}
+            </span>
           </a>
         </div>
       </div>

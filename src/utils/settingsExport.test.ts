@@ -1,10 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { defaultSettings } from "../types/settings";
+import { defaultSettings } from "../types/settings.ts";
 import {
   createSettingsExport,
   MAX_SETTINGS_IMPORT_BYTES,
   parseSettingsExport,
-} from "./settingsExport";
+} from "./settingsExport.ts";
+
+const SIZE_LIMIT_PATTERN = /size limit/;
+const JSON_OBJECT_PATTERN = /JSON object/;
+const RECOGNIZED_SETTINGS_PATTERN = /recognized settings/;
 
 describe("settings export", () => {
   it("wraps settings with export metadata", () => {
@@ -54,12 +58,12 @@ describe("settings export", () => {
   it("rejects invalid payloads", () => {
     expect(() =>
       parseSettingsExport(" ".repeat(MAX_SETTINGS_IMPORT_BYTES + 1)),
-    ).toThrow(/size limit/);
-    expect(() => parseSettingsExport("[]")).toThrow(/JSON object/);
+    ).toThrow(SIZE_LIMIT_PATTERN);
+    expect(() => parseSettingsExport("[]")).toThrow(JSON_OBJECT_PATTERN);
     expect(() => parseSettingsExport("{")).toThrow();
     expect(() => parseSettingsExport('{"widgets":{}}')).not.toThrow();
     expect(() => parseSettingsExport('{"totallyUnknown":true}')).toThrow(
-      /recognized settings/,
+      RECOGNIZED_SETTINGS_PATTERN,
     );
   });
 });

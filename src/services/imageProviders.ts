@@ -1,19 +1,23 @@
-import type { AnimeImage, ImageDimensions, ImageSource } from "../types/image";
-import type { ImageApiConfig, ImageAspectRequest } from "./imageApiTypes";
+import type {
+  AnimeImage,
+  ImageDimensions,
+  ImageSource,
+} from "../types/image.ts";
+import type { ImageApiConfig, ImageAspectRequest } from "./imageApiTypes.ts";
 import {
   buildDanbooruAspectTags,
   buildWaifuImSearchUrl,
   buildWallhavenSearchUrl,
-} from "./imageAspect";
+} from "./imageAspect.ts";
 import {
   buildDataError,
   buildResponseError,
   getCorsProxyUrl,
   getProxiedImageUrl,
   withCacheBust,
-} from "./imageApiUtils";
-import { fetchRandomUserImage } from "./userImageStore";
-import { isSafeHttpsUrl, isSafeImageUrl } from "../utils/safeUrl";
+} from "./imageApiUtils.ts";
+import { fetchRandomUserImage } from "./userImageStore.ts";
+import { isSafeHttpsUrl, isSafeImageUrl } from "../utils/safeUrl.ts";
 
 /**
  * Response structure from nekos.best API
@@ -125,8 +129,10 @@ async function fetchFromNekosBest(signal?: AbortSignal): Promise<AnimeImage> {
   let data: NekosBestResponse;
   try {
     data = await response.json();
-  } catch {
-    throw buildDataError("nekos.best", url, "Failed to parse JSON response");
+  } catch (error) {
+    throw buildDataError("nekos.best", url, "Failed to parse JSON response", {
+      cause: error,
+    });
   }
 
   if (!data.results || data.results.length === 0) {
@@ -134,11 +140,11 @@ async function fetchFromNekosBest(signal?: AbortSignal): Promise<AnimeImage> {
       "nekos.best",
       url,
       "No images returned from nekos.best API",
-      data,
+      { data },
     );
   }
 
-  const result = data.results[0];
+  const [result] = data.results;
 
   const directUrl = result.url;
 
@@ -157,10 +163,10 @@ async function fetchFromNekosBest(signal?: AbortSignal): Promise<AnimeImage> {
  * Fetches a random anime image from waifu.pics API
  */
 async function fetchFromWaifuPics(
-  allowNSFW = false,
+  allowNsfw = false,
   signal?: AbortSignal,
 ): Promise<AnimeImage> {
-  const sfwOrNsfw = allowNSFW ? "nsfw" : "sfw";
+  const sfwOrNsfw = allowNsfw ? "nsfw" : "sfw";
   const url = `https://api.waifu.pics/${sfwOrNsfw}/waifu`;
 
   const response = await fetch(url, {
@@ -178,8 +184,10 @@ async function fetchFromWaifuPics(
   let data: WaifuPicsResponse;
   try {
     data = await response.json();
-  } catch {
-    throw buildDataError("waifu.pics", url, "Failed to parse JSON response");
+  } catch (error) {
+    throw buildDataError("waifu.pics", url, "Failed to parse JSON response", {
+      cause: error,
+    });
   }
 
   if (!data.url) {
@@ -187,7 +195,7 @@ async function fetchFromWaifuPics(
       "waifu.pics",
       url,
       "No image URL returned from waifu.pics API",
-      data,
+      { data },
     );
   }
 
@@ -220,16 +228,18 @@ async function fetchFromNekosia(signal?: AbortSignal): Promise<AnimeImage> {
   let data: NekosiaResponse;
   try {
     data = await response.json();
-  } catch {
-    throw buildDataError("Nekosia", url, "Failed to parse JSON response");
+  } catch (error) {
+    throw buildDataError("Nekosia", url, "Failed to parse JSON response", {
+      cause: error,
+    });
   }
 
-  if (!data.image || !data.image.original || !data.image.original.url) {
+  if (!data.image?.original?.url) {
     throw buildDataError(
       "Nekosia",
       url,
       "No image URL returned from Nekosia API",
-      data,
+      { data },
     );
   }
 
@@ -245,11 +255,11 @@ async function fetchFromNekosia(signal?: AbortSignal): Promise<AnimeImage> {
  * Fetches a random anime image from waifu.im API
  */
 async function fetchFromWaifuIm(
-  allowNSFW = false,
+  allowNsfw = false,
   aspect?: ImageAspectRequest,
   signal?: AbortSignal,
 ): Promise<AnimeImage> {
-  const url = buildWaifuImSearchUrl(allowNSFW, aspect);
+  const url = buildWaifuImSearchUrl(allowNsfw, aspect);
 
   const response = await fetch(url, {
     method: "GET",
@@ -266,8 +276,10 @@ async function fetchFromWaifuIm(
   let data: WaifuImResponse;
   try {
     data = await response.json();
-  } catch {
-    throw buildDataError("waifu.im", url, "Failed to parse JSON response");
+  } catch (error) {
+    throw buildDataError("waifu.im", url, "Failed to parse JSON response", {
+      cause: error,
+    });
   }
 
   const images = data.items ?? data.images ?? [];
@@ -276,17 +288,17 @@ async function fetchFromWaifuIm(
       "waifu.im",
       url,
       "No images returned from waifu.im API",
-      data,
+      { data },
     );
   }
 
-  const image = images[0];
+  const [image] = images;
   if (!image?.url) {
     throw buildDataError(
       "waifu.im",
       url,
       "No image URL returned from waifu.im API",
-      data,
+      { data },
     );
   }
 
@@ -313,10 +325,10 @@ async function fetchFromWaifuIm(
  * Direct image: https://nekos.moe/image/{id}
  */
 async function fetchFromNekosMoe(
-  allowNSFW = false,
+  allowNsfw = false,
   signal?: AbortSignal,
 ): Promise<AnimeImage> {
-  const url = `https://nekos.moe/api/v1/random/image?count=1&nsfw=${allowNSFW ? "true" : "false"}`;
+  const url = `https://nekos.moe/api/v1/random/image?count=1&nsfw=${allowNsfw ? "true" : "false"}`;
   const response = await fetch(url, {
     method: "GET",
     headers: { Accept: "application/json" },
@@ -328,16 +340,18 @@ async function fetchFromNekosMoe(
   let data: NekosMoeRandomResponse;
   try {
     data = await response.json();
-  } catch {
-    throw buildDataError("nekos.moe", url, "Failed to parse JSON response");
+  } catch (error) {
+    throw buildDataError("nekos.moe", url, "Failed to parse JSON response", {
+      cause: error,
+    });
   }
   const img = data.images?.[0];
-  if (!img || !img.id) {
+  if (!img?.id) {
     throw buildDataError(
       "nekos.moe",
       url,
       "No images returned from nekos.moe API",
-      data,
+      { data },
     );
   }
   const imageUrl = `https://nekos.moe/image/${img.id}`;
@@ -354,11 +368,11 @@ async function fetchFromNekosMoe(
  * API: https://danbooru.donmai.us/posts.json?random=true&limit=1&tags=rating:safe
  */
 async function fetchFromDanbooru(
-  allowNSFW = false,
+  allowNsfw = false,
   aspect?: ImageAspectRequest,
   signal?: AbortSignal,
 ): Promise<AnimeImage> {
-  const rating = allowNSFW ? "-rating:s" : "rating:s";
+  const rating = allowNsfw ? "-rating:s" : "rating:s";
   const tags = [rating, ...buildDanbooruAspectTags(aspect), "random:1"];
   const apiUrl = `https://danbooru.donmai.us/posts.json?limit=1&tags=${encodeURIComponent(tags.join(" "))}`;
   const response = await fetch(apiUrl, {
@@ -372,8 +386,10 @@ async function fetchFromDanbooru(
   let posts: DanbooruPost[];
   try {
     posts = await response.json();
-  } catch {
-    throw buildDataError("danbooru", apiUrl, "Failed to parse JSON response");
+  } catch (error) {
+    throw buildDataError("danbooru", apiUrl, "Failed to parse JSON response", {
+      cause: error,
+    });
   }
   const post = posts?.[0];
   const url = post?.large_file_url || post?.file_url || post?.preview_file_url;
@@ -382,7 +398,7 @@ async function fetchFromDanbooru(
       "danbooru",
       apiUrl,
       "No image URL returned from danbooru API",
-      posts,
+      { data: posts },
     );
   }
   return {
@@ -401,7 +417,7 @@ async function fetchFromDanbooru(
  * Fetches a random SFW anime image from Pic.re
  * Docs: https://doc.pic.re/anime-api-jie-shao
  */
-async function fetchFromPicRe(): Promise<AnimeImage> {
+function fetchFromPicRe(): AnimeImage {
   // Pic.re serves a random safe-for-work anime image at this URL.
   const imageUrl = withCacheBust("https://pic.re/image");
   return {
@@ -428,12 +444,12 @@ interface NekosApiImage {
  * Base URL: https://api.nekosapi.com/v4
  */
 async function fetchFromNekosApi(
-  allowNSFW = false,
+  allowNsfw = false,
   signal?: AbortSignal,
 ): Promise<AnimeImage> {
   const params = new URLSearchParams();
   params.set("limit", "1");
-  if (!allowNSFW) {
+  if (!allowNsfw) {
     params.set("rating", "safe");
   }
   const baseUrl = `https://api.nekosapi.com/v4/images/random?${params.toString()}`;
@@ -489,20 +505,22 @@ async function fetchFromNekosApi(
   let data: NekosApiImage[] | { items?: NekosApiImage[] };
   try {
     data = await response.json();
-  } catch {
-    throw buildDataError("Nekos", requestUrl, "Failed to parse JSON response");
+  } catch (error) {
+    throw buildDataError("Nekos", requestUrl, "Failed to parse JSON response", {
+      cause: error,
+    });
   }
   const images: NekosApiImage[] = Array.isArray(data)
     ? data
     : (data?.items ?? []);
-  const image = images[0];
+  const [image] = images;
 
-  if (!image || !image.url) {
+  if (!image?.url) {
     throw buildDataError(
       "Nekos",
       requestUrl,
       "No image URL returned from Nekos API",
-      data,
+      { data },
     );
   }
 
@@ -532,8 +550,10 @@ async function fetchFromWallhaven(
   let data: WallhavenResponse;
   try {
     data = await response.json();
-  } catch {
-    throw buildDataError("Wallhaven", url, "Failed to parse JSON response");
+  } catch (error) {
+    throw buildDataError("Wallhaven", url, "Failed to parse JSON response", {
+      cause: error,
+    });
   }
   const wallpaper = data.data?.[0];
   if (!wallpaper?.path) {
@@ -541,7 +561,7 @@ async function fetchFromWallhaven(
       "Wallhaven",
       url,
       "No wallpaper URL returned from Wallhaven API",
-      data,
+      { data },
     );
   }
   const [resolutionWidth, resolutionHeight] = (

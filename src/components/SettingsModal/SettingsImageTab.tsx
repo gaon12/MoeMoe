@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import {
   useCallback,
+  useId,
   useState,
   type Dispatch,
   type SetStateAction,
@@ -10,9 +11,11 @@ import type {
   ImageAspectPreference,
   ImageFitMode,
   LetterboxFillMode,
-} from "../../types/settings";
-import { ALL_IMAGE_SOURCES, type ImageSource } from "../../types/image";
-import { UserImageManager } from "./UserImageManager";
+} from "../../types/settings.ts";
+import { ALL_IMAGE_SOURCES, type ImageSource } from "../../types/image.ts";
+import { UserImageManager } from "./UserImageManager.tsx";
+
+const AUTO_REFRESH_INTERVAL_OPTIONS = ["30", "60", "120", "300", "600"];
 
 interface SettingsImageTabProps {
   localSettings: AppSettings;
@@ -20,23 +23,54 @@ interface SettingsImageTabProps {
   onUserImagesAvailabilityChange: (available: boolean) => void;
 }
 
+const getSecondsSuffix = (language: string) => {
+  if (language === "ko") {
+    return "초";
+  }
+  if (language === "ja") {
+    return "秒";
+  }
+  return "s";
+};
+
 export const SettingsImageTab = ({
   localSettings,
   setLocalSettings,
   onUserImagesAvailabilityChange,
 }: SettingsImageTabProps) => {
   const { t, i18n } = useTranslation();
+  const idPrefix = useId();
   const secondsLabel = (value: number) =>
-    `${value}${i18n.language === "ko" ? "초" : i18n.language === "ja" ? "秒" : "s"}`;
+    `${value}${getSecondsSuffix(i18n.language)}`;
   const [userImageCount, setUserImageCount] = useState(0);
 
-  const toggleImageSource = (source: ImageSource) => {
-    if (source === "user_uploads" && userImageCount === 0) return;
-    const newSources = localSettings.imageSources.includes(source)
-      ? localSettings.imageSources.filter((s) => s !== source)
-      : [...localSettings.imageSources, source];
-    setLocalSettings({ ...localSettings, imageSources: newSources });
-  };
+  const toggleImageSource = useCallback(
+    (source: ImageSource) => {
+      if (source === "user_uploads" && userImageCount === 0) {
+        return;
+      }
+      setLocalSettings((current) => ({
+        ...current,
+        imageSources: current.imageSources.includes(source)
+          ? current.imageSources.filter(
+              (currentSource) => currentSource !== source,
+            )
+          : [...current.imageSources, source],
+      }));
+    },
+    [setLocalSettings, userImageCount],
+  );
+
+  const handleImageSourceChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const source = event.currentTarget.dataset.source as
+        ImageSource | undefined;
+      if (source) {
+        toggleImageSource(source);
+      }
+    },
+    [toggleImageSource],
+  );
 
   const allSourceValues = ALL_IMAGE_SOURCES;
 
@@ -87,6 +121,55 @@ export const SettingsImageTab = ({
     onUserImagesAvailabilityChange(false);
   }, [onUserImagesAvailabilityChange, setLocalSettings]);
 
+  const handleAllowNsfwChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const allowNSFW = event.currentTarget.checked;
+      setLocalSettings((current) => ({ ...current, allowNSFW }));
+    },
+    [setLocalSettings],
+  );
+
+  const handleFitModeChange = useCallback(
+    (event: React.ChangeEvent<HTMLSelectElement>) => {
+      const imageFitMode = event.currentTarget.value as ImageFitMode;
+      setLocalSettings((current) => ({ ...current, imageFitMode }));
+    },
+    [setLocalSettings],
+  );
+
+  const handleAspectPreferenceChange = useCallback(
+    (event: React.ChangeEvent<HTMLSelectElement>) => {
+      const imageAspectPreference = event.currentTarget
+        .value as ImageAspectPreference;
+      setLocalSettings((current) => ({ ...current, imageAspectPreference }));
+    },
+    [setLocalSettings],
+  );
+
+  const handleLetterboxFillChange = useCallback(
+    (event: React.ChangeEvent<HTMLSelectElement>) => {
+      const letterboxFillMode = event.currentTarget.value as LetterboxFillMode;
+      setLocalSettings((current) => ({ ...current, letterboxFillMode }));
+    },
+    [setLocalSettings],
+  );
+
+  const handleLetterboxColorChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const letterboxCustomColor = event.currentTarget.value;
+      setLocalSettings((current) => ({ ...current, letterboxCustomColor }));
+    },
+    [setLocalSettings],
+  );
+
+  const handleRefreshIntervalChange = useCallback(
+    (event: React.ChangeEvent<HTMLSelectElement>) => {
+      const imageChangeInterval = Number(event.currentTarget.value);
+      setLocalSettings((current) => ({ ...current, imageChangeInterval }));
+    },
+    [setLocalSettings],
+  );
+
   const availableSources: Array<{ value: ImageSource; label: string }> =
     allSourceValues.map((value) => ({
       value,
@@ -101,9 +184,9 @@ export const SettingsImageTab = ({
 
         {/* Image Sources */}
         <div className="settings-option">
-          <label className="settings-label">
+          <span className="settings-label">
             {t("settings.imageSource.title")}
-          </label>
+          </span>
           <p className="settings-description">
             {t("settings.imageSource.description")}
           </p>
@@ -128,16 +211,17 @@ export const SettingsImageTab = ({
               <div key={source.value} className="source-checkbox-item">
                 <input
                   type="checkbox"
-                  id={`source-${source.value}`}
+                  id={`${idPrefix}-source-${source.value}`}
+                  data-source={source.value}
                   className="settings-checkbox"
                   checked={localSettings.imageSources.includes(source.value)}
                   disabled={
                     source.value === "user_uploads" && userImageCount === 0
                   }
-                  onChange={() => toggleImageSource(source.value)}
+                  onChange={handleImageSourceChange}
                 />
                 <label
-                  htmlFor={`source-${source.value}`}
+                  htmlFor={`${idPrefix}-source-${source.value}`}
                   className="settings-checkbox-label"
                 >
                   {source.label}
@@ -166,23 +250,21 @@ export const SettingsImageTab = ({
           <div className="settings-checkbox-group">
             <input
               type="checkbox"
-              id="allowNSFW"
+              id={`${idPrefix}-allow-nsfw`}
               className="settings-checkbox nsfw-checkbox"
               checked={localSettings.allowNSFW}
-              onChange={(e) =>
-                setLocalSettings({
-                  ...localSettings,
-                  allowNSFW: e.target.checked,
-                })
-              }
+              onChange={handleAllowNsfwChange}
             />
-            <label htmlFor="allowNSFW" className="settings-checkbox-label">
+            <label
+              htmlFor={`${idPrefix}-allow-nsfw`}
+              className="settings-checkbox-label"
+            >
               {t("settings.image.allowNSFW")}{" "}
               <span
                 className="nsfw-warning-icon"
                 data-tooltip={t("settings.image.nsfwWarning")}
               >
-                ⚠️
+                {"⚠️"}
               </span>
             </label>
           </div>
@@ -190,18 +272,14 @@ export const SettingsImageTab = ({
 
         {/* Image Fit Mode */}
         <div className="settings-option">
-          <label className="settings-label">
+          <label className="settings-label" htmlFor={`${idPrefix}-fit-mode`}>
             {t("settings.image.fitMode")}
           </label>
           <select
+            id={`${idPrefix}-fit-mode`}
             className="settings-select"
             value={localSettings.imageFitMode}
-            onChange={(e) =>
-              setLocalSettings({
-                ...localSettings,
-                imageFitMode: e.target.value as ImageFitMode,
-              })
-            }
+            onChange={handleFitModeChange}
           >
             <option value="cover">{t("settings.image.fitCover")}</option>
             <option value="contain">{t("settings.image.fitContain")}</option>
@@ -209,18 +287,17 @@ export const SettingsImageTab = ({
         </div>
 
         <div className="settings-option">
-          <label className="settings-label">
+          <label
+            className="settings-label"
+            htmlFor={`${idPrefix}-aspect-preference`}
+          >
             {t("settings.image.aspectPreference")}
           </label>
           <select
+            id={`${idPrefix}-aspect-preference`}
             className="settings-select"
             value={localSettings.imageAspectPreference}
-            onChange={(e) =>
-              setLocalSettings({
-                ...localSettings,
-                imageAspectPreference: e.target.value as ImageAspectPreference,
-              })
-            }
+            onChange={handleAspectPreferenceChange}
           >
             <option value="screen">{t("settings.image.aspectScreen")}</option>
             <option value="landscape">
@@ -238,18 +315,17 @@ export const SettingsImageTab = ({
         {localSettings.imageFitMode === "contain" && (
           <>
             <div className="settings-option">
-              <label className="settings-label">
+              <label
+                className="settings-label"
+                htmlFor={`${idPrefix}-letterbox-fill`}
+              >
                 {t("settings.image.letterboxFill")}
               </label>
               <select
+                id={`${idPrefix}-letterbox-fill`}
                 className="settings-select"
                 value={localSettings.letterboxFillMode}
-                onChange={(e) =>
-                  setLocalSettings({
-                    ...localSettings,
-                    letterboxFillMode: e.target.value as LetterboxFillMode,
-                  })
-                }
+                onChange={handleLetterboxFillChange}
               >
                 <option value="blur">
                   {t("settings.image.letterboxBlur")}
@@ -269,19 +345,18 @@ export const SettingsImageTab = ({
             {/* Custom Color Picker (only show when custom mode is selected) */}
             {localSettings.letterboxFillMode === "custom" && (
               <div className="settings-option">
-                <label className="settings-label">
+                <label
+                  className="settings-label"
+                  htmlFor={`${idPrefix}-custom-color`}
+                >
                   {t("settings.image.customColor")}
                 </label>
                 <input
+                  id={`${idPrefix}-custom-color`}
                   type="color"
                   className="settings-color-picker"
                   value={localSettings.letterboxCustomColor}
-                  onChange={(e) =>
-                    setLocalSettings({
-                      ...localSettings,
-                      letterboxCustomColor: e.target.value,
-                    })
-                  }
+                  onChange={handleLetterboxColorChange}
                 />
               </div>
             )}
@@ -290,25 +365,24 @@ export const SettingsImageTab = ({
 
         {/* Auto Refresh Interval */}
         <div className="settings-option">
-          <label className="settings-label">
+          <label
+            className="settings-label"
+            htmlFor={`${idPrefix}-auto-refresh`}
+          >
             {t("settings.image.autoRefresh")}
           </label>
           <select
+            id={`${idPrefix}-auto-refresh`}
             className="settings-select"
             value={localSettings.imageChangeInterval}
-            onChange={(e) =>
-              setLocalSettings({
-                ...localSettings,
-                imageChangeInterval: Number(e.target.value),
-              })
-            }
+            onChange={handleRefreshIntervalChange}
           >
             <option value="0">{t("settings.image.autoRefreshDisabled")}</option>
-            <option value="30">{secondsLabel(30)}</option>
-            <option value="60">{secondsLabel(60)}</option>
-            <option value="120">{secondsLabel(120)}</option>
-            <option value="300">{secondsLabel(300)}</option>
-            <option value="600">{secondsLabel(600)}</option>
+            {AUTO_REFRESH_INTERVAL_OPTIONS.map((interval) => (
+              <option key={interval} value={interval}>
+                {secondsLabel(Number(interval))}
+              </option>
+            ))}
           </select>
         </div>
       </div>

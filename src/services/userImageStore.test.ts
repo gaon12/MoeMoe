@@ -8,7 +8,12 @@ import {
   getRandomUserImageOffset,
   validateUserImageCandidate,
   type UserImageCandidate,
-} from "./userImageStore";
+} from "./userImageStore.ts";
+
+const UNSUPPORTED_IMAGE_TYPE_PATTERN = /Unsupported image type/;
+const FILE_LIMIT_PATTERN = /file limit/;
+const COUNT_LIMIT_PATTERN = /limited/;
+const COLLECTION_LIMIT_PATTERN = /collection exceeds/;
 
 const candidate = (
   overrides: Partial<UserImageCandidate> = {},
@@ -38,7 +43,7 @@ describe("user image validation", () => {
     ).toThrowError(UserImageStoreError);
     expect(() =>
       validateUserImageCandidate(candidate({ type: "image/gif" }), 0, 0),
-    ).toThrow(/Unsupported image type/);
+    ).toThrow(UNSUPPORTED_IMAGE_TYPE_PATTERN);
   });
 
   it("enforces per-file, count, and collection quotas", () => {
@@ -48,13 +53,13 @@ describe("user image validation", () => {
         0,
         0,
       ),
-    ).toThrow(/file limit/);
+    ).toThrow(FILE_LIMIT_PATTERN);
     expect(() =>
       validateUserImageCandidate(candidate(), MAX_USER_IMAGE_COUNT, 0),
-    ).toThrow(/limited/);
+    ).toThrow(COUNT_LIMIT_PATTERN);
     expect(() =>
       validateUserImageCandidate(candidate(), 1, MAX_USER_IMAGE_TOTAL_BYTES),
-    ).toThrow(/collection exceeds/);
+    ).toThrow(COLLECTION_LIMIT_PATTERN);
   });
 
   it("uses stable file metadata for duplicate detection", () => {

@@ -1,7 +1,7 @@
-import { useRef } from "react";
+import { useId, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
-import { useModalAccessibility } from "../../hooks/useModalAccessibility";
+import { useModalAccessibility } from "../../hooks/useModalAccessibility.ts";
 
 type CopyState = "idle" | "copied" | "failed";
 
@@ -15,7 +15,7 @@ interface ImageErrorDialogProps {
   onClose: () => void;
 }
 
-export function ImageErrorDialog({
+function ImageErrorDialog({
   isOpen,
   errorMessage,
   copyState,
@@ -25,22 +25,24 @@ export function ImageErrorDialog({
   onClose,
 }: ImageErrorDialogProps) {
   const { t } = useTranslation();
+  const titleId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
   useModalAccessibility(isOpen, dialogRef, onClose);
-  if (!isOpen) return null;
+  if (!isOpen) {
+    return null;
+  }
 
   return createPortal(
-    <div className="error-modal-overlay" onClick={onClose}>
+    <div className="error-modal-overlay">
       <div
         ref={dialogRef}
         className="error-modal"
         role="dialog"
         aria-modal="true"
-        aria-labelledby="image-error-title"
+        aria-labelledby={titleId}
         tabIndex={-1}
-        onClick={(event) => event.stopPropagation()}
       >
-        <h2 id="image-error-title" className="error-modal-title">
+        <h2 id={titleId} className="error-modal-title">
           {t("image.error.title")}
         </h2>
         <div className="error-modal-content">
@@ -48,7 +50,7 @@ export function ImageErrorDialog({
           <textarea
             className="error-modal-message"
             value={errorMessage ?? t("image.error.unknown")}
-            readOnly
+            readOnly={true}
           />
           <div className="error-modal-actions">
             <button
@@ -60,7 +62,7 @@ export function ImageErrorDialog({
                 ? t("image.error.copied")
                 : t("image.error.copy")}
             </button>
-            {githubIssueUrl && (
+            {githubIssueUrl ? (
               <a
                 href={githubIssueUrl}
                 target="_blank"
@@ -69,7 +71,7 @@ export function ImageErrorDialog({
               >
                 {t("image.error.openIssue")}
               </a>
-            )}
+            ) : null}
           </div>
           {copyState === "failed" && (
             <p className="error-modal-copy-hint">
@@ -107,7 +109,7 @@ interface ImageMetadataDialogProps {
   onClose: () => void;
 }
 
-export function ImageMetadataDialog({
+function ImageMetadataDialog({
   isOpen,
   metadataText,
   copyState,
@@ -115,22 +117,24 @@ export function ImageMetadataDialog({
   onClose,
 }: ImageMetadataDialogProps) {
   const { t } = useTranslation();
+  const titleId = useId();
   const dialogRef = useRef<HTMLDivElement>(null);
   useModalAccessibility(isOpen, dialogRef, onClose);
-  if (!isOpen) return null;
+  if (!isOpen) {
+    return null;
+  }
 
   return createPortal(
-    <div className="error-modal-overlay" onClick={onClose}>
+    <div className="error-modal-overlay">
       <div
         ref={dialogRef}
         className="error-modal"
         role="dialog"
         aria-modal="true"
-        aria-labelledby="image-metadata-title"
+        aria-labelledby={titleId}
         tabIndex={-1}
-        onClick={(event) => event.stopPropagation()}
       >
-        <h2 id="image-metadata-title" className="error-modal-title">
+        <h2 id={titleId} className="error-modal-title">
           {t("image.metadata.title")}
         </h2>
         <div className="error-modal-content">
@@ -138,7 +142,7 @@ export function ImageMetadataDialog({
           <textarea
             className="error-modal-message"
             value={metadataText}
-            readOnly
+            readOnly={true}
           />
           <div className="error-modal-actions">
             <button
@@ -171,3 +175,5 @@ export function ImageMetadataDialog({
     document.body,
   );
 }
+
+export { ImageErrorDialog, ImageMetadataDialog };

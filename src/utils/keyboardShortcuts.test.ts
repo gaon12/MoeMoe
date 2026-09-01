@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
   isInteractiveShortcutTarget,
   shouldIgnoreGlobalShortcut,
-} from "./keyboardShortcuts";
+} from "./keyboardShortcuts.ts";
 
 describe("global keyboard shortcut guards", () => {
   afterEach(() => {

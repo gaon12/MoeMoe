@@ -1,16 +1,22 @@
+import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { useApp } from "../../contexts/useApp";
+import { useApp } from "../../contexts/useApp.ts";
 import "./SettingsButton.css";
 
 export const SettingsButton = () => {
   const { t } = useTranslation();
   const { setIsSettingsOpen } = useApp();
+  const openSettings = useCallback(
+    () => setIsSettingsOpen(true),
+    [setIsSettingsOpen],
+  );
 
   return (
     <div className="settings-button-wrapper">
       <button
+        type="button"
         className="settings-fab"
-        onClick={() => setIsSettingsOpen(true)}
+        onClick={openSettings}
         aria-label={t("buttons.settings")}
         title={t("buttons.settings")}
       >

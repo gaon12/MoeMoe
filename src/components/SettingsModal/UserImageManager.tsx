@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   ACCEPTED_USER_IMAGE_TYPES,
@@ -9,7 +9,7 @@ import {
   getUserImageObjectUrl,
   listUserImages,
   type StoredUserImage,
-} from "../../services/userImageStore";
+} from "../../services/userImageStore.ts";
 
 interface UserImageManagerProps {
   onCountChange: (count: number) => void;
@@ -23,8 +23,11 @@ type ManagerStatus =
   | { type: "success"; added: number; duplicates: number }
   | { type: "error"; message: string };
 
+const BYTES_PER_KIBIBYTE = 1024;
+const BYTES_PER_MEBIBYTE = BYTES_PER_KIBIBYTE * BYTES_PER_KIBIBYTE;
+
 const formatBytes = (bytes: number): string =>
-  `${(bytes / (1024 * 1024)).toFixed(bytes >= 10 * 1024 * 1024 ? 0 : 1)} MB`;
+  `${(bytes / BYTES_PER_MEBIBYTE).toFixed(bytes >= 10 * BYTES_PER_MEBIBYTE ? 0 : 1)} MB`;
 
 export function UserImageManager({
   onCountChange,
@@ -32,6 +35,7 @@ export function UserImageManager({
   onLastImageRemoved,
 }: UserImageManagerProps) {
   const { t } = useTranslation();
+  const inputId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const [images, setImages] = useState<StoredUserImage[]>([]);
   const [status, setStatus] = useState<ManagerStatus>({ type: "loading" });
@@ -47,14 +51,17 @@ export function UserImageManager({
     let active = true;
     listUserImages()
       .then((stored) => {
-        if (!active) return;
+        if (!active) {
+          return;
+        }
         setImages(stored);
         onCountChange(stored.length);
         setStatus({ type: "idle" });
       })
-      .catch((error) => {
-        if (!active) return;
-        console.error("Failed to load user images:", error);
+      .catch(() => {
+        if (!active) {
+          return;
+        }
         setStatus({
           type: "error",
           message: t("settings.userImages.errors.unavailable"),
@@ -65,63 +72,90 @@ export function UserImageManager({
     };
   }, [onCountChange, t]);
 
-  const errorMessage = (error: unknown): string => {
-    if (!(error instanceof UserImageStoreError)) {
-      return t("settings.userImages.errors.unknown");
-    }
-    return t(`settings.userImages.errors.${error.code}`);
-  };
+  const errorMessage = useCallback(
+    (error: unknown): string => {
+      if (!(error instanceof UserImageStoreError)) {
+        return t("settings.userImages.errors.unknown");
+      }
+      return t(`settings.userImages.errors.${error.code}`);
+    },
+    [t],
+  );
 
-  const handleFiles = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files ?? []);
-    event.target.value = "";
-    if (files.length === 0) return;
+  const handleFiles = useCallback(
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
+      const files = Array.from(event.target.files ?? []);
+      event.target.value = "";
+      if (files.length === 0) {
+        return;
+      }
 
-    setStatus({ type: "loading" });
-    try {
-      const result = await addUserImages(files);
-      await refreshImages();
-      if (result.added.length > 0) onImagesAdded();
-      setStatus({
-        type: "success",
-        added: result.added.length,
-        duplicates: result.skippedDuplicates,
-      });
-    } catch (error) {
-      console.error("Failed to add user images:", error);
-      setStatus({ type: "error", message: errorMessage(error) });
-    }
-  };
+      setStatus({ type: "loading" });
+      try {
+        const result = await addUserImages(files);
+        await refreshImages();
+        if (result.added.length > 0) {
+          onImagesAdded();
+        }
+        setStatus({
+          type: "success",
+          added: result.added.length,
+          duplicates: result.skippedDuplicates,
+        });
+      } catch (error) {
+        setStatus({ type: "error", message: errorMessage(error) });
+      }
+    },
+    [errorMessage, onImagesAdded, refreshImages],
+  );
 
-  const handleRemove = async (id: string) => {
-    setStatus({ type: "loading" });
-    try {
-      await deleteUserImage(id);
-      const remaining = await refreshImages();
-      if (remaining.length === 0) onLastImageRemoved();
-      setStatus({ type: "idle" });
-    } catch (error) {
-      console.error("Failed to delete user image:", error);
-      setStatus({ type: "error", message: errorMessage(error) });
-    }
-  };
+  const handleRemove = useCallback(
+    async (id: string) => {
+      setStatus({ type: "loading" });
+      try {
+        await deleteUserImage(id);
+        const remaining = await refreshImages();
+        if (remaining.length === 0) {
+          onLastImageRemoved();
+        }
+        setStatus({ type: "idle" });
+      } catch (error) {
+        setStatus({ type: "error", message: errorMessage(error) });
+      }
+    },
+    [errorMessage, onLastImageRemoved, refreshImages],
+  );
+
+  const openFilePicker = useCallback(() => inputRef.current?.click(), []);
+  const handleRemoveClick = useCallback(
+    (event: React.MouseEvent<HTMLButtonElement>) => {
+      const { imageId } = event.currentTarget.dataset;
+      if (imageId) {
+        return handleRemove(imageId);
+      }
+    },
+    [handleRemove],
+  );
 
   const isBusy = status.type === "loading";
 
   return (
     <div className="settings-option user-image-manager">
-      <label className="settings-label">{t("settings.userImages.title")}</label>
+      <label className="settings-label" htmlFor={inputId}>
+        {t("settings.userImages.title")}
+      </label>
       <p className="settings-description">
         {t("settings.userImages.description", {
           maxSize: formatBytes(MAX_USER_IMAGE_BYTES),
         })}
       </p>
       <input
+        id={inputId}
         ref={inputRef}
         type="file"
         className="settings-file-input"
         accept={ACCEPTED_USER_IMAGE_TYPES.join(",")}
-        multiple
+        multiple={true}
         onChange={handleFiles}
       />
       <div className="user-image-summary">
@@ -129,7 +163,7 @@ export function UserImageManager({
           type="button"
           className="settings-button settings-button-secondary"
           disabled={isBusy}
-          onClick={() => inputRef.current?.click()}
+          onClick={openFilePicker}
         >
           {isBusy
             ? t("settings.userImages.processing")
@@ -162,14 +196,19 @@ export function UserImageManager({
               <div className="user-image-details">
                 <strong title={image.name}>{image.name}</strong>
                 <span>
-                  {image.width}×{image.height} · {formatBytes(image.size)}
+                  {image.width}
+                  {"×"}
+                  {image.height}
+                  {"·"}
+                  {formatBytes(image.size)}
                 </span>
               </div>
               <button
                 type="button"
                 className="settings-button settings-button-danger"
                 disabled={isBusy}
-                onClick={() => handleRemove(image.id)}
+                data-image-id={image.id}
+                onClick={handleRemoveClick}
                 aria-label={t("settings.userImages.removeNamed", {
                   name: image.name,
                 })}

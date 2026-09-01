@@ -1,0 +1,186 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.5.8/schema.json",
+  "files": {
+    "includes": [
+      "**",
+      "!!dist",
+      "!!node_modules",
+      "!!coverage",
+      "!!public/demo"
+    ]
+  },
+  "formatter": {
+    "enabled": false
+  },
+  "linter": {
+    "enabled": true,
+    "domains": {
+      "drizzle": "none",
+      "next": "none",
+      "playwright": "none",
+      "project": "all",
+      "qwik": "none",
+      "react": "all",
+      "reactNative": "none",
+      "solid": "none",
+      "svelte": "none",
+      "tailwind": "none",
+      "test": "all",
+      "turborepo": "none",
+      "types": "all",
+      "vue": "none"
+    },
+    "rules": {
+      "preset": "all",
+      "a11y": "error",
+      "complexity": "error",
+      "correctness": "error",
+      "performance": "error",
+      "security": "error",
+      "style": "error",
+      "suspicious": "error"
+    }
+  },
+  "overrides": [
+    {
+      "includes": ["**"],
+      "linter": {
+        "rules": {
+          "complexity": {
+            "noExcessiveCognitiveComplexity": {
+              "level": "error",
+              "options": {
+                "maxAllowedComplexity": 50
+              }
+            },
+            "noExcessiveLinesPerFunction": {
+              "level": "error",
+              "options": {
+                "maxLines": 500,
+                "skipBlankLines": true
+              }
+            }
+          },
+          "correctness": {
+            "noUnresolvedImports": "off"
+          },
+          "style": {
+            "noExcessiveLinesPerFile": {
+              "level": "error",
+              "options": {
+                "maxLines": 800,
+                "skipBlankLines": true
+              }
+            },
+            "noHexColors": "error",
+            "noJsxLiterals": {
+              "level": "error",
+              "options": {
+                "allowedStrings": [
+                  "Fail image",
+                  "JPG",
+                  "PNG",
+                  "WebP",
+                  "AVIF",
+                  " - ",
+                  "⚠️",
+                  "MIT License",
+                  "GH",
+                  "github.com/gaon12/MoeMoe",
+                  "♥",
+                  "github.com/sponsors/gaon12",
+                  "✕",
+                  "↑",
+                  "↓",
+                  "×",
+                  " · ",
+                  "★",
+                  "⊘",
+                  "°C",
+                  "“",
+                  "”"
+                ]
+              }
+            },
+            "noMagicNumbers": "off",
+            "noTernary": "off",
+            "useConsistentCurlyBraces": "off",
+            "useFilenamingConvention": {
+              "level": "error",
+              "options": {
+                "filenameCases": [
+                  "camelCase",
+                  "PascalCase",
+                  "kebab-case",
+                  "snake_case",
+                  "export"
+                ]
+              }
+            },
+            "useNamingConvention": {
+              "level": "error",
+              "options": {
+                "strictCase": false,
+                "conventions": [
+                  {
+                    "selector": {
+                      "kind": "objectLiteralMember"
+                    },
+                    "match": ".*"
+                  },
+                  {
+                    "selector": {
+                      "kind": "typeMember"
+                    },
+                    "match": ".*"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": [
+        "src/components/DownloadButton/downloadImage.test.ts",
+        "src/components/SettingsModal/SettingsInfoTab.tsx",
+        "src/hooks/useModalAccessibility.ts",
+        "src/utils/keyboardShortcuts.ts",
+        "src/utils/serverTime.test.ts"
+      ],
+      "linter": {
+        "rules": {
+          "security": {
+            "noSecrets": {
+              "level": "error",
+              "options": {
+                "entropyThreshold": 55
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["eslint.config.js", "vite.config.ts", "scripts/**/*.mjs"],
+      "linter": {
+        "rules": {
+          "correctness": {
+            "noNodejsModules": "off",
+            "noProcessGlobal": "off"
+          },
+          "style": {
+            "noDefaultExport": "off"
+          },
+          "suspicious": {
+            "noConsole": "off"
+          }
+        }
+      }
+    }
+  ],
+  "assist": {
+    "enabled": false
+  }
+}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getSafeHttpsUrl, isSafeImageUrl } from "./safeUrl";
+import { getSafeHttpsUrl, isSafeImageUrl } from "./safeUrl.ts";
 
 describe("safe URL handling", () => {
   it("accepts HTTPS and rejects active or cleartext schemes", () => {

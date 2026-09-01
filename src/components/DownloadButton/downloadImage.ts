@@ -7,7 +7,15 @@ export async function fetchImageBlobWithFallback(
     [string] | [string, string];
   const failures: Error[] = [];
 
-  for (const [index, candidate] of candidates.entries()) {
+  const fetchCandidate = async (index: number): Promise<Blob> => {
+    const candidate = candidates[index];
+    if (!candidate) {
+      throw new AggregateError(
+        failures,
+        "Image download failed from every available source.",
+      );
+    }
+
     try {
       const response = await fetch(candidate, { signal });
       if (!response.ok) {
@@ -29,11 +37,9 @@ export async function fetchImageBlobWithFallback(
           cause: error,
         }),
       );
+      return fetchCandidate(index + 1);
     }
-  }
+  };
 
-  throw new AggregateError(
-    failures,
-    "Image download failed from every available source.",
-  );
+  return fetchCandidate(0);
 }

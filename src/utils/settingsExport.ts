@@ -1,12 +1,12 @@
-import { type AppSettings } from "../types/settings";
+import type { AppSettings } from "../types/settings.ts";
 import {
   hasSettingsFields,
   isRecord,
   sanitizeSettings,
-} from "./settingsValidation";
+} from "./settingsValidation.ts";
 
 const EXPORT_VERSION = 1;
-export const MAX_SETTINGS_IMPORT_BYTES = 1_000_000;
+const MAX_SETTINGS_IMPORT_BYTES = 1_000_000;
 
 interface SettingsExportPayload {
   version: number;
@@ -14,9 +14,13 @@ interface SettingsExportPayload {
   settings: Partial<AppSettings>;
 }
 
-export function createSettingsExport(settings: AppSettings, now = new Date()) {
-  const portableSettings: Partial<AppSettings> = { ...settings };
-  delete portableSettings.weatherApiKey;
+function createSettingsExport(settings: AppSettings, now = new Date()) {
+  // The weather API key is a user-held secret, so it never leaves the browser
+  // in an export. JSON.stringify drops the undefined value entirely.
+  const portableSettings: Partial<AppSettings> = {
+    ...settings,
+    weatherApiKey: undefined,
+  };
   const payload: SettingsExportPayload = {
     version: EXPORT_VERSION,
     exportedAt: now.toISOString(),
@@ -26,7 +30,7 @@ export function createSettingsExport(settings: AppSettings, now = new Date()) {
   return JSON.stringify(payload, null, 2);
 }
 
-export function parseSettingsExport(text: string): AppSettings {
+function parseSettingsExport(text: string): AppSettings {
   if (text.length > MAX_SETTINGS_IMPORT_BYTES) {
     throw new Error("Settings export exceeds the import size limit.");
   }
@@ -46,3 +50,5 @@ export function parseSettingsExport(text: string): AppSettings {
 
   return sanitizeSettings(candidate);
 }
+
+export { createSettingsExport, MAX_SETTINGS_IMPORT_BYTES, parseSettingsExport };

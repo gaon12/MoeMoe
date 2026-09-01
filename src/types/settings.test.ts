@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { defaultSettings } from "./settings";
+import { defaultSettings } from "./settings.ts";
+
+const OPTIONAL_UI_ELEMENT_COUNT = 7;
 
 describe("defaultSettings", () => {
   it("starts with an uncluttered clock-only surface", () => {
@@ -21,7 +23,7 @@ describe("defaultSettings", () => {
 
   it("keeps every optional interface element visible by default", () => {
     expect(Object.values(defaultSettings.uiVisibility)).toEqual(
-      Array(7).fill(true),
+      new Array(OPTIONAL_UI_ELEMENT_COUNT).fill(true),
     );
   });
 });

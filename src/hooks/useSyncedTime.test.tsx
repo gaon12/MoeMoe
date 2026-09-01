@@ -2,7 +2,7 @@
 
 import { cleanup, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { useSyncedTime } from "./useSyncedTime";
+import { useSyncedTime } from "./useSyncedTime.ts";
 
 describe("useSyncedTime", () => {
   afterEach(() => {

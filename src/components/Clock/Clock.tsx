@@ -1,7 +1,7 @@
 import type React from "react";
 import { useTranslation } from "react-i18next";
-import { useApp } from "../../contexts/useApp";
-import { getFormattedTimeParts, getFullDateString } from "../../utils/time";
+import { useApp } from "../../contexts/useApp.ts";
+import { getFormattedTimeParts, getFullDateString } from "../../utils/time.ts";
 import "./Clock.css";
 
 interface ClockProps {

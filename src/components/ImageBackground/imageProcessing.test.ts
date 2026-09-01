@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { averageRgbSamples, extractEdgeColor } from "./imageProcessing";
+import { averageRgbSamples, extractEdgeColor } from "./imageProcessing.ts";
 
 describe("edge color processing", () => {
   afterEach(() => {

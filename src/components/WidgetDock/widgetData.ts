@@ -1,15 +1,18 @@
-import { useEffect, useRef, useState } from "react";
-import { fetchWithTimeout } from "../../utils/fetchWithTimeout";
-import { getSafeHttpsUrl } from "../../utils/safeUrl";
+import { useEffect, useState } from "react";
+import { fetchWithTimeout } from "../../utils/fetchWithTimeout.ts";
+import { getSafeHttpsUrl } from "../../utils/safeUrl.ts";
 import type {
   LocationData,
   LocationState,
   WeatherConditionKey,
   WeatherData,
   WeatherState,
-} from "./widgetTypes";
+} from "./widgetTypes.ts";
 
-export type Coordinates = { latitude: number; longitude: number };
+interface Coordinates {
+  latitude: number;
+  longitude: number;
+}
 type ReverseGeocodeResult = {
   name?: string;
   region: string;
@@ -25,37 +28,21 @@ const MAX_TEXT_LENGTH = 200;
 let coordinatesRequest: Promise<Coordinates> | null = null;
 const reverseGeocodeRequests = new Map<string, Promise<ReverseGeocodeResult>>();
 
-export function useWeatherData(
-  shouldFetch: boolean,
-  apiKey: string,
-): WeatherState {
+function useWeatherData(shouldFetch: boolean, apiKey: string): WeatherState {
   // 현재 날씨 위젯의 상태를 관리한다.
   const [state, setState] = useState<WeatherState>({
     status: shouldFetch ? "loading" : "idle",
   });
 
-  // 컴포넌트가 마운트되어 있는지 추적하기 위한 ref
-  const mountedRef = useRef(false);
-
-  // 마운트 시 true, 언마운트 시 false로 설정하여 StrictMode에서도 정확한 상태를 유지한다.
-  useEffect(() => {
-    mountedRef.current = true;
-    return () => {
-      mountedRef.current = false;
-    };
-  }, []);
-
   useEffect(() => {
     // 데이터를 가져올 필요가 없는 경우 → idle 상태로 전환
     if (!shouldFetch) {
-      if (!mountedRef.current) return;
       setState({ status: "idle" });
       return;
     }
 
     // API 키가 없으면 에러 상태로 전환
     if (!apiKey) {
-      if (!mountedRef.current) return;
       setState({
         status: "error",
         error: "WeatherAPI key missing",
@@ -67,23 +54,24 @@ export function useWeatherData(
 
     // 실제 날씨 데이터를 가져오는 비동기 함수
     const fetchWeather = async () => {
-      // 언마운트된 경우에는 setState를 호출하지 않도록 방지
-      if (!mountedRef.current) return;
-
       // 로딩 상태로 설정
       setState({ status: "loading" });
 
       try {
         // 브라우저의 위치 정보를 가져온다. 실패 시 DEFAULT_COORDS를 사용한다.
         const coords = await getCoordinates();
-        if (cancelled || !mountedRef.current) return;
+        if (cancelled) {
+          return;
+        }
 
         // 날씨 API와 역지오코딩 API를 병렬로 호출한다.
         const [weatherData, reverseInfo] = await Promise.all([
           fetchWeatherApi(coords, apiKey),
           reverseGeocode(coords),
         ]);
-        if (cancelled || !mountedRef.current) return;
+        if (cancelled) {
+          return;
+        }
 
         // 역지오코딩 정보가 있으면 날씨 데이터의 location 정보를 보완한다.
         const mergedLocation = weatherData.location;
@@ -94,12 +82,12 @@ export function useWeatherData(
             reverseInfo.country ?? mergedLocation.country;
         }
 
-        if (!mountedRef.current) return;
-
         // 최종적으로 ready 상태와 데이터를 설정한다.
         setState({ status: "ready", data: weatherData });
       } catch (error) {
-        if (cancelled || !mountedRef.current) return;
+        if (cancelled) {
+          return;
+        }
         setState({
           status: "error",
           error: error instanceof Error ? error.message : "Weather error",
@@ -123,41 +111,37 @@ export function useWeatherData(
  * 현재 위치 정보를 가져오는 커스텀 훅
  * - WeatherAPI 키 없이도 동작하며, 브라우저 위치 권한 → IP 기반 → 기본 좌표 순으로 시도한다.
  */
-export function useLocationData(shouldFetch: boolean): LocationState {
+function useLocationData(shouldFetch: boolean): LocationState {
   const [state, setState] = useState<LocationState>({
     status: shouldFetch ? "loading" : "idle",
   });
 
-  const mountedRef = useRef(false);
-
-  useEffect(() => {
-    mountedRef.current = true;
-    return () => {
-      mountedRef.current = false;
-    };
-  }, []);
-
   useEffect(() => {
     if (!shouldFetch) {
-      if (!mountedRef.current) return;
       setState({ status: "idle" });
       return;
     }
 
+    let cancelled = false;
+
     const fetchLocation = async () => {
-      if (!mountedRef.current) return;
       setState({ status: "loading" });
 
       try {
         const coords = await getCoordinates();
-        if (!mountedRef.current) return;
+        if (cancelled) {
+          return;
+        }
 
         const reverseInfo = await reverseGeocode(coords);
+        if (cancelled) {
+          return;
+        }
 
         const resolvedTimeZone =
-          typeof Intl !== "undefined"
-            ? (Intl.DateTimeFormat().resolvedOptions().timeZone ?? "")
-            : "";
+          typeof Intl === "undefined"
+            ? ""
+            : (Intl.DateTimeFormat().resolvedOptions().timeZone ?? "");
 
         const data: LocationData = {
           name: reverseInfo?.name ?? "Location",
@@ -169,10 +153,11 @@ export function useLocationData(shouldFetch: boolean): LocationState {
           timezoneLabel: resolvedTimeZone || "Local time",
         };
 
-        if (!mountedRef.current) return;
         setState({ status: "ready", data });
       } catch (error) {
-        if (!mountedRef.current) return;
+        if (cancelled) {
+          return;
+        }
         setState({
           status: "error",
           error: error instanceof Error ? error.message : "Location error",
@@ -181,6 +166,9 @@ export function useLocationData(shouldFetch: boolean): LocationState {
     };
 
     fetchLocation();
+    return () => {
+      cancelled = true;
+    };
   }, [shouldFetch]);
 
   return state;
@@ -215,10 +203,7 @@ async function fetchWeatherApi(
   return parseWeatherApiResponse(data, new Date());
 }
 
-export function parseWeatherApiResponse(
-  value: unknown,
-  updatedAt: Date,
-): WeatherData {
+function parseWeatherApiResponse(value: unknown, updatedAt: Date): WeatherData {
   const data = requireRecord(value, "WeatherAPI response");
   const current = requireRecord(data.current, "WeatherAPI current data");
   const condition = requireRecord(
@@ -236,7 +221,7 @@ export function parseWeatherApiResponse(
     condition.code,
     "Weather condition code",
   );
-  if (conditionCode < 0 || conditionCode > 9_999) {
+  if (conditionCode < 0 || conditionCode > 9999) {
     throw new Error("Weather condition code is outside the supported range");
   }
 
@@ -282,25 +267,24 @@ export function parseWeatherApiResponse(
  * OpenStreetMap Nominatim API를 사용하여 위도/경도로부터 대략적인 주소를 가져오는 함수
  * - name, region, country 정도만 사용한다.
  */
-export function reverseGeocode(coords: Coordinates) {
+function reverseGeocode(coords: Coordinates) {
   const validCoordinates = parseCoordinatePair(
     coords.latitude,
     coords.longitude,
   );
-  if (!validCoordinates) return Promise.resolve(null);
+  if (!validCoordinates) {
+    return Promise.resolve(null);
+  }
 
   const cacheKey = `${validCoordinates.latitude.toFixed(4)},${validCoordinates.longitude.toFixed(4)}`;
   const cachedRequest = reverseGeocodeRequests.get(cacheKey);
-  if (cachedRequest) return cachedRequest;
+  if (cachedRequest) {
+    return cachedRequest;
+  }
 
-  const request = requestReverseGeocode(validCoordinates).catch(
-    (error: unknown) => {
-      console.warn("Reverse geocoding failed:", error);
-      return null;
-    },
-  );
+  const request = requestReverseGeocode(validCoordinates).catch(() => null);
   reverseGeocodeRequests.set(cacheKey, request);
-  void request.then((result) => {
+  request.then((result) => {
     if (result === null && reverseGeocodeRequests.get(cacheKey) === request) {
       reverseGeocodeRequests.delete(cacheKey);
     }
@@ -335,7 +319,7 @@ async function requestReverseGeocode(
   return parseReverseGeocodeResponse(data);
 }
 
-export function parseReverseGeocodeResponse(
+function parseReverseGeocodeResponse(
   value: unknown,
 ): Exclude<ReverseGeocodeResult, null> {
   const data = requireRecord(value, "Reverse geocode response");
@@ -370,7 +354,7 @@ export function parseReverseGeocodeResponse(
     "Reverse geocode country",
   );
 
-  if (!primaryName && !region && !country) {
+  if (!(primaryName || region || country)) {
     throw new Error("Reverse geocode response did not include an address");
   }
 
@@ -381,23 +365,29 @@ export function parseReverseGeocodeResponse(
   };
 }
 
-/**
- * 애니 명대사(quote)를 가져오는 커스텀 훅
- * - shouldFetch: 애니 명대사 위젯이 실제로 활성화되어 있어 데이터를 가져올지 여부
- *
- * React 18 StrictMode에서도 안전하게 동작하도록 mountedRef를 정확히 관리한다.
- */
+/** WeatherAPI condition code를 UI에서 사용하는 상태 키로 변환한다. */
 function mapWeatherCode(code: number): WeatherConditionKey {
-  if (code === 1000) return "clear";
-  if (code === 1003) return "partlyCloudy";
-  if ([1006, 1009].includes(code)) return "cloudy";
-  if ([1030, 1135, 1147].includes(code)) return "fog";
-  if ([1150, 1153, 1168, 1171, 1180, 1183].includes(code)) return "drizzle";
+  if (code === 1000) {
+    return "clear";
+  }
+  if (code === 1003) {
+    return "partlyCloudy";
+  }
+  if ([1006, 1009].includes(code)) {
+    return "cloudy";
+  }
+  if ([1030, 1135, 1147].includes(code)) {
+    return "fog";
+  }
+  if ([1150, 1153, 1168, 1171, 1180, 1183].includes(code)) {
+    return "drizzle";
+  }
   if ([1063, 1186, 1189, 1192, 1195, 1240, 1243, 1246].includes(code)) {
     return "rain";
   }
-  if ([1069, 1072, 1198, 1201, 1204, 1207, 1249, 1252].includes(code))
+  if ([1069, 1072, 1198, 1201, 1204, 1207, 1249, 1252].includes(code)) {
     return "freezingRain";
+  }
   if (
     [
       1066, 1114, 1117, 1210, 1213, 1216, 1219, 1222, 1225, 1237, 1255, 1258,
@@ -406,7 +396,9 @@ function mapWeatherCode(code: number): WeatherConditionKey {
   ) {
     return "snow";
   }
-  if ([1087, 1273, 1276, 1279, 1282].includes(code)) return "thunderstorm";
+  if ([1087, 1273, 1276, 1279, 1282].includes(code)) {
+    return "thunderstorm";
+  }
   return "unknown";
 }
 
@@ -431,23 +423,28 @@ const WEATHER_ICONS: Record<WeatherConditionKey, string> = {
  * 예: "Asia/Seoul" → "Asia · Seoul"
  */
 function formatTimezoneLabel(tz?: string) {
-  if (!tz || typeof tz !== "string") return "UTC";
+  if (!tz || typeof tz !== "string") {
+    return "UTC";
+  }
   return tz.replace(/_/g, " ").replace(/\//g, " · ");
 }
 
-export function formatLocationLocalTime(
+function formatLocationLocalTime(
   currentTime: Date,
   language: string,
   timeZone: string,
 ): string {
-  if (!Number.isFinite(currentTime.getTime())) return "";
+  if (!Number.isFinite(currentTime.getTime())) {
+    return "";
+  }
 
   const normalizedLanguage = language.toLowerCase();
-  const locale = normalizedLanguage.startsWith("ko")
-    ? "ko-KR"
-    : normalizedLanguage.startsWith("ja")
-      ? "ja-JP"
-      : "en-US";
+  let locale = "en-US";
+  if (normalizedLanguage.startsWith("ko")) {
+    locale = "ko-KR";
+  } else if (normalizedLanguage.startsWith("ja")) {
+    locale = "ja-JP";
+  }
   const options: Intl.DateTimeFormatOptions = {
     dateStyle: "medium",
     timeStyle: "short",
@@ -486,12 +483,16 @@ function requireInteger(value: unknown, label: string): number {
 }
 
 function readOptionalNumber(value: unknown, label: string): number | undefined {
-  if (value == null) return undefined;
+  if (value === null || value === undefined) {
+    return undefined;
+  }
   return requireNumber(value, label);
 }
 
 function readOptionalString(value: unknown, label: string): string {
-  if (value == null) return "";
+  if (value === null || value === undefined) {
+    return "";
+  }
   if (typeof value !== "string") {
     throw new Error(`${label} must be a string`);
   }
@@ -503,12 +504,14 @@ function firstNonEmptyString(values: readonly string[]): string {
 }
 
 function parseEpochSeconds(value: number | undefined): Date | undefined {
-  if (value == null) return undefined;
+  if (value === undefined) {
+    return undefined;
+  }
   if (!Number.isInteger(value) || value < 0) {
     throw new Error("Weather local time must be a positive Unix timestamp");
   }
 
-  const date = new Date(value * 1_000);
+  const date = new Date(value * 1000);
   if (!Number.isFinite(date.getTime())) {
     throw new Error("Weather local time is outside the supported range");
   }
@@ -535,14 +538,18 @@ function parseCoordinatePair(
 }
 
 function parseNumericValue(value: unknown): number | null {
-  if (typeof value === "number") return Number.isFinite(value) ? value : null;
-  if (typeof value !== "string" || value.trim() === "") return null;
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : null;
+  }
+  if (typeof value !== "string" || value.trim() === "") {
+    return null;
+  }
 
   const number = Number(value);
   return Number.isFinite(number) ? number : null;
 }
 
-export function parseIpCoordinates(value: unknown): Coordinates | null {
+function parseIpCoordinates(value: unknown): Coordinates | null {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
     return null;
   }
@@ -554,7 +561,9 @@ export function parseIpCoordinates(value: unknown): Coordinates | null {
       const latitude = parseNumericValue(parts[0]);
       const longitude = parseNumericValue(parts[1]);
       const coordinates = parseCoordinatePair(latitude, longitude);
-      if (coordinates) return coordinates;
+      if (coordinates) {
+        return coordinates;
+      }
     }
   }
 
@@ -597,7 +606,9 @@ async function resolveCoordinates(): Promise<Coordinates> {
         geoPosition.coords.latitude,
         geoPosition.coords.longitude,
       );
-      if (!coordinates) throw new Error("Browser location is invalid");
+      if (!coordinates) {
+        throw new Error("Browser location is invalid");
+      }
       return coordinates;
     } catch {
       // 무시하고 다음 단계(IP 기반)로 진행
@@ -631,15 +642,28 @@ async function resolveCoordinates(): Promise<Coordinates> {
 
       const data: unknown = await response.json();
       const coordinates = parseIpCoordinates(data);
-      if (coordinates) return coordinates;
+      if (coordinates) {
+        return coordinates;
+      }
 
       throw new Error("IP geolocation response did not include coordinates");
     }
-  } catch (error) {
-    console.warn("IP-based reverse geocoding failed:", error);
+  } catch {
+    // 실제 위치나 IP 조회 실패는 호출자에게 통합된 오류로 전달한다.
   }
 
   throw new Error(
     "Location unavailable: allow browser location access or configure VITE_IP_REVERSE_GEOCODING_API_URL",
   );
 }
+
+export {
+  formatLocationLocalTime,
+  parseIpCoordinates,
+  parseReverseGeocodeResponse,
+  parseWeatherApiResponse,
+  reverseGeocode,
+  useLocationData,
+  useWeatherData,
+};
+export type { Coordinates };

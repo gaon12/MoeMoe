@@ -4,10 +4,10 @@ import {
   type AppSettings,
   defaultSettings,
   type ThemeMode,
-} from "../types/settings";
-import { sanitizeSettings } from "../utils/settingsValidation";
-import { resolveTheme, THEME_COLORS } from "../utils/theme";
-import { AppContext } from "./appContextValue";
+} from "../types/settings.ts";
+import { sanitizeSettings } from "../utils/settingsValidation.ts";
+import { resolveTheme, THEME_COLORS } from "../utils/theme.ts";
+import { AppContext } from "./appContextValue.ts";
 
 const STORAGE_KEY = "moemoe-settings";
 
@@ -17,8 +17,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
     let language: AppSettings["language"] = "en";
     try {
       const navLang = (navigator.language || "").toLowerCase();
-      if (navLang.startsWith("ko")) language = "ko";
-      else if (navLang.startsWith("ja")) language = "ja";
+      if (navLang.startsWith("ko")) {
+        language = "ko";
+      } else if (navLang.startsWith("ja")) {
+        language = "ja";
+      }
     } catch {
       // Browser language detection is optional.
     }
@@ -29,8 +32,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (saved) {
         return sanitizeSettings(JSON.parse(saved), fallback);
       }
-    } catch (error) {
-      console.error("Failed to load settings:", error);
+    } catch {
+      // Corrupted or unavailable storage falls back to validated defaults.
     }
     return fallback;
   });
@@ -40,7 +43,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const applyTheme = (theme: ThemeMode) => {
       const root = document.documentElement;
-      const prefersDark = window.matchMedia(
+      const prefersDark = globalThis.matchMedia(
         "(prefers-color-scheme: dark)",
       ).matches;
       const resolvedTheme = resolveTheme(theme, prefersDark);
@@ -54,7 +57,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     // Listen for system theme changes if in auto mode
     if (settings.theme === "auto") {
-      const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+      const mediaQuery = globalThis.matchMedia("(prefers-color-scheme: dark)");
       const handleChange = () => applyTheme("auto");
 
       mediaQuery.addEventListener("change", handleChange);
@@ -65,15 +68,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // Apply language
   useEffect(() => {
     if (i18n.language !== settings.language) {
-      void i18n.changeLanguage(settings.language).catch((error: unknown) => {
-        console.error("Failed to change language:", error);
-      });
+      i18n.changeLanguage(settings.language).catch(() => undefined);
     }
     document.documentElement.lang = settings.language;
     try {
       localStorage.setItem("moemoe-language", settings.language);
-    } catch (error) {
-      console.error("Failed to save language:", error);
+    } catch {
+      // Language persistence is optional in restricted browsing modes.
     }
   }, [i18n, settings.language]);
 
@@ -86,8 +87,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
-    } catch (error) {
-      console.error("Failed to save settings:", error);
+    } catch {
+      // Keep the in-memory settings when persistent storage is unavailable.
     }
   }, [settings]);
 
@@ -99,8 +100,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setSettings(defaultSettings);
     try {
       localStorage.removeItem(STORAGE_KEY);
-    } catch (error) {
-      console.error("Failed to remove saved settings:", error);
+    } catch {
+      // Reset still succeeds in memory when storage cannot be changed.
     }
   };
 

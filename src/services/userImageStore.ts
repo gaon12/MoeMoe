@@ -1,21 +1,21 @@
-import type { AnimeImage, ImageDimensions } from "../types/image";
+import type { AnimeImage, ImageDimensions } from "../types/image.ts";
 
 const DATABASE_NAME = "moemoe-user-images";
 const DATABASE_VERSION = 1;
 const STORE_NAME = "images";
 
-export const MAX_USER_IMAGE_COUNT = 50;
-export const MAX_USER_IMAGE_BYTES = 25 * 1024 * 1024;
-export const MAX_USER_IMAGE_TOTAL_BYTES = 250 * 1024 * 1024;
-export const MAX_USER_IMAGE_PIXELS = 100_000_000;
-export const ACCEPTED_USER_IMAGE_TYPES = [
+const MAX_USER_IMAGE_COUNT = 50;
+const MAX_USER_IMAGE_BYTES = 25 * 1024 * 1024;
+const MAX_USER_IMAGE_TOTAL_BYTES = 250 * 1024 * 1024;
+const MAX_USER_IMAGE_PIXELS = 100_000_000;
+const ACCEPTED_USER_IMAGE_TYPES = [
   "image/jpeg",
   "image/png",
   "image/webp",
   "image/avif",
 ] as const;
 
-export type UserImageErrorCode =
+type UserImageErrorCode =
   | "unsupported"
   | "tooLarge"
   | "tooMany"
@@ -25,7 +25,7 @@ export type UserImageErrorCode =
   | "unavailable"
   | "empty";
 
-export class UserImageStoreError extends Error {
+class UserImageStoreError extends Error {
   readonly code: UserImageErrorCode;
 
   constructor(
@@ -39,7 +39,15 @@ export class UserImageStoreError extends Error {
   }
 }
 
-export interface StoredUserImage {
+function createUserImageStoreError(
+  code: UserImageErrorCode,
+  message: string,
+  cause: unknown,
+): UserImageStoreError {
+  return new UserImageStoreError(code, message, { cause });
+}
+
+interface StoredUserImage {
   id: string;
   name: string;
   type: string;
@@ -52,14 +60,14 @@ export interface StoredUserImage {
   blob: Blob;
 }
 
-export interface UserImageCandidate {
+interface UserImageCandidate {
   name: string;
   type: string;
   size: number;
   lastModified: number;
 }
 
-export interface AddUserImagesResult {
+interface AddUserImagesResult {
   added: StoredUserImage[];
   skippedDuplicates: number;
 }
@@ -114,11 +122,11 @@ function closeDatabase(database: IDBDatabase) {
   database.close();
 }
 
-export function getUserImageFingerprint(image: UserImageCandidate): string {
+function getUserImageFingerprint(image: UserImageCandidate): string {
   return `${image.name}\u0000${image.size}\u0000${image.lastModified}`;
 }
 
-export function validateUserImageCandidate(
+function validateUserImageCandidate(
   image: UserImageCandidate,
   existingCount: number,
   existingBytes: number,
@@ -205,7 +213,9 @@ async function readImageDimensions(file: File): Promise<ImageDimensions> {
         height: bitmap.height,
       });
     } catch (error) {
-      if (error instanceof UserImageStoreError) throw error;
+      if (error instanceof UserImageStoreError) {
+        throw error;
+      }
       bitmapError = error;
     } finally {
       bitmap?.close();
@@ -215,16 +225,18 @@ async function readImageDimensions(file: File): Promise<ImageDimensions> {
   try {
     return await readDimensionsWithImageElement(file);
   } catch (error) {
-    if (error instanceof UserImageStoreError) throw error;
-    throw new UserImageStoreError(
+    if (error instanceof UserImageStoreError) {
+      throw error;
+    }
+    throw createUserImageStoreError(
       "decode",
       "The selected file could not be decoded as an image",
-      { cause: bitmapError ?? error },
+      bitmapError ?? error,
     );
   }
 }
 
-export async function listUserImages(): Promise<StoredUserImage[]> {
+async function listUserImages(): Promise<StoredUserImage[]> {
   const database = await openDatabase();
   try {
     const transaction = database.transaction(STORE_NAME, "readonly");
@@ -254,12 +266,11 @@ async function countUserImages(): Promise<number> {
   }
 }
 
-export function getRandomUserImageOffset(
-  count: number,
-  random = Math.random,
-): number {
-  if (!Number.isInteger(count) || count <= 0) return 0;
-  const value = Math.min(0.999999999, Math.max(0, random()));
+function getRandomUserImageOffset(count: number, random = Math.random): number {
+  if (!Number.isInteger(count) || count <= 0) {
+    return 0;
+  }
+  const value = Math.min(0.999_999_999, Math.max(0, random()));
   return Math.floor(value * count);
 }
 
@@ -293,7 +304,7 @@ async function getUserImageAtOffset(offset: number): Promise<StoredUserImage> {
   }
 }
 
-export async function addUserImages(
+async function addUserImages(
   files: readonly File[],
 ): Promise<AddUserImagesResult> {
   const existing = await listUserImages();
@@ -302,55 +313,67 @@ export async function addUserImages(
   const pending: StoredUserImage[] = [];
   let skippedDuplicates = 0;
 
-  for (const file of files) {
+  const processFileAt = async (index: number): Promise<void> => {
+    const file = files[index];
+    if (!file) {
+      return;
+    }
+
     const fingerprint = getUserImageFingerprint(file);
     if (fingerprints.has(fingerprint)) {
       skippedDuplicates += 1;
-      continue;
+    } else {
+      validateUserImageCandidate(
+        file,
+        existing.length + pending.length,
+        totalBytes,
+      );
+      const dimensions = await readImageDimensions(file);
+      const stored: StoredUserImage = {
+        id:
+          typeof crypto.randomUUID === "function"
+            ? crypto.randomUUID()
+            : Array.from(crypto.getRandomValues(new Uint32Array(4)), (value) =>
+                value.toString(16).padStart(8, "0"),
+              ).join(""),
+        name: file.name.slice(0, 255),
+        type: file.type,
+        size: file.size,
+        width: dimensions.width,
+        height: dimensions.height,
+        createdAt: Date.now(),
+        lastModified: file.lastModified,
+        fingerprint,
+        blob: file,
+      };
+      pending.push(stored);
+      fingerprints.add(fingerprint);
+      totalBytes += file.size;
     }
 
-    validateUserImageCandidate(
-      file,
-      existing.length + pending.length,
-      totalBytes,
-    );
-    const dimensions = await readImageDimensions(file);
-    const stored: StoredUserImage = {
-      id:
-        typeof crypto.randomUUID === "function"
-          ? crypto.randomUUID()
-          : Array.from(crypto.getRandomValues(new Uint32Array(4)), (value) =>
-              value.toString(16).padStart(8, "0"),
-            ).join(""),
-      name: file.name.slice(0, 255),
-      type: file.type,
-      size: file.size,
-      width: dimensions.width,
-      height: dimensions.height,
-      createdAt: Date.now(),
-      lastModified: file.lastModified,
-      fingerprint,
-      blob: file,
-    };
-    pending.push(stored);
-    fingerprints.add(fingerprint);
-    totalBytes += file.size;
-  }
+    return processFileAt(index + 1);
+  };
 
-  if (pending.length === 0) return { added: [], skippedDuplicates };
+  await processFileAt(0);
+
+  if (pending.length === 0) {
+    return { added: [], skippedDuplicates };
+  }
 
   const database = await openDatabase();
   try {
     const transaction = database.transaction(STORE_NAME, "readwrite");
     const store = transaction.objectStore(STORE_NAME);
-    for (const image of pending) store.add(image);
+    for (const image of pending) {
+      store.add(image);
+    }
     await transactionDone(transaction);
   } catch (error) {
     if (error instanceof DOMException && error.name === "QuotaExceededError") {
-      throw new UserImageStoreError(
+      throw createUserImageStoreError(
         "quota",
         "Browser storage quota was exceeded",
-        { cause: error },
+        error,
       );
     }
     throw error;
@@ -361,15 +384,17 @@ export async function addUserImages(
   return { added: pending, skippedDuplicates };
 }
 
-export function getUserImageObjectUrl(image: StoredUserImage): string {
+function getUserImageObjectUrl(image: StoredUserImage): string {
   const existing = objectUrls.get(image.id);
-  if (existing) return existing;
+  if (existing) {
+    return existing;
+  }
   const url = URL.createObjectURL(image.blob);
   objectUrls.set(image.id, url);
   return url;
 }
 
-export async function deleteUserImage(id: string): Promise<void> {
+async function deleteUserImage(id: string): Promise<void> {
   const database = await openDatabase();
   try {
     const transaction = database.transaction(STORE_NAME, "readwrite");
@@ -381,7 +406,7 @@ export async function deleteUserImage(id: string): Promise<void> {
   // Keep an already displayed blob URL alive until this page is closed.
 }
 
-export async function clearUserImages(): Promise<void> {
+async function clearUserImages(): Promise<void> {
   const database = await openDatabase();
   try {
     const transaction = database.transaction(STORE_NAME, "readwrite");
@@ -394,12 +419,14 @@ export async function clearUserImages(): Promise<void> {
   // this document is closed.
 }
 
-export async function fetchRandomUserImage(
-  signal?: AbortSignal,
-): Promise<AnimeImage> {
-  if (signal?.aborted) throw signal.reason;
+async function fetchRandomUserImage(signal?: AbortSignal): Promise<AnimeImage> {
+  if (signal?.aborted) {
+    throw signal.reason;
+  }
   const count = await countUserImages();
-  if (signal?.aborted) throw signal.reason;
+  if (signal?.aborted) {
+    throw signal.reason;
+  }
   if (count === 0) {
     throw new UserImageStoreError(
       "empty",
@@ -407,7 +434,9 @@ export async function fetchRandomUserImage(
     );
   }
   const image = await getUserImageAtOffset(getRandomUserImageOffset(count));
-  if (signal?.aborted) throw signal.reason;
+  if (signal?.aborted) {
+    throw signal.reason;
+  }
   return {
     url: getUserImageObjectUrl(image),
     animeName: image.name,
@@ -417,3 +446,27 @@ export async function fetchRandomUserImage(
     localImageId: image.id,
   };
 }
+
+export {
+  ACCEPTED_USER_IMAGE_TYPES,
+  addUserImages,
+  clearUserImages,
+  deleteUserImage,
+  fetchRandomUserImage,
+  getRandomUserImageOffset,
+  getUserImageFingerprint,
+  getUserImageObjectUrl,
+  listUserImages,
+  MAX_USER_IMAGE_BYTES,
+  MAX_USER_IMAGE_COUNT,
+  MAX_USER_IMAGE_PIXELS,
+  MAX_USER_IMAGE_TOTAL_BYTES,
+  UserImageStoreError,
+  validateUserImageCandidate,
+};
+export type {
+  AddUserImagesResult,
+  StoredUserImage,
+  UserImageCandidate,
+  UserImageErrorCode,
+};

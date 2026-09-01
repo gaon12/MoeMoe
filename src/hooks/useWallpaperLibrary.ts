@@ -3,21 +3,21 @@ import {
   ALL_IMAGE_SOURCES,
   type AnimeImage,
   type ImageSource,
-} from "../types/image";
+} from "../types/image.ts";
 import {
   createWallpaperFeedback,
   type WallpaperAspect,
   type WallpaperFeedback,
   type WallpaperSentiment,
-} from "../utils/wallpaperPreferences";
-import { isSafeHttpsUrl } from "../utils/safeUrl";
+} from "../utils/wallpaperPreferences.ts";
+import { isSafeHttpsUrl } from "../utils/safeUrl.ts";
 
 const STORAGE_KEY = "moemoe-wallpaper-library";
 const MAX_FAVORITES = 50;
 const MAX_BLOCKED_URLS = 200;
 const MAX_FEEDBACK = 300;
 
-export interface WallpaperLibraryData {
+interface WallpaperLibraryData {
   favorites: AnimeImage[];
   blockedUrls: string[];
   feedback: WallpaperFeedback[];
@@ -27,7 +27,7 @@ function isSafeRemoteUrl(value: unknown): value is string {
   return isSafeHttpsUrl(value);
 }
 
-export function sanitizeWallpaperLibrary(value: unknown): WallpaperLibraryData {
+function sanitizeWallpaperLibrary(value: unknown): WallpaperLibraryData {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     return { favorites: [], blockedUrls: [], feedback: [] };
   }
@@ -35,10 +35,13 @@ export function sanitizeWallpaperLibrary(value: unknown): WallpaperLibraryData {
   const favorites = Array.isArray(candidate.favorites)
     ? candidate.favorites
         .flatMap((item): AnimeImage[] => {
-          if (!item || typeof item !== "object" || Array.isArray(item))
+          if (!item || typeof item !== "object" || Array.isArray(item)) {
             return [];
+          }
           const image = item as Record<string, unknown>;
-          if (!isSafeRemoteUrl(image.url)) return [];
+          if (!isSafeRemoteUrl(image.url)) {
+            return [];
+          }
           const sanitized: AnimeImage = { url: image.url };
           if (isSafeRemoteUrl(image.proxiedUrl)) {
             sanitized.proxiedUrl = image.proxiedUrl;
@@ -94,13 +97,14 @@ export function sanitizeWallpaperLibrary(value: unknown): WallpaperLibraryData {
   const feedback = Array.isArray(candidate.feedback)
     ? candidate.feedback
         .flatMap((item): WallpaperFeedback[] => {
-          if (!item || typeof item !== "object" || Array.isArray(item))
+          if (!item || typeof item !== "object" || Array.isArray(item)) {
             return [];
+          }
           const entry = item as Record<string, unknown>;
-          if (
-            !isSafeRemoteUrl(entry.url) ||
-            !validSentiments.includes(entry.sentiment as WallpaperSentiment)
-          ) {
+          if (!(
+            isSafeRemoteUrl(entry.url) &&
+            validSentiments.includes(entry.sentiment as WallpaperSentiment)
+          )) {
             return [];
           }
           return [
@@ -131,8 +135,9 @@ export function sanitizeWallpaperLibrary(value: unknown): WallpaperLibraryData {
         .sort((a, b) => b.updatedAt - a.updatedAt)
         .filter(
           (entry, index, entries) =>
-            entries.findIndex((candidate) => candidate.url === entry.url) ===
-            index,
+            entries.findIndex(
+              (existingEntry) => existingEntry.url === entry.url,
+            ) === index,
         )
         .slice(0, MAX_FEEDBACK)
     : [];
@@ -149,15 +154,14 @@ function upsertFeedback(
   );
 }
 
-export function useWallpaperLibrary() {
+function useWallpaperLibrary() {
   const [library, setLibrary] = useState<WallpaperLibraryData>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       return saved
         ? sanitizeWallpaperLibrary(JSON.parse(saved))
         : { favorites: [], blockedUrls: [], feedback: [] };
-    } catch (error) {
-      console.error("Failed to load wallpaper library:", error);
+    } catch {
       return { favorites: [], blockedUrls: [], feedback: [] };
     }
   });
@@ -165,8 +169,8 @@ export function useWallpaperLibrary() {
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(library));
-    } catch (error) {
-      console.error("Failed to save wallpaper library:", error);
+    } catch {
+      // Keep the in-memory library when persistent storage is unavailable.
     }
   }, [library]);
 
@@ -236,3 +240,6 @@ export function useWallpaperLibrary() {
     blockWallpaper,
   };
 }
+
+export { sanitizeWallpaperLibrary, useWallpaperLibrary };
+export type { WallpaperLibraryData };

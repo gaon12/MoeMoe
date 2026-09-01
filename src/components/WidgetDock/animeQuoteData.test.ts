@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   getBuiltInAnimeQuote,
   parseAnimeQuoteResponse,
-} from "./animeQuoteData";
+} from "./animeQuoteData.ts";
 
 describe("anime quote data", () => {
   it("parses both configured API response shapes", () => {

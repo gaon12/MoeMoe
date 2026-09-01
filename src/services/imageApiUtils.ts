@@ -1,3 +1,5 @@
+import { getSafeHttpsUrl } from "../utils/safeUrl.ts";
+
 const MAX_ERROR_BODY_LENGTH = 1000;
 
 const safeJsonStringify = (value: unknown): string | undefined => {
@@ -8,11 +10,11 @@ const safeJsonStringify = (value: unknown): string | undefined => {
   }
 };
 
-export const buildDataError = (
+const buildDataError = (
   sourceName: string,
   requestUrl: string,
   detail: string,
-  data?: unknown,
+  context?: { data?: unknown; cause?: unknown },
 ): Error => {
   const lines: string[] = [
     `${sourceName} API error`,
@@ -20,8 +22,8 @@ export const buildDataError = (
     detail,
   ];
 
-  if (data !== undefined) {
-    const json = safeJsonStringify(data);
+  if (context?.data !== undefined) {
+    const json = safeJsonStringify(context.data);
     if (json) {
       lines.push(
         "responseDataSnippet:",
@@ -32,10 +34,13 @@ export const buildDataError = (
     }
   }
 
-  return new Error(lines.join("\n"));
+  if (context?.cause === undefined) {
+    return new Error(lines.join("\n"));
+  }
+  return new Error(lines.join("\n"), { cause: context.cause });
 };
 
-export const buildResponseError = async (
+const buildResponseError = async (
   sourceName: string,
   requestUrl: string,
   response: Response,
@@ -69,15 +74,14 @@ export const buildResponseError = async (
 /**
  * Get CORS proxy URL from environment variable
  */
-export const getCorsProxyUrl = (): string | undefined => {
-  return getSafeHttpsUrl(import.meta.env.VITE_FIX_CORS_API_URL);
-};
+const getCorsProxyUrl = (): string | undefined =>
+  getSafeHttpsUrl(import.meta.env.VITE_FIX_CORS_API_URL);
 
 /**
  * Build a CORS-proxied image URL if proxy is configured.
  * Returns undefined when no proxy is configured.
  */
-export const getProxiedImageUrl = (url: string): string | undefined => {
+const getProxiedImageUrl = (url: string): string | undefined => {
   const proxyUrl = getCorsProxyUrl();
   if (proxyUrl && url) {
     return `${proxyUrl}${encodeURIComponent(url)}`;
@@ -88,9 +92,16 @@ export const getProxiedImageUrl = (url: string): string | undefined => {
 const createCacheBustToken = (): string =>
   `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 
-export const withCacheBust = (url: string): string => {
+const withCacheBust = (url: string): string => {
   const nextUrl = new URL(url);
   nextUrl.searchParams.set("_moemoe_refresh", createCacheBustToken());
   return nextUrl.toString();
 };
-import { getSafeHttpsUrl } from "../utils/safeUrl";
+
+export {
+  buildDataError,
+  buildResponseError,
+  getCorsProxyUrl,
+  getProxiedImageUrl,
+  withCacheBust,
+};

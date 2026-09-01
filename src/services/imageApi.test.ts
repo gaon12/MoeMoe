@@ -3,8 +3,13 @@ import {
   buildDanbooruAspectTags,
   buildWaifuImSearchUrl,
   buildWallhavenSearchUrl,
-  fetchRandomImage,
-} from "./imageApi";
+} from "./imageAspect.ts";
+import { fetchRandomImage } from "./imageProviders.ts";
+
+const PIC_RE_REFRESH_URL_PATTERN =
+  /^https:\/\/pic\.re\/image\?_moemoe_refresh=/;
+const SERVICE_UNAVAILABLE_PATTERN = /503 Service Unavailable/;
+const UNSAFE_IMAGE_URL_PATTERN = /Unsafe image URL/;
 
 describe("fetchRandomImage", () => {
   afterEach(() => vi.restoreAllMocks());
@@ -19,8 +24,8 @@ describe("fetchRandomImage", () => {
       allowNSFW: false,
     });
 
-    expect(first.url).toMatch(/^https:\/\/pic\.re\/image\?_moemoe_refresh=/);
-    expect(second.url).toMatch(/^https:\/\/pic\.re\/image\?_moemoe_refresh=/);
+    expect(first.url).toMatch(PIC_RE_REFRESH_URL_PATTERN);
+    expect(second.url).toMatch(PIC_RE_REFRESH_URL_PATTERN);
     expect(first.url).not.toBe(second.url);
     expect(first.sourceUrl).toBe(first.url);
     expect(first.source).toBe("pic_re");
@@ -83,7 +88,7 @@ describe("fetchRandomImage", () => {
 
     await expect(
       fetchRandomImage({ source: "nekos_best", allowNSFW: false }),
-    ).rejects.toThrow(/503 Service Unavailable/);
+    ).rejects.toThrow(SERVICE_UNAVAILABLE_PATTERN);
   });
 
   it("rejects active URLs returned by a compromised provider", async () => {
@@ -95,7 +100,7 @@ describe("fetchRandomImage", () => {
     );
 
     await expect(fetchRandomImage({ source: "waifu_pics" })).rejects.toThrow(
-      /Unsafe image URL/,
+      UNSAFE_IMAGE_URL_PATTERN,
     );
   });
 

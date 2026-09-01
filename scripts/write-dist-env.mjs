@@ -4,6 +4,7 @@ import process from "node:process";
 import { loadEnv } from "vite";
 import deploymentEnvironment from "../config/deployment-env.json" with { type: "json" };
 
+const PUBLIC_ENVIRONMENT_KEY_PATTERN = /^VITE_[A-Z0-9_]+$/;
 const mode = process.argv[2] || "production";
 const projectRoot = process.cwd();
 const outputDirectory = path.join(projectRoot, "dist");
@@ -20,7 +21,7 @@ const publicEnvironment = {
 };
 
 const serializedEnvironment = Object.keys(publicEnvironment)
-  .filter((key) => /^VITE_[A-Z0-9_]+$/.test(key))
+  .filter((key) => PUBLIC_ENVIRONMENT_KEY_PATTERN.test(key))
   .sort()
   .map((key) => `${key}=${JSON.stringify(publicEnvironment[key])}`);
 

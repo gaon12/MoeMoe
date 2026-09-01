@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { defaultSettings } from "../types/settings";
-import { sanitizeSettings } from "./settingsValidation";
+import { defaultSettings } from "../types/settings.ts";
+import { sanitizeSettings } from "./settingsValidation.ts";
 
 describe("sanitizeSettings", () => {
   it("preserves image source identity for unrelated setting updates", () => {
@@ -22,7 +22,7 @@ describe("sanitizeSettings", () => {
   it("filters untrusted values and clamps numeric settings", () => {
     const result = sanitizeSettings({
       theme: "neon",
-      fontSize: Infinity,
+      fontSize: Number.POSITIVE_INFINITY,
       imageSources: ["pic_re", "javascript:"],
       imageChangeInterval: -100,
       letterboxCustomColor: "url(evil)",

@@ -1,27 +1,39 @@
-import { useState, useEffect, useCallback, useRef } from "react";
-import { Clock } from "./components/Clock/Clock";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Clock } from "./components/Clock/Clock.tsx";
 import {
   ImageBackground,
   type ImageBackgroundHandle,
-} from "./components/ImageBackground/ImageBackground";
-import { RefreshButton } from "./components/RefreshButton/RefreshButton";
-import { DownloadButton } from "./components/DownloadButton/DownloadButton";
-import { SettingsButton } from "./components/SettingsButton/SettingsButton";
-import { SettingsModal } from "./components/SettingsModal/SettingsModal";
-import { FullscreenButton } from "./components/FullscreenButton/FullscreenButton";
-import { AutoRefreshIndicator } from "./components/AutoRefreshIndicator/AutoRefreshIndicator";
-import { type AnimeImage } from "./types/image";
-import { useApp } from "./contexts/useApp";
-import { useSyncedTime } from "./hooks/useSyncedTime";
-import { WidgetDock } from "./components/WidgetDock/WidgetDock";
-import { SpotlightActions } from "./components/SpotlightActions/SpotlightActions";
-import { useWallpaperLibrary } from "./hooks/useWallpaperLibrary";
-import { shouldIgnoreGlobalShortcut } from "./utils/keyboardShortcuts";
+} from "./components/ImageBackground/ImageBackground.tsx";
+import { RefreshButton } from "./components/RefreshButton/RefreshButton.tsx";
+import { DownloadButton } from "./components/DownloadButton/DownloadButton.tsx";
+import { SettingsButton } from "./components/SettingsButton/SettingsButton.tsx";
+import { SettingsModal } from "./components/SettingsModal/SettingsModal.tsx";
+import { FullscreenButton } from "./components/FullscreenButton/FullscreenButton.tsx";
+import { AutoRefreshIndicator } from "./components/AutoRefreshIndicator/AutoRefreshIndicator.tsx";
+import type { AnimeImage } from "./types/image.ts";
+import { useApp } from "./contexts/useApp.ts";
+import { useSyncedTime } from "./hooks/useSyncedTime.ts";
+import { WidgetDock } from "./components/WidgetDock/WidgetDock.tsx";
+import { SpotlightActions } from "./components/SpotlightActions/SpotlightActions.tsx";
+import { useWallpaperLibrary } from "./hooks/useWallpaperLibrary.ts";
+import { shouldIgnoreGlobalShortcut } from "./utils/keyboardShortcuts.ts";
 import "./App.css";
 
-const IMAGE_CHANGE_COOLDOWN_MS = 5_000;
+const IMAGE_CHANGE_COOLDOWN_MS = 5000;
+const MILLISECONDS_PER_SECOND = 1000;
 
-function App() {
+interface TimerRef {
+  current: ReturnType<typeof setTimeout> | null;
+}
+
+const clearTimer = (timerRef: TimerRef) => {
+  if (timerRef.current !== null) {
+    clearTimeout(timerRef.current);
+    timerRef.current = null;
+  }
+};
+
+export function App() {
   const { settings, isSettingsOpen, setIsSettingsOpen } = useApp();
   const [isLoadingImage, setIsLoadingImage] = useState(true);
   const [currentImage, setCurrentImage] = useState<AnimeImage | null>(null);
@@ -51,22 +63,18 @@ function App() {
   } = useWallpaperLibrary();
 
   const performImageChange = useCallback(() => {
-    if (pendingImageChangeTimerRef.current) {
-      clearTimeout(pendingImageChangeTimerRef.current);
-      pendingImageChangeTimerRef.current = null;
-    }
+    clearTimer(pendingImageChangeTimerRef);
     setIsImageChangePending(false);
     setIsLoadingImage(true);
-    if (autoRefreshTimerRef.current) {
-      clearTimeout(autoRefreshTimerRef.current);
-      autoRefreshTimerRef.current = null;
-    }
+    clearTimer(autoRefreshTimerRef);
     imageBackgroundRef.current?.refresh();
   }, []);
 
   const requestImageChange = useCallback(
     (deferDuringCooldown = false) => {
-      if (isLoadingImage || isImageChangePending) return false;
+      if (isLoadingImage || isImageChangePending) {
+        return false;
+      }
       const elapsed = Date.now() - lastImageAttemptTime;
       const remaining =
         lastImageAttemptTime > 0
@@ -99,16 +107,13 @@ function App() {
 
   const scheduleAutoRefresh = useCallback(() => {
     // Clear existing timer
-    if (autoRefreshTimerRef.current) {
-      clearTimeout(autoRefreshTimerRef.current);
-      autoRefreshTimerRef.current = null;
-    }
+    clearTimer(autoRefreshTimerRef);
 
     // Schedule new auto-refresh if interval is set and not paused
     if (settings.imageChangeInterval > 0 && !isAutoRefreshPaused) {
       autoRefreshTimerRef.current = setTimeout(() => {
         handleRefresh();
-      }, settings.imageChangeInterval * 1000);
+      }, settings.imageChangeInterval * MILLISECONDS_PER_SECOND);
     }
   }, [settings.imageChangeInterval, isAutoRefreshPaused, handleRefresh]);
 
@@ -129,7 +134,9 @@ function App() {
 
   const handleDismissWallpaper = useCallback(
     (image: AnimeImage) => {
-      if (image.isLocal) return;
+      if (image.isLocal) {
+        return;
+      }
       blockWallpaper(image);
       requestImageChange(true);
     },
@@ -137,16 +144,13 @@ function App() {
   );
 
   // Cleanup timer on unmount or interval change
-  useEffect(() => {
-    return () => {
-      if (autoRefreshTimerRef.current) {
-        clearTimeout(autoRefreshTimerRef.current);
-      }
-      if (pendingImageChangeTimerRef.current) {
-        clearTimeout(pendingImageChangeTimerRef.current);
-      }
-    };
-  }, []);
+  useEffect(
+    () => () => {
+      clearTimer(autoRefreshTimerRef);
+      clearTimer(pendingImageChangeTimerRef);
+    },
+    [],
+  );
 
   // Re-schedule when interval setting changes
   useEffect(() => {
@@ -160,7 +164,9 @@ function App() {
   }, []);
 
   const toggleFullscreen = useCallback(() => {
-    if (typeof document === "undefined") return;
+    if (typeof document === "undefined") {
+      return;
+    }
     if (isPseudoFullscreen) {
       setIsPseudoFullscreen(false);
       return;
@@ -193,7 +199,9 @@ function App() {
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (shouldIgnoreGlobalShortcut(event, isSettingsOpen)) return;
+      if (shouldIgnoreGlobalShortcut(event, isSettingsOpen)) {
+        return;
+      }
 
       // R key or Space key to refresh
       if (event.key === "r" || event.key === "R" || event.key === " ") {
@@ -208,11 +216,12 @@ function App() {
       }
 
       // P key to toggle auto-refresh pause
-      if (event.key === "p" || event.key === "P") {
-        if (settings.imageChangeInterval > 0) {
-          event.preventDefault();
-          toggleAutoRefreshPause();
-        }
+      if (
+        (event.key === "p" || event.key === "P") &&
+        settings.imageChangeInterval > 0
+      ) {
+        event.preventDefault();
+        toggleAutoRefreshPause();
       }
 
       // S key to open settings
@@ -222,10 +231,10 @@ function App() {
       }
     };
 
-    window.addEventListener("keydown", handleKeyDown);
+    globalThis.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      window.removeEventListener("keydown", handleKeyDown);
+      globalThis.removeEventListener("keydown", handleKeyDown);
     };
   }, [
     handleRefresh,
@@ -251,35 +260,39 @@ function App() {
         excludedUrls={blockedUrls}
         feedback={feedback}
       />
-      {settings.uiVisibility.clock && (
+      {settings.uiVisibility.clock ? (
         <div className="content">
           <Clock currentTime={currentTime} />
         </div>
-      )}
+      ) : null}
 
-      <div className="control-dock" aria-label="Wallpaper controls">
+      <div
+        className="control-dock"
+        role="toolbar"
+        aria-label="Wallpaper controls"
+      >
         <SettingsButton />
-        {settings.uiVisibility.fullscreenButton && (
+        {settings.uiVisibility.fullscreenButton ? (
           <FullscreenButton
             onToggle={toggleFullscreen}
             isPseudoFullscreen={isPseudoFullscreen}
           />
-        )}
-        {settings.uiVisibility.downloadButton && (
+        ) : null}
+        {settings.uiVisibility.downloadButton ? (
           <DownloadButton
             imageUrl={currentImage?.url || null}
             fallbackImageUrl={currentImage?.proxiedUrl || null}
             imageName={currentImage?.animeName || "anime-image"}
           />
-        )}
-        {settings.uiVisibility.refreshButton && (
+        ) : null}
+        {settings.uiVisibility.refreshButton ? (
           <RefreshButton
             onRefresh={handleRefresh}
             isLoading={isLoadingImage}
             lastRefreshTime={lastImageAttemptTime}
           />
-        )}
-        {settings.uiVisibility.wallpaperActions && (
+        ) : null}
+        {settings.uiVisibility.wallpaperActions ? (
           <SpotlightActions
             currentImage={currentImage}
             favorites={favorites}
@@ -289,24 +302,22 @@ function App() {
             onDismiss={handleDismissWallpaper}
             isChangePending={isImageChangePending}
           />
-        )}
+        ) : null}
       </div>
       {settings.uiVisibility.autoRefreshIndicator &&
-        settings.imageChangeInterval > 0 && (
-          <AutoRefreshIndicator
-            intervalSeconds={settings.imageChangeInterval}
-            lastRefreshTime={lastImageAttemptTime}
-            isPaused={isAutoRefreshPaused}
-            isLoading={isLoadingImage}
-            onTogglePause={toggleAutoRefreshPause}
-          />
-        )}
-      {settings.uiVisibility.widgets && (
+      settings.imageChangeInterval > 0 ? (
+        <AutoRefreshIndicator
+          intervalSeconds={settings.imageChangeInterval}
+          lastRefreshTime={lastImageAttemptTime}
+          isPaused={isAutoRefreshPaused}
+          isLoading={isLoadingImage}
+          onTogglePause={toggleAutoRefreshPause}
+        />
+      ) : null}
+      {settings.uiVisibility.widgets ? (
         <WidgetDock currentTime={currentTime} />
-      )}
+      ) : null}
       <SettingsModal />
     </div>
   );
 }
-
-export default App;

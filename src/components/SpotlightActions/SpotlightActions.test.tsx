@@ -2,7 +2,7 @@
 
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { SpotlightActions } from "./SpotlightActions";
+import { SpotlightActions } from "./SpotlightActions.tsx";
 
 vi.mock("react-i18next", () => ({
   useTranslation: () => ({ t: (key: string) => key }),
@@ -47,7 +47,7 @@ describe("SpotlightActions", () => {
         onToggleFavorite={vi.fn()}
         onRemoveFavorite={vi.fn()}
         onDismiss={vi.fn()}
-        isChangePending
+        isChangePending={true}
       />,
     );
 
@@ -68,7 +68,7 @@ describe("SpotlightActions", () => {
       <SpotlightActions
         currentImage={currentImage}
         favorites={[currentImage]}
-        isFavorite
+        isFavorite={true}
         onToggleFavorite={vi.fn()}
         onRemoveFavorite={vi.fn()}
         onDismiss={vi.fn()}
@@ -77,9 +77,33 @@ describe("SpotlightActions", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "spotlight.gallery" }));
 
-    expect(screen.getByRole("dialog").getAttribute("aria-labelledby")).toBe(
-      "spotlight-gallery-title",
+    const dialog = screen.getByRole("dialog");
+    const titleId = dialog.getAttribute("aria-labelledby");
+    expect(titleId).toBeTruthy();
+    expect(document.getElementById(titleId ?? "")?.textContent).toBe(
+      "spotlight.gallery",
     );
     expect(screen.getByAltText("Current wallpaper")).toBeTruthy();
+  });
+
+  it("closes the gallery through the accessible backdrop button", () => {
+    render(
+      <SpotlightActions
+        currentImage={currentImage}
+        favorites={[currentImage]}
+        isFavorite={true}
+        onToggleFavorite={vi.fn()}
+        onRemoveFavorite={vi.fn()}
+        onDismiss={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "spotlight.gallery" }));
+    const closeButtons = screen.getAllByRole("button", {
+      name: "spotlight.close",
+    });
+    fireEvent.click(closeButtons[0]);
+
+    expect(screen.queryByRole("dialog")).toBeNull();
   });
 });

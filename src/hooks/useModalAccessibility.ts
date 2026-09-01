@@ -15,7 +15,9 @@ export function useModalAccessibility(
   onClose: () => void,
 ) {
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      return;
+    }
     const previouslyFocused = document.activeElement as HTMLElement | null;
     const container = containerRef.current;
     container?.focus();
@@ -26,7 +28,9 @@ export function useModalAccessibility(
         onClose();
         return;
       }
-      if (event.key !== "Tab" || !container) return;
+      if (event.key !== "Tab" || !container) {
+        return;
+      }
 
       const focusable = Array.from(
         container.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
@@ -37,8 +41,11 @@ export function useModalAccessibility(
         return;
       }
 
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
+      const [first] = focusable;
+      const last = focusable.at(-1);
+      if (!(first && last)) {
+        return;
+      }
       if (event.shiftKey && document.activeElement === first) {
         event.preventDefault();
         last.focus();

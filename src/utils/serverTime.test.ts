@@ -4,7 +4,7 @@ import {
   buildSameOriginServerTimeUrl,
   parseServerDateHeader,
   parseServerTimePayload,
-} from "./serverTime";
+} from "./serverTime.ts";
 
 describe("server time utilities", () => {
   it("builds placeholder, query parameter, and same-origin URLs", () => {

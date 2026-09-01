@@ -1,5 +1,5 @@
-import type { ImageDimensions, ImageSource } from "../types/image";
-import type { ImageAspectPreference } from "../types/settings";
+import type { ImageDimensions, ImageSource } from "../types/image.ts";
+import type { ImageAspectPreference } from "../types/settings.ts";
 
 /**
  * Configuration for image fetching

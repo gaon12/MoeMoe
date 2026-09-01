@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
-import type { Dispatch, SetStateAction } from "react";
-import type { AppSettings, Widget, WidgetType } from "../../types/settings";
+import { useCallback, useId, type Dispatch, type SetStateAction } from "react";
+import type { AppSettings, Widget, WidgetType } from "../../types/settings.ts";
 
 interface SettingsWidgetsTabProps {
   localSettings: AppSettings;
@@ -8,12 +8,14 @@ interface SettingsWidgetsTabProps {
 }
 
 const MAX_WIDGETS = 4;
+const MAX_WIDGET_POSITION_OFFSET = 500;
 
 export const SettingsWidgetsTab = ({
   localSettings,
   setLocalSettings,
 }: SettingsWidgetsTabProps) => {
   const { t } = useTranslation();
+  const idPrefix = useId();
 
   const widgetTypeOptions: Array<{ value: WidgetType; label: string }> = [
     { value: "clock", label: t("settings.widgets.clock") },
@@ -23,69 +25,181 @@ export const SettingsWidgetsTab = ({
     { value: "customText", label: t("settings.widgets.customText") },
   ];
 
-  const handleWidgetUpdate = (id: string, updates: Partial<Widget>) => {
-    const nextWidgets = localSettings.widgets.map((widget) =>
-      widget.id === id ? { ...widget, ...updates } : widget,
-    );
-    setLocalSettings({ ...localSettings, widgets: nextWidgets });
-  };
+  const handleWidgetUpdate = useCallback(
+    (id: string, updates: Partial<Widget>) => {
+      setLocalSettings((current) => ({
+        ...current,
+        widgets: current.widgets.map((widget) =>
+          widget.id === id ? { ...widget, ...updates } : widget,
+        ),
+      }));
+    },
+    [setLocalSettings],
+  );
 
-  const handleWidgetTypeChange = (id: string, type: WidgetType) => {
-    handleWidgetUpdate(id, { type });
-  };
+  const handleWidgetTypeChange = useCallback(
+    (id: string, type: WidgetType) => {
+      handleWidgetUpdate(id, { type });
+    },
+    [handleWidgetUpdate],
+  );
 
-  const handleWidgetToggle = (id: string, enabled: boolean) => {
-    handleWidgetUpdate(id, { enabled });
-  };
+  const handleWidgetToggle = useCallback(
+    (id: string, enabled: boolean) => {
+      handleWidgetUpdate(id, { enabled });
+    },
+    [handleWidgetUpdate],
+  );
 
-  const handleWidgetRemove = (id: string) => {
-    setLocalSettings({
-      ...localSettings,
-      widgets: localSettings.widgets.filter((widget) => widget.id !== id),
+  const handleWidgetRemove = useCallback(
+    (id: string) => {
+      setLocalSettings((current) => ({
+        ...current,
+        widgets: current.widgets.filter((widget) => widget.id !== id),
+      }));
+    },
+    [setLocalSettings],
+  );
+
+  const handleWidgetMove = useCallback(
+    (index: number, offset: number) => {
+      setLocalSettings((current) => {
+        const newIndex = index + offset;
+        if (newIndex < 0 || newIndex >= current.widgets.length) {
+          return current;
+        }
+        const widgets = [...current.widgets];
+        const [moved] = widgets.splice(index, 1);
+        if (!moved) {
+          return current;
+        }
+        widgets.splice(newIndex, 0, moved);
+        return { ...current, widgets };
+      });
+    },
+    [setLocalSettings],
+  );
+
+  const handleWidgetAdd = useCallback(() => {
+    setLocalSettings((current) => {
+      if (current.widgets.length >= MAX_WIDGETS) {
+        return current;
+      }
+      const newWidget: Widget = {
+        id: `widget-${Date.now()}`,
+        type: "clock",
+        enabled: true,
+        position: { x: 0, y: 0 },
+        data: {},
+      };
+      return { ...current, widgets: [...current.widgets, newWidget] };
     });
-  };
+  }, [setLocalSettings]);
 
-  const handleWidgetMove = (index: number, offset: number) => {
-    const newIndex = index + offset;
-    if (newIndex < 0 || newIndex >= localSettings.widgets.length) return;
-    const widgets = [...localSettings.widgets];
-    const [moved] = widgets.splice(index, 1);
-    widgets.splice(newIndex, 0, moved);
-    setLocalSettings({ ...localSettings, widgets });
-  };
+  const handleWidgetCustomText = useCallback(
+    (id: string, text: string) => {
+      setLocalSettings((current) => ({
+        ...current,
+        widgets: current.widgets.map((widget) =>
+          widget.id === id
+            ? { ...widget, data: { ...(widget.data || {}), text } }
+            : widget,
+        ),
+      }));
+    },
+    [setLocalSettings],
+  );
 
-  const handleWidgetAdd = () => {
-    if (localSettings.widgets.length >= MAX_WIDGETS) return;
-    const newWidget: Widget = {
-      id: `widget-${Date.now()}`,
-      type: "clock",
-      enabled: true,
-      position: { x: 0, y: 0 },
-      data: {},
-    };
-    setLocalSettings({
-      ...localSettings,
-      widgets: [...localSettings.widgets, newWidget],
-    });
-  };
+  const handleWidgetPosition = useCallback(
+    (id: string, axis: "x" | "y", value: number) => {
+      if (!Number.isFinite(value)) {
+        return;
+      }
+      setLocalSettings((current) => ({
+        ...current,
+        widgets: current.widgets.map((widget) =>
+          widget.id === id
+            ? {
+                ...widget,
+                position: {
+                  ...widget.position,
+                  [axis]: Math.min(
+                    MAX_WIDGET_POSITION_OFFSET,
+                    Math.max(-MAX_WIDGET_POSITION_OFFSET, value),
+                  ),
+                },
+              }
+            : widget,
+        ),
+      }));
+    },
+    [setLocalSettings],
+  );
 
-  const handleWidgetCustomText = (id: string, text: string) => {
-    const target = localSettings.widgets.find((widget) => widget.id === id);
-    if (!target) return;
-    const data = { ...(target.data || {}), text };
-    handleWidgetUpdate(id, { data });
-  };
-
-  const handleWidgetPosition = (id: string, axis: "x" | "y", value: number) => {
-    const target = localSettings.widgets.find((widget) => widget.id === id);
-    if (!target || !Number.isFinite(value)) return;
-    handleWidgetUpdate(id, {
-      position: {
-        ...target.position,
-        [axis]: Math.min(500, Math.max(-500, value)),
-      },
-    });
-  };
+  const handleWeatherApiKeyChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const weatherApiKey = event.currentTarget.value;
+      setLocalSettings((current) => ({ ...current, weatherApiKey }));
+    },
+    [setLocalSettings],
+  );
+  const handleWidgetMoveClick = useCallback(
+    (event: React.MouseEvent<HTMLButtonElement>) => {
+      handleWidgetMove(
+        Number(event.currentTarget.dataset.index),
+        Number(event.currentTarget.dataset.offset),
+      );
+    },
+    [handleWidgetMove],
+  );
+  const handleWidgetRemoveClick = useCallback(
+    (event: React.MouseEvent<HTMLButtonElement>) => {
+      const { widgetId } = event.currentTarget.dataset;
+      if (widgetId) {
+        handleWidgetRemove(widgetId);
+      }
+    },
+    [handleWidgetRemove],
+  );
+  const handleWidgetTypeSelect = useCallback(
+    (event: React.ChangeEvent<HTMLSelectElement>) => {
+      const { widgetId } = event.currentTarget.dataset;
+      if (widgetId) {
+        handleWidgetTypeChange(
+          widgetId,
+          event.currentTarget.value as WidgetType,
+        );
+      }
+    },
+    [handleWidgetTypeChange],
+  );
+  const handleWidgetPositionChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const { widgetId, axis } = event.currentTarget.dataset;
+      if (widgetId && (axis === "x" || axis === "y")) {
+        handleWidgetPosition(widgetId, axis, Number(event.currentTarget.value));
+      }
+    },
+    [handleWidgetPosition],
+  );
+  const handleWidgetEnabledChange = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const { widgetId } = event.currentTarget.dataset;
+      if (widgetId) {
+        handleWidgetToggle(widgetId, event.currentTarget.checked);
+      }
+    },
+    [handleWidgetToggle],
+  );
+  const handleWidgetTextChange = useCallback(
+    (event: React.ChangeEvent<HTMLTextAreaElement>) => {
+      const { widgetId } = event.currentTarget.dataset;
+      if (widgetId) {
+        handleWidgetCustomText(widgetId, event.currentTarget.value);
+      }
+    },
+    [handleWidgetCustomText],
+  );
 
   return (
     <>
@@ -101,23 +215,21 @@ export const SettingsWidgetsTab = ({
         </div>
 
         <div className="settings-option">
-          <label className="settings-label" htmlFor="weatherApiKey">
+          <label
+            className="settings-label"
+            htmlFor={`${idPrefix}-weather-api-key`}
+          >
             {t("settings.widgets.weatherApiKeyLabel")}
           </label>
           <p className="settings-description">
             {t("settings.widgets.weatherApiKeyDescription")}
           </p>
           <input
-            id="weatherApiKey"
+            id={`${idPrefix}-weather-api-key`}
             type="password"
             className="settings-input"
-            value={localSettings.weatherApiKey ?? ""}
-            onChange={(e) =>
-              setLocalSettings({
-                ...localSettings,
-                weatherApiKey: e.target.value,
-              })
-            }
+            value={localSettings.weatherApiKey}
+            onChange={handleWeatherApiKeyChange}
             placeholder={t("settings.widgets.weatherApiKeyPlaceholder")}
             autoComplete="off"
           />
@@ -159,46 +271,51 @@ export const SettingsWidgetsTab = ({
                   <div className="widget-config-actions">
                     <button
                       type="button"
+                      data-index={index}
+                      data-offset={-1}
                       className="widget-config-action"
-                      onClick={() => handleWidgetMove(index, -1)}
+                      onClick={handleWidgetMoveClick}
                       disabled={index === 0}
                       aria-label={t("settings.widgets.moveUp")}
                     >
-                      ↑
+                      {"↑"}
                     </button>
                     <button
                       type="button"
+                      data-index={index}
+                      data-offset={1}
                       className="widget-config-action"
-                      onClick={() => handleWidgetMove(index, 1)}
+                      onClick={handleWidgetMoveClick}
                       disabled={index === localSettings.widgets.length - 1}
                       aria-label={t("settings.widgets.moveDown")}
                     >
-                      ↓
+                      {"↓"}
                     </button>
                     <button
                       type="button"
+                      data-widget-id={widget.id}
                       className="widget-config-action danger"
-                      onClick={() => handleWidgetRemove(widget.id)}
+                      onClick={handleWidgetRemoveClick}
                       aria-label={t("settings.widgets.remove")}
                     >
-                      ✕
+                      {"✕"}
                     </button>
                   </div>
                 </div>
 
                 <div className="widget-config-row">
-                  <label className="widget-config-label">
+                  <label
+                    className="widget-config-label"
+                    htmlFor={`${idPrefix}-${widget.id}-type`}
+                  >
                     {t("settings.widgets.typeLabel")}
                   </label>
                   <select
+                    id={`${idPrefix}-${widget.id}-type`}
+                    data-widget-id={widget.id}
                     className="settings-select"
                     value={widget.type}
-                    onChange={(e) =>
-                      handleWidgetTypeChange(
-                        widget.id,
-                        e.target.value as WidgetType,
-                      )
-                    }
+                    onChange={handleWidgetTypeSelect}
                   >
                     {widgetTypeOptions.map((option) => (
                       <option key={option.value} value={option.value}>
@@ -218,17 +335,13 @@ export const SettingsWidgetsTab = ({
                       <input
                         className="settings-input"
                         type="number"
+                        data-widget-id={widget.id}
+                        data-axis="x"
                         min={-500}
                         max={500}
                         step={10}
                         value={widget.position.x}
-                        onChange={(event) =>
-                          handleWidgetPosition(
-                            widget.id,
-                            "x",
-                            Number(event.target.value),
-                          )
-                        }
+                        onChange={handleWidgetPositionChange}
                       />
                     </label>
                     <label>
@@ -236,17 +349,13 @@ export const SettingsWidgetsTab = ({
                       <input
                         className="settings-input"
                         type="number"
+                        data-widget-id={widget.id}
+                        data-axis="y"
                         min={-500}
                         max={500}
                         step={10}
                         value={widget.position.y}
-                        onChange={(event) =>
-                          handleWidgetPosition(
-                            widget.id,
-                            "y",
-                            Number(event.target.value),
-                          )
-                        }
+                        onChange={handleWidgetPositionChange}
                       />
                     </label>
                   </div>
@@ -256,16 +365,15 @@ export const SettingsWidgetsTab = ({
                 </div>
 
                 <div className="widget-config-row">
-                  <label className="widget-config-label">
+                  <span className="widget-config-label">
                     {t("settings.widgets.visible")}
-                  </label>
+                  </span>
                   <label className="widget-config-toggle">
                     <input
                       type="checkbox"
+                      data-widget-id={widget.id}
                       checked={widget.enabled}
-                      onChange={(e) =>
-                        handleWidgetToggle(widget.id, e.target.checked)
-                      }
+                      onChange={handleWidgetEnabledChange}
                     />
                     <span>
                       {widget.enabled
@@ -277,10 +385,15 @@ export const SettingsWidgetsTab = ({
 
                 {widget.type === "customText" && (
                   <div className="widget-config-row">
-                    <label className="widget-config-label">
+                    <label
+                      className="widget-config-label"
+                      htmlFor={`${idPrefix}-${widget.id}-custom-text`}
+                    >
                       {t("settings.widgets.customTextLabel")}
                     </label>
                     <textarea
+                      id={`${idPrefix}-${widget.id}-custom-text`}
+                      data-widget-id={widget.id}
                       className="widget-config-textarea"
                       rows={2}
                       value={
@@ -288,9 +401,7 @@ export const SettingsWidgetsTab = ({
                           ? widget.data.text
                           : ""
                       }
-                      onChange={(e) =>
-                        handleWidgetCustomText(widget.id, e.target.value)
-                      }
+                      onChange={handleWidgetTextChange}
                       placeholder={t("settings.widgets.customTextPlaceholder")}
                     />
                   </div>

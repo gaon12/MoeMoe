@@ -1,7 +1,9 @@
 const EDGE_COLOR_FALLBACK = "#1a1a1a";
 
 export function averageRgbSamples(samples: readonly number[][]): string {
-  if (samples.length === 0) return EDGE_COLOR_FALLBACK;
+  if (samples.length === 0) {
+    return EDGE_COLOR_FALLBACK;
+  }
   const average = (channel: number) =>
     Math.floor(
       samples.reduce((sum, sample) => sum + (sample[channel] ?? 0), 0) /
@@ -14,11 +16,15 @@ export function extractEdgeColor(img: HTMLImageElement): string {
   try {
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
-    if (!ctx) return EDGE_COLOR_FALLBACK;
+    if (!ctx) {
+      return EDGE_COLOR_FALLBACK;
+    }
 
     canvas.width = img.naturalWidth || img.width;
     canvas.height = img.naturalHeight || img.height;
-    if (canvas.width <= 0 || canvas.height <= 0) return EDGE_COLOR_FALLBACK;
+    if (canvas.width <= 0 || canvas.height <= 0) {
+      return EDGE_COLOR_FALLBACK;
+    }
     ctx.drawImage(img, 0, 0);
     const sampleSize = 10;
     const samples: number[][] = [];
@@ -35,8 +41,7 @@ export function extractEdgeColor(img: HTMLImageElement): string {
       samples.push([left[0], left[1], left[2]], [right[0], right[1], right[2]]);
     }
     return averageRgbSamples(samples);
-  } catch (error) {
-    console.error("Failed to extract edge color:", error);
+  } catch {
     return EDGE_COLOR_FALLBACK;
   }
 }
@@ -44,18 +49,18 @@ export function extractEdgeColor(img: HTMLImageElement): string {
 export function loadReadableImage(
   url: string,
   signal?: AbortSignal,
-  timeoutMs = 5_000,
+  timeoutMs = 5000,
 ): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const image = new Image();
     image.crossOrigin = "anonymous";
-    const timeoutId = window.setTimeout(() => {
+    const timeoutId = globalThis.setTimeout(() => {
       cleanup();
       image.src = "";
       reject(new Error(`Edge-color image load timed out: ${url}`));
     }, timeoutMs);
     const cleanup = () => {
-      window.clearTimeout(timeoutId);
+      globalThis.clearTimeout(timeoutId);
       signal?.removeEventListener("abort", handleAbort);
       image.onload = null;
       image.onerror = null;

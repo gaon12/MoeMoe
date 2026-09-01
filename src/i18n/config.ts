@@ -1,9 +1,9 @@
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 
-import enTranslation from "../locales/en/translation.json";
-import koTranslation from "../locales/ko/translation.json";
-import jaTranslation from "../locales/ja/translation.json";
+import enTranslation from "../locales/en/translation.json" with { type: "json" };
+import koTranslation from "../locales/ko/translation.json" with { type: "json" };
+import jaTranslation from "../locales/ja/translation.json" with { type: "json" };
 
 const resources = {
   en: {
@@ -21,17 +21,17 @@ const resources = {
 let savedLanguage: string | null = null;
 try {
   savedLanguage = localStorage.getItem("moemoe-language");
-} catch (error) {
-  console.error("Failed to load the saved language:", error);
+} catch {
+  // Storage can be unavailable in private or restricted browsing contexts.
 }
-const browserLanguage = navigator.language.split("-")[0];
+const [browserLanguage] = navigator.language.split("-");
 const defaultLanguage =
   savedLanguage ||
   (browserLanguage === "ko" || browserLanguage === "ja"
     ? browserLanguage
     : "en");
 
-void i18n
+i18n
   .use(initReactI18next)
   .init({
     resources,
@@ -44,8 +44,4 @@ void i18n
       useSuspense: false,
     },
   })
-  .catch((error: unknown) => {
-    console.error("Failed to initialize translations:", error);
-  });
-
-export default i18n;
+  .catch(() => undefined);

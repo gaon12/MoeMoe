@@ -1,16 +1,23 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { fetchWithTimeout } from "../utils/fetchWithTimeout";
+import { fetchWithTimeout } from "../utils/fetchWithTimeout.ts";
 import {
   buildConfiguredServerTimeUrl,
   buildSameOriginServerTimeUrl,
   parseServerDateHeader,
   parseServerTimePayload,
-} from "../utils/serverTime";
+} from "../utils/serverTime.ts";
 
-const SERVER_TIME_TIMEOUT_MS = 8_000;
+const SERVER_TIME_TIMEOUT_MS = 8000;
+const HTTP_METHOD_NOT_ALLOWED = 405;
+const HTTP_NOT_IMPLEMENTED = 501;
+const MAX_ERROR_BODY_CHARS = 500;
+const CLOCK_TICK_INTERVAL_MS = 1000;
+const ROUND_TRIP_MIDPOINT_DIVISOR = 2;
+const MINIMUM_SYNC_INTERVAL_SECONDS = 5;
+const MILLISECONDS_PER_SECOND = 1000;
 
 async function fetchSameOriginServerTime(signal: AbortSignal) {
-  const requestUrl = buildSameOriginServerTimeUrl(window.location.href);
+  const requestUrl = buildSameOriginServerTimeUrl(globalThis.location.href);
   let response = await fetchWithTimeout(
     requestUrl,
     { method: "HEAD", cache: "no-store", signal },
@@ -18,7 +25,11 @@ async function fetchSameOriginServerTime(signal: AbortSignal) {
   );
   let serverMs = response.ok ? parseServerDateHeader(response) : null;
 
-  if (response.status === 405 || response.status === 501 || serverMs == null) {
+  if (
+    response.status === HTTP_METHOD_NOT_ALLOWED ||
+    response.status === HTTP_NOT_IMPLEMENTED ||
+    serverMs === null
+  ) {
     response = await fetchWithTimeout(
       requestUrl,
       { method: "GET", cache: "no-store", signal },
@@ -32,7 +43,7 @@ async function fetchSameOriginServerTime(signal: AbortSignal) {
       `Failed to fetch deployment server time (${response.status} ${response.statusText})`,
     );
   }
-  if (serverMs == null) {
+  if (serverMs === null) {
     throw new Error("Deployment server response did not include a Date header");
   }
   return serverMs;
@@ -50,18 +61,24 @@ async function fetchConfiguredServerTime(
   if (!response.ok) {
     const snippet = await response
       .text()
-      .then((text) => (text.length > 500 ? `${text.slice(0, 500)}…` : text))
+      .then((text) =>
+        text.length > MAX_ERROR_BODY_CHARS
+          ? `${text.slice(0, MAX_ERROR_BODY_CHARS)}…`
+          : text,
+      )
       .catch(() => undefined);
     const details = [
       `Failed to fetch server time (${response.status} ${response.statusText})`,
       `url: ${requestUrl}`,
     ];
-    if (snippet) details.push(`body: ${snippet}`);
+    if (snippet) {
+      details.push(`body: ${snippet}`);
+    }
     throw new Error(details.join("\n"));
   }
 
   const serverMs = parseServerTimePayload(await response.json());
-  if (serverMs == null) {
+  if (serverMs === null) {
     throw new Error("Server time response did not include a valid timestamp");
   }
   return serverMs;
@@ -73,18 +90,17 @@ export function useSyncedTime(
 ) {
   const [currentTime, setCurrentTime] = useState<Date>(() => new Date());
   const offsetRef = useRef(0); // server-client delta
-  const syncTimerRef = useRef<number | null>(null);
   const requestSequenceRef = useRef(0);
   const requestControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
-    const timer = window.setInterval(() => {
+    const timer = globalThis.setInterval(() => {
       const now = Date.now() + offsetRef.current;
       setCurrentTime(new Date(now));
-    }, 1000);
+    }, CLOCK_TICK_INTERVAL_MS);
 
     return () => {
-      window.clearInterval(timer);
+      globalThis.clearInterval(timer);
     };
   }, []);
 
@@ -92,7 +108,8 @@ export function useSyncedTime(
     requestControllerRef.current?.abort();
     const controller = new AbortController();
     requestControllerRef.current = controller;
-    const requestSequence = ++requestSequenceRef.current;
+    requestSequenceRef.current += 1;
+    const requestSequence = requestSequenceRef.current;
     const isStale = () =>
       controller.signal.aborted ||
       requestSequence !== requestSequenceRef.current;
@@ -108,12 +125,15 @@ export function useSyncedTime(
         ? await fetchConfiguredServerTime(requestUrl, controller.signal)
         : await fetchSameOriginServerTime(controller.signal);
       const t3 = Date.now();
-      if (isStale()) return;
-      const midpoint = (t0 + t3) / 2;
+      if (isStale()) {
+        return;
+      }
+      const midpoint = (t0 + t3) / ROUND_TRIP_MIDPOINT_DIVISOR;
       offsetRef.current = serverMs - midpoint;
-    } catch (error) {
-      if (isStale()) return;
-      console.error("Server time sync failed:", error);
+    } catch {
+      if (isStale()) {
+        return;
+      }
       offsetRef.current = 0;
     } finally {
       if (requestControllerRef.current === controller) {
@@ -123,27 +143,27 @@ export function useSyncedTime(
   }, []);
 
   useEffect(() => {
-    if (syncTimerRef.current) {
-      window.clearInterval(syncTimerRef.current);
-      syncTimerRef.current = null;
-    }
     requestSequenceRef.current += 1;
     requestControllerRef.current?.abort();
     requestControllerRef.current = null;
 
     if (useServerTime) {
-      void fetchServerTime();
-      const intervalMs = Math.max(5, serverTimeUpdateIntervalSec) * 1000;
-      syncTimerRef.current = window.setInterval(fetchServerTime, intervalMs);
-    } else {
-      offsetRef.current = 0;
+      fetchServerTime();
+      const intervalMs =
+        Math.max(MINIMUM_SYNC_INTERVAL_SECONDS, serverTimeUpdateIntervalSec) *
+        MILLISECONDS_PER_SECOND;
+      const syncTimer = globalThis.setInterval(fetchServerTime, intervalMs);
+      return () => {
+        globalThis.clearInterval(syncTimer);
+        requestSequenceRef.current += 1;
+        requestControllerRef.current?.abort();
+        requestControllerRef.current = null;
+      };
     }
 
+    offsetRef.current = 0;
+
     return () => {
-      if (syncTimerRef.current) {
-        window.clearInterval(syncTimerRef.current);
-        syncTimerRef.current = null;
-      }
       requestSequenceRef.current += 1;
       requestControllerRef.current?.abort();
       requestControllerRef.current = null;

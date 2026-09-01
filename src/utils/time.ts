@@ -1,12 +1,12 @@
-import { type AppSettings } from "../types/settings";
+import type { AppSettings } from "../types/settings.ts";
 
-export interface FormattedTimeParts {
+interface FormattedTimeParts {
   time: string;
   ampmText: string | null;
   ampmPosition: "before" | "after";
 }
 
-export function getFormattedTimeParts(
+function getFormattedTimeParts(
   date: Date,
   settings: AppSettings,
   language: string,
@@ -26,27 +26,16 @@ export function getFormattedTimeParts(
 
   let ampmText: string | null = null;
   if (!settings.use24Hour && settings.showAmPm) {
-    const isPM = rawHours >= 12;
+    const isPm = rawHours >= 12;
+    const latinAmPm = isPm ? "PM" : "AM";
     if (language === "ko") {
-      ampmText =
-        settings.amPmStyle === "latin"
-          ? isPM
-            ? "PM"
-            : "AM"
-          : isPM
-            ? "오후"
-            : "오전";
+      const localizedAmPm = isPm ? "오후" : "오전";
+      ampmText = settings.amPmStyle === "latin" ? latinAmPm : localizedAmPm;
     } else if (language === "ja") {
-      ampmText =
-        settings.amPmStyle === "latin"
-          ? isPM
-            ? "PM"
-            : "AM"
-          : isPM
-            ? "午後"
-            : "午前";
+      const localizedAmPm = isPm ? "午後" : "午前";
+      ampmText = settings.amPmStyle === "latin" ? latinAmPm : localizedAmPm;
     } else {
-      ampmText = isPM ? "PM" : "AM";
+      ampmText = latinAmPm;
     }
   }
 
@@ -57,9 +46,8 @@ export function getFormattedTimeParts(
   };
 }
 
-export function getFullDateString(date: Date, language: string): string {
-  const locale =
-    language === "ko" ? "ko-KR" : language === "ja" ? "ja-JP" : "en-US";
+function getFullDateString(date: Date, language: string): string {
+  const locale = resolveLocale(language);
   const options: Intl.DateTimeFormatOptions = {
     weekday: "long",
     year: "numeric",
@@ -69,9 +57,8 @@ export function getFullDateString(date: Date, language: string): string {
   return date.toLocaleDateString(locale, options);
 }
 
-export function getDateParts(date: Date, language: string) {
-  const locale =
-    language === "ko" ? "ko-KR" : language === "ja" ? "ja-JP" : "en-US";
+function getDateParts(date: Date, language: string) {
+  const locale = resolveLocale(language);
   const weekday = date.toLocaleDateString(locale, { weekday: "long" });
   const monthDay = date.toLocaleDateString(locale, {
     month: "long",
@@ -80,3 +67,16 @@ export function getDateParts(date: Date, language: string) {
   const year = date.toLocaleDateString(locale, { year: "numeric" });
   return { weekday, monthDay, year };
 }
+
+function resolveLocale(language: string): string {
+  if (language === "ko") {
+    return "ko-KR";
+  }
+  if (language === "ja") {
+    return "ja-JP";
+  }
+  return "en-US";
+}
+
+export { getDateParts, getFormattedTimeParts, getFullDateString };
+export type { FormattedTimeParts };

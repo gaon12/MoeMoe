@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { fetchWithTimeout } from "../../utils/fetchWithTimeout";
-import type { AnimeQuoteData, AnimeQuoteState } from "./widgetTypes";
+import { fetchWithTimeout } from "../../utils/fetchWithTimeout.ts";
+import type { AnimeQuoteData, AnimeQuoteState } from "./widgetTypes.ts";
 
 const MAX_QUOTE_LENGTH = 500;
 const MAX_LABEL_LENGTH = 120;
@@ -34,14 +34,16 @@ const cleanText = (value: unknown, maximum: number): string =>
     ? value.replace(/\s+/g, " ").trim().slice(0, maximum)
     : "";
 
-export function parseAnimeQuoteResponse(value: unknown): AnimeQuoteData | null {
+function parseAnimeQuoteResponse(value: unknown): AnimeQuoteData | null {
   const candidate = Array.isArray(value) ? value[0] : value;
   if (!candidate || typeof candidate !== "object" || Array.isArray(candidate)) {
     return null;
   }
   const entry = candidate as Record<string, unknown>;
   const content = cleanText(entry.quote ?? entry.content, MAX_QUOTE_LENGTH);
-  if (!content) return null;
+  if (!content) {
+    return null;
+  }
   return {
     content,
     character:
@@ -50,7 +52,7 @@ export function parseAnimeQuoteResponse(value: unknown): AnimeQuoteData | null {
   };
 }
 
-export function getBuiltInAnimeQuote(
+function getBuiltInAnimeQuote(
   previousContent?: string,
   random = Math.random,
 ): AnimeQuoteData {
@@ -59,7 +61,7 @@ export function getBuiltInAnimeQuote(
   );
   const pool = choices.length > 0 ? choices : BUILT_IN_QUOTES;
   return pool[
-    Math.floor(Math.min(0.999999999, Math.max(0, random())) * pool.length)
+    Math.floor(Math.min(0.999_999_999, Math.max(0, random())) * pool.length)
   ];
 }
 
@@ -67,7 +69,9 @@ function getConfiguredApiUrl(): string | undefined {
   const value = (
     import.meta.env.VITE_ANIME_QUOTE_API_URL as string | undefined
   )?.trim();
-  if (!value) return undefined;
+  if (!value) {
+    return undefined;
+  }
   try {
     const url = new URL(value);
     return url.protocol === "https:" ? url.toString() : undefined;
@@ -76,31 +80,24 @@ function getConfiguredApiUrl(): string | undefined {
   }
 }
 
-export function useAnimeQuoteData(shouldFetch: boolean) {
+function useAnimeQuoteData(shouldFetch: boolean) {
   const [state, setState] = useState<AnimeQuoteState>({
     status: shouldFetch ? "loading" : "idle",
   });
-  const mountedRef = useRef(false);
   const controllerRef = useRef<AbortController | null>(null);
   const previousContentRef = useRef<string | undefined>(undefined);
   const apiUrl = getConfiguredApiUrl();
 
-  useEffect(() => {
-    mountedRef.current = true;
-    return () => {
-      mountedRef.current = false;
-      controllerRef.current?.abort();
-    };
-  }, []);
-
   const showFallback = useCallback(() => {
     const quote = getBuiltInAnimeQuote(previousContentRef.current);
     previousContentRef.current = quote.content;
-    if (mountedRef.current) setState({ status: "ready", data: quote });
+    setState({ status: "ready", data: quote });
   }, []);
 
   const fetchQuote = useCallback(async () => {
-    if (!shouldFetch || !mountedRef.current) return;
+    if (!shouldFetch) {
+      return;
+    }
     controllerRef.current?.abort();
     const controller = new AbortController();
     controllerRef.current = controller;
@@ -115,18 +112,24 @@ export function useAnimeQuoteData(shouldFetch: boolean) {
       const response = await fetchWithTimeout(
         apiUrl,
         { cache: "no-store", signal: controller.signal },
-        8_000,
+        8000,
       );
       if (!response.ok) {
         throw new Error(`Anime quote API error: ${response.status}`);
       }
       const quote = parseAnimeQuoteResponse(await response.json());
-      if (!quote) throw new Error("Anime quote API returned invalid data");
-      if (!mountedRef.current || controller.signal.aborted) return;
+      if (!quote) {
+        throw new Error("Anime quote API returned invalid data");
+      }
+      if (controller.signal.aborted) {
+        return;
+      }
       previousContentRef.current = quote.content;
       setState({ status: "ready", data: quote });
     } catch {
-      if (!mountedRef.current || controller.signal.aborted) return;
+      if (controller.signal.aborted) {
+        return;
+      }
       showFallback();
     }
   }, [apiUrl, shouldFetch, showFallback]);
@@ -134,12 +137,16 @@ export function useAnimeQuoteData(shouldFetch: boolean) {
   useEffect(() => {
     if (!shouldFetch) {
       controllerRef.current?.abort();
-      if (mountedRef.current) setState({ status: "idle" });
+      setState({ status: "idle" });
       return;
     }
     fetchQuote();
-    return () => controllerRef.current?.abort();
+    return () => {
+      controllerRef.current?.abort();
+    };
   }, [fetchQuote, shouldFetch]);
 
   return { state, refresh: fetchQuote };
 }
+
+export { getBuiltInAnimeQuote, parseAnimeQuoteResponse, useAnimeQuoteData };

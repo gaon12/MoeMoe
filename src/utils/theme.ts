@@ -1,4 +1,4 @@
-import type { ThemeMode } from "../types/settings";
+import type { ThemeMode } from "../types/settings.ts";
 
 export type ResolvedTheme = Exclude<ThemeMode, "auto">;
 
@@ -11,5 +11,8 @@ export function resolveTheme(
   theme: ThemeMode,
   prefersDark: boolean,
 ): ResolvedTheme {
-  return theme === "auto" ? (prefersDark ? "dark" : "light") : theme;
+  if (theme !== "auto") {
+    return theme;
+  }
+  return prefersDark ? "dark" : "light";
 }

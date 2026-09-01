@@ -5,7 +5,7 @@ import {
   parseReverseGeocodeResponse,
   parseWeatherApiResponse,
   reverseGeocode,
-} from "./widgetData";
+} from "./widgetData.ts";
 
 const VALID_WEATHER_RESPONSE = {
   current: {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolveTheme, THEME_COLORS } from "./theme";
+import { resolveTheme, THEME_COLORS } from "./theme.ts";
 
 describe("theme presentation", () => {
   it("resolves automatic themes from the system preference", () => {

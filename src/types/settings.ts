@@ -1,4 +1,4 @@
-import { type ImageSource } from "./image";
+import type { ImageSource } from "./image.ts";
 
 /**
  * Theme mode options

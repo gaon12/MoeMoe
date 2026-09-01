@@ -13,9 +13,9 @@ export const FullscreenButton: React.FC<FullscreenButtonProps> = ({
 }) => {
   const { t } = useTranslation();
   const [isFullscreen, setIsFullscreen] = useState(
-    typeof document !== "undefined"
-      ? Boolean(document.fullscreenElement)
-      : false,
+    typeof document === "undefined"
+      ? false
+      : Boolean(document.fullscreenElement),
   );
 
   useEffect(() => {
@@ -32,6 +32,7 @@ export const FullscreenButton: React.FC<FullscreenButtonProps> = ({
 
   return (
     <button
+      type="button"
       className={`fullscreen-button ${isFullscreen || isPseudoFullscreen ? "active" : ""}`}
       onClick={onToggle}
       aria-label={t("buttons.fullscreen")}
@@ -45,6 +46,7 @@ export const FullscreenButton: React.FC<FullscreenButtonProps> = ({
         strokeWidth="2"
         strokeLinecap="round"
         strokeLinejoin="round"
+        aria-hidden="true"
       >
         {isFullscreen || isPseudoFullscreen ? (
           <>
