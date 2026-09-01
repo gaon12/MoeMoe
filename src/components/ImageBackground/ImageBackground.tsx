@@ -36,6 +36,8 @@ const PORTRAIT_MAXIMUM_RATIO = 0.95;
 const SQUARE_RATIO_TOLERANCE = 0.12;
 const SCREEN_RATIO_TOLERANCE = 0.24;
 const TRANSITION_DELAY_MS = 300;
+const MIN_WALLPAPER_ATTEMPTS = 3;
+const MAX_WALLPAPER_ATTEMPTS = 6;
 const COPY_STATE_RESET_DELAY_MS = 2000;
 
 interface ImageBackgroundProps {
@@ -211,7 +213,18 @@ export const ImageBackground = ({
       let image: AnimeImage | null = null;
       let loadedImg: HTMLImageElement | null = null;
       let randomSource: ImageSource = imageSources[0] ?? "pic_re";
-      const maxAttempts = 3;
+      // Providers that already failed this load. A provider that is down --
+      // blocked by CORS, or simply unreachable -- fails for every attempt, so
+      // re-drawing from the full list wasted retries on a known-dead source.
+      const failedSources = new Set<ImageSource>();
+      // Enough attempts to walk a meaningful part of the enabled list rather
+      // than a third of it. The 10s load budget still bounds the wall time,
+      // and network failures return immediately, so the extra attempts cost
+      // nothing in exactly the case they are there for.
+      const maxAttempts = Math.max(
+        MIN_WALLPAPER_ATTEMPTS,
+        Math.min(MAX_WALLPAPER_ATTEMPTS, imageSources.length),
+      );
       const attemptErrors: Error[] = [];
 
       const runAttempt = async (
@@ -221,6 +234,7 @@ export const ImageBackground = ({
           return "exhausted";
         }
 
+        let attemptSource: ImageSource | null = null;
         try {
           const providerBudget = capWallpaperAttemptBudget(
             getRemainingWallpaperLoadBudget(loadStartedAt),
@@ -230,10 +244,17 @@ export const ImageBackground = ({
             throw new Error("Wallpaper load time budget was exhausted.");
           }
 
+          const untriedSources = imageSources.filter(
+            (source) => !failedSources.has(source),
+          );
           randomSource = chooseWeightedImageSource(
-            imageSources,
+            // Falling back to the full list keeps a single-source setup, or
+            // one where everything has failed once, retrying rather than
+            // giving up early on a transient blip.
+            untriedSources.length > 0 ? untriedSources : imageSources,
             feedbackRef.current,
           );
+          attemptSource = randomSource;
           const attemptController = new AbortController();
           const handleRequestAbort = () =>
             attemptController.abort(controller.signal.reason);
@@ -361,8 +382,17 @@ export const ImageBackground = ({
           if (isStale()) {
             return "stale";
           }
+          if (attemptSource) {
+            failedSources.add(attemptSource);
+          }
+          const reason = error instanceof Error ? error.message : String(error);
+          // Naming the provider is what makes a repeated failure diagnosable;
+          // three identical "Failed to fetch" lines said nothing about which
+          // source was refusing the request.
           attemptErrors.push(
-            error instanceof Error ? error : new Error(String(error)),
+            new Error(`[${attemptSource ?? "unknown"}] ${reason}`, {
+              cause: error,
+            }),
           );
         }
 
