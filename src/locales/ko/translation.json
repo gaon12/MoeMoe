@@ -328,5 +328,9 @@
   "update": {
     "available": "업데이트가 있습니다. {{countdown}} 후 새로고침합니다.",
     "reloadNow": "지금 새로고침"
+  },
+  "fullscreen": {
+    "installHint": "iOS Safari는 웹 페이지 전체화면을 지원하지 않습니다. 공유 → 홈 화면에 추가로 설치하면 브라우저 막대 없이 실행됩니다.",
+    "dismissHint": "닫기"
   }
 }

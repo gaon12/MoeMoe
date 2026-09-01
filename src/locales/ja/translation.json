@@ -328,5 +328,9 @@
   "update": {
     "available": "アップデートがあります。{{countdown}} 後に再読み込みします。",
     "reloadNow": "今すぐ再読み込み"
+  },
+  "fullscreen": {
+    "installHint": "iOS Safari はウェブページの全画面表示に対応していません。共有 → ホーム画面に追加すると、ブラウザのバーなしで起動します。",
+    "dismissHint": "閉じる"
   }
 }

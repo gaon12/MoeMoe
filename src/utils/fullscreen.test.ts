@@ -4,7 +4,9 @@ import {
   FULLSCREEN_CHANGE_EVENTS,
   getFullscreenElement,
   isNativeFullscreenAvailable,
+  isStandaloneDisplay,
   requestFullscreen,
+  resolveFullscreenCapability,
 } from "./fullscreen.ts";
 
 /** Stands in for a `document` without constructing a real one. */
@@ -113,7 +115,7 @@ describe("requestFullscreen", () => {
   it("reports failure instead of throwing when the method is missing", async () => {
     // This is the case that broke Safari: calling an absent method throws a
     // TypeError synchronously, which a `.catch()` on the result never sees,
-    // so the pseudo-fullscreen fallback was never reached.
+    // so the fallback path was never reached.
     await expect(requestFullscreen(fakeElement({}))).resolves.toBe(false);
   });
 
@@ -164,5 +166,85 @@ describe("FULLSCREEN_CHANGE_EVENTS", () => {
       "fullscreenchange",
       "webkitfullscreenchange",
     ]);
+  });
+});
+
+/** Stands in for a `window` with a chosen display mode. */
+function fakeWindow(options: {
+  standalone?: boolean;
+  displayMode?: string;
+}): Window {
+  return {
+    navigator: { standalone: options.standalone },
+    matchMedia: (query: string) => ({
+      matches: options.displayMode
+        ? query === `(display-mode: ${options.displayMode})`
+        : false,
+    }),
+  } as unknown as Window;
+}
+
+describe("isStandaloneDisplay", () => {
+  it("detects an iOS home-screen launch", () => {
+    expect(isStandaloneDisplay(fakeWindow({ standalone: true }))).toBe(true);
+  });
+
+  it("detects each installed display mode", () => {
+    for (const mode of ["fullscreen", "standalone", "minimal-ui"]) {
+      expect(isStandaloneDisplay(fakeWindow({ displayMode: mode }))).toBe(true);
+    }
+  });
+
+  it("reports a plain browser tab as not installed", () => {
+    expect(isStandaloneDisplay(fakeWindow({}))).toBe(false);
+    expect(isStandaloneDisplay(fakeWindow({ displayMode: "browser" }))).toBe(
+      false,
+    );
+  });
+
+  it("survives a window with no matchMedia", () => {
+    expect(isStandaloneDisplay({ navigator: {} } as unknown as Window)).toBe(
+      false,
+    );
+  });
+});
+
+describe("resolveFullscreenCapability", () => {
+  const capableElement = fakeElement({
+    requestFullscreen: () => Promise.resolve(),
+  });
+  const inertElement = fakeElement({});
+
+  it("prefers the real API, even when installed", () => {
+    // An installed iPad app has both; the API is the better answer.
+    expect(
+      resolveFullscreenCapability(
+        capableElement,
+        fakeDocument({ fullscreenEnabled: true }),
+        fakeWindow({ displayMode: "standalone" }),
+      ),
+    ).toBe("native");
+  });
+
+  it("reports an installed app with no API as already fullscreen", () => {
+    expect(
+      resolveFullscreenCapability(
+        inertElement,
+        fakeDocument({}),
+        fakeWindow({ standalone: true }),
+      ),
+    ).toBe("installed");
+  });
+
+  it("reports an iPhone Safari tab as unavailable", () => {
+    // No API, not installed. A page cannot remove the address bar here, so
+    // the control has to say so instead of pretending.
+    expect(
+      resolveFullscreenCapability(
+        fakeElement({ webkitRequestFullscreen: () => undefined }),
+        fakeDocument({ webkitFullscreenEnabled: false }),
+        fakeWindow({}),
+      ),
+    ).toBe("unavailable");
   });
 });

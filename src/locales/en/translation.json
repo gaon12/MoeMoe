@@ -328,5 +328,9 @@
   "update": {
     "available": "An update is available. Reloading in {{countdown}}.",
     "reloadNow": "Reload now"
+  },
+  "fullscreen": {
+    "installHint": "iOS Safari cannot put a web page fullscreen. Add MoeMoe to your Home Screen (Share → Add to Home Screen) to run it without the browser bars.",
+    "dismissHint": "Dismiss"
   }
 }

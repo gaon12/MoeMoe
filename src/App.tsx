@@ -25,10 +25,12 @@ import { useWallpaperLibrary } from "./hooks/useWallpaperLibrary.ts";
 import { useWallpaperHistory } from "./hooks/useWallpaperHistory.ts";
 import {
   exitFullscreen,
+  type FullscreenCapability,
   getFullscreenElement,
-  isNativeFullscreenAvailable,
   requestFullscreen,
+  resolveFullscreenCapability,
 } from "./utils/fullscreen.ts";
+import { FullscreenHint } from "./components/FullscreenHint/FullscreenHint.tsx";
 import { HistoryNav } from "./components/HistoryNav/HistoryNav.tsx";
 import { UpdateNotice } from "./components/UpdateNotice/UpdateNotice.tsx";
 import { useAppUpdate } from "./hooks/useAppUpdate.ts";
@@ -70,7 +72,9 @@ export function App() {
   const [currentImage, setCurrentImage] = useState<AnimeImage | null>(null);
   const [lastImageAttemptTime, setLastImageAttemptTime] = useState<number>(0);
   const [isAutoRefreshPaused, setIsAutoRefreshPaused] = useState(false);
-  const [isPseudoFullscreen, setIsPseudoFullscreen] = useState(false);
+  const [fullscreenCapability, setFullscreenCapability] =
+    useState<FullscreenCapability>("native");
+  const [isFullscreenHintOpen, setIsFullscreenHintOpen] = useState(false);
   const [isImageChangePending, setIsImageChangePending] = useState(false);
   const autoRefreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
@@ -241,51 +245,50 @@ export function App() {
     setIsAutoRefreshPaused((prev) => !prev);
   }, []);
 
+  // Recomputed on display-mode changes, so installing to the home screen or
+  // returning to a tab is reflected without a reload.
+  useEffect(() => {
+    const update = () =>
+      setFullscreenCapability(
+        resolveFullscreenCapability(document.documentElement),
+      );
+    update();
+
+    // Absent in some embedded webviews and in the test environment. The
+    // capability was already resolved above; only live updates are lost.
+    if (typeof globalThis.matchMedia !== "function") {
+      return;
+    }
+    const query = globalThis.matchMedia("(display-mode: standalone)");
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
+
+  const dismissFullscreenHint = useCallback(
+    () => setIsFullscreenHintOpen(false),
+    [],
+  );
+
   const toggleFullscreen = useCallback(() => {
     if (typeof document === "undefined") {
       return;
     }
-    if (isPseudoFullscreen) {
-      setIsPseudoFullscreen(false);
-      return;
-    }
     if (getFullscreenElement()) {
-      exitFullscreen().catch(() => setIsPseudoFullscreen(false));
+      exitFullscreen().catch(() => undefined);
       return;
     }
-
-    const target = document.documentElement;
-    // iPhone Safari reports fullscreen as unavailable rather than failing the
-    // request, so the fallback is chosen before asking rather than after.
-    if (!isNativeFullscreenAvailable(target)) {
-      setIsPseudoFullscreen(true);
+    // Nothing a page can do here: an iPhone Safari tab keeps its address bar
+    // whatever the document asks for. Say so rather than toggling an icon
+    // over an unchanged screen.
+    if (fullscreenCapability !== "native") {
+      setIsFullscreenHintOpen(true);
       return;
     }
-    requestFullscreen(target).then(
-      (granted) => {
-        if (!granted) {
-          setIsPseudoFullscreen(true);
-        }
-      },
-      () => setIsPseudoFullscreen(true),
+    requestFullscreen(document.documentElement).then(
+      (granted) => setIsFullscreenHintOpen(!granted),
+      () => setIsFullscreenHintOpen(true),
     );
-  }, [isPseudoFullscreen]);
-
-  useEffect(() => {
-    document.documentElement.classList.toggle(
-      "pseudo-fullscreen-root",
-      isPseudoFullscreen,
-    );
-    document.body.classList.toggle(
-      "pseudo-fullscreen-root",
-      isPseudoFullscreen,
-    );
-
-    return () => {
-      document.documentElement.classList.remove("pseudo-fullscreen-root");
-      document.body.classList.remove("pseudo-fullscreen-root");
-    };
-  }, [isPseudoFullscreen]);
+  }, [fullscreenCapability]);
 
   // Warm the settings chunk once the browser is idle, so the first press of
   // the settings button never waits on a network round trip.
@@ -362,7 +365,7 @@ export function App() {
   ]);
 
   return (
-    <div className={`app ${isPseudoFullscreen ? "pseudo-fullscreen" : ""}`}>
+    <div className="app">
       <ImageBackground
         ref={imageBackgroundRef}
         imageSources={settings.imageSources}
@@ -388,11 +391,9 @@ export function App() {
         aria-label="Wallpaper controls"
       >
         <SettingsButton />
-        {settings.uiVisibility.fullscreenButton ? (
-          <FullscreenButton
-            onToggle={toggleFullscreen}
-            isPseudoFullscreen={isPseudoFullscreen}
-          />
+        {settings.uiVisibility.fullscreenButton &&
+        fullscreenCapability !== "installed" ? (
+          <FullscreenButton onToggle={toggleFullscreen} />
         ) : null}
         {settings.uiVisibility.downloadButton ? (
           <DownloadButton
@@ -443,6 +444,9 @@ export function App() {
       ) : null}
       {settings.uiVisibility.widgets ? (
         <WidgetDock currentTime={currentTime} />
+      ) : null}
+      {isFullscreenHintOpen ? (
+        <FullscreenHint onDismiss={dismissFullscreenHint} />
       ) : null}
       {isUpdatePending ? (
         <UpdateNotice msRemaining={msRemaining} onApply={applyUpdate} />

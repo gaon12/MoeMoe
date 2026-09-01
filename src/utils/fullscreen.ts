@@ -14,6 +14,28 @@ interface PrefixedElement extends HTMLElement {
   webkitRequestFullscreen?: () => Promise<void> | void;
 }
 
+/** iOS marks a home-screen launch here rather than through display-mode. */
+interface StandaloneNavigator extends Navigator {
+  standalone?: boolean;
+}
+
+/**
+ * What the fullscreen control can actually do here.
+ *
+ * - `native`: the Fullscreen API works.
+ * - `installed`: already running without browser chrome, so there is nothing
+ *   to toggle.
+ * - `unavailable`: no API and not installed. This is an iPhone Safari tab,
+ *   where a page cannot remove the address bar by any means.
+ */
+type FullscreenCapability = "native" | "installed" | "unavailable";
+
+const STANDALONE_DISPLAY_QUERIES = [
+  "(display-mode: fullscreen)",
+  "(display-mode: standalone)",
+  "(display-mode: minimal-ui)",
+] as const;
+
 /**
  * Both spellings of the change event. Safari below 16.4 emits only the
  * prefixed one, so a listener on the standard name alone never fires and the
@@ -83,10 +105,36 @@ async function exitFullscreen(doc: Document = document): Promise<void> {
   }
 }
 
+/** Whether the page is running installed, outside a browser tab. */
+function isStandaloneDisplay(view: Window = globalThis as unknown as Window) {
+  if ((view.navigator as StandaloneNavigator | undefined)?.standalone) {
+    return true;
+  }
+  return STANDALONE_DISPLAY_QUERIES.some(
+    (query) => view.matchMedia?.(query).matches ?? false,
+  );
+}
+
+function resolveFullscreenCapability(
+  element: HTMLElement,
+  doc: Document = document,
+  view: Window = globalThis as unknown as Window,
+): FullscreenCapability {
+  if (isNativeFullscreenAvailable(element, doc)) {
+    return "native";
+  }
+  // Checked second: an installed iPad app has both, and the real API is the
+  // better answer there.
+  return isStandaloneDisplay(view) ? "installed" : "unavailable";
+}
+
 export {
   exitFullscreen,
   FULLSCREEN_CHANGE_EVENTS,
   getFullscreenElement,
   isNativeFullscreenAvailable,
+  isStandaloneDisplay,
   requestFullscreen,
+  resolveFullscreenCapability,
 };
+export type { FullscreenCapability };

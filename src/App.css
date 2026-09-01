@@ -9,24 +9,10 @@
   background: rgb(0 0 0);
 }
 
-.app.pseudo-fullscreen {
-  position: fixed;
-  inset: 0;
-  z-index: 2147483647;
-  width: 100vw;
-  height: 100vh;
-}
-
 @supports (height: 100dvh) {
-  .app,
-  .app.pseudo-fullscreen {
+  .app {
     height: 100dvh;
   }
-}
-
-.pseudo-fullscreen-root {
-  overflow: hidden;
-  height: 100%;
 }
 
 .content {
@@ -123,8 +109,7 @@
 }
 
 @supports (-webkit-touch-callout: none) {
-  .app,
-  .app.pseudo-fullscreen {
+  .app {
     min-height: -webkit-fill-available;
   }
 }
