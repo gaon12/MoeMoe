@@ -70,7 +70,22 @@ macOS/Linux에서는 `cp .env.sample .env`를 사용하세요. `.env`와 `.env.*
 | `DEPLOY_KNOWN_HOSTS` | 서버 호스트키 (`ssh-keyscan -p 22 호스트`)      |
 | `DEPLOY_PORT`        | 선택. 비우면 22                                 |
 
-배포 전용 키를 따로 만들고, 서버에서 그 키에 필요한 권한만 주는 것을 권장합니다.
+여섯 값을 손으로 모으는 대신 `setup-deploy-secrets.py`를 **서버에 접속한 상태에서** 실행하면 붙여넣을 형태로 한 번에 출력됩니다. 이 스크립트는 출력에 개인키가 포함되므로 저장소에 커밋하지 않습니다(`.gitignore`에 등록됨). 로컬 파일을 서버로 복사하거나 내용을 붙여넣어 실행하세요.
+
+```bash
+python3 setup-deploy-secrets.py --host moemoe.uiharu.dev --path /배포/경로
+```
+
+하는 일:
+
+- 배포 전용 ed25519 키쌍을 새로 만들고 공개키를 이 계정의 `authorized_keys`에 `restrict` 옵션으로 등록합니다. `restrict`는 pty·포트포워딩·에이전트 포워딩을 막지만 rsync에는 필요 없는 것들이라 배포는 그대로 동작하며, 키가 유출돼도 일반 로그인용으로 쓸 수 없습니다.
+- `/etc/ssh`의 호스트키를 읽어 `DEPLOY_KNOWN_HOSTS` 줄을 만듭니다. 포트가 22가 아니면 `[호스트]:포트` 형식으로 씁니다.
+- 개인키를 **한 번 출력한 뒤 서버에서 삭제**합니다. 서버에는 공개키만 남습니다.
+- 다시 실행하면 같은 주석(`moemoe-deploy`)의 이전 키를 교체하므로 `authorized_keys`가 쌓이지 않고, 기존 `authorized_keys`는 `.bak`으로 백업합니다.
+
+`--host`를 생략하면 현재 SSH 세션의 서버 주소를 씁니다. **도메인으로 접속한다면 반드시 `--host`에 도메인을 넣으세요** — 호스트키 항목이 GitHub가 접속할 주소와 정확히 일치해야 합니다.
+
+직접 만들려면:
 
 ```bash
 ssh-keygen -t ed25519 -C "moemoe-deploy" -f moemoe-deploy -N ""

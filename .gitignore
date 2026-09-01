@@ -33,3 +33,7 @@ Thumbs.db
 *.njsproj
 *.sln
 *.sw?
+
+# One-off deployment helper. Run on the server; its output is a private key.
+setup-deploy-secrets.py
+__pycache__/
