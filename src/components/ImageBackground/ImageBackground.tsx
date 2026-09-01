@@ -582,6 +582,15 @@ export const ImageBackground = ({
     letterboxBackgroundColor = "#000000";
   }
 
+  /**
+   * `cover` fills the viewport by cropping, and anchoring to the top keeps
+   * subjects -- which in this artwork sit near the top -- in frame. `contain`
+   * fits the whole image and letterboxes the remainder, so it has to be
+   * centred: anchoring to the top puts the entire bar along the bottom edge.
+   */
+  const objectPosition =
+    imageFitMode === "cover" ? "center top" : "center center";
+
   return (
     <>
       <div className="image-background">
@@ -596,7 +605,7 @@ export const ImageBackground = ({
               src="/demo/demo.webp"
               alt="Demo background"
               className="background-image"
-              style={{ objectFit: imageFitMode }}
+              style={{ objectFit: imageFitMode, objectPosition }}
             />
           </picture>
         )}
@@ -627,7 +636,7 @@ export const ImageBackground = ({
               src={currentImage.url}
               alt="Anime Background"
               className={`background-image ${isTransitioning ? "transitioning" : ""}`}
-              style={{ objectFit: imageFitMode }}
+              style={{ objectFit: imageFitMode, objectPosition }}
               onLoad={handleImageLoad}
               onError={handleImageError}
               aria-hidden="true"
