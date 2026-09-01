@@ -1,7 +1,10 @@
+/*
+ * The wrapper contributes no box of its own: the buttons become direct
+ * children of the control dock and inherit its axis and gap. Wrapping them in
+ * a flex row of their own made the dock twice as wide as every other control.
+ */
 .history-nav {
-  display: flex;
-  align-items: center;
-  gap: 4px;
+  display: contents;
 }
 
 .history-nav-button {
@@ -29,7 +32,7 @@
 }
 
 .history-nav-button:focus-visible,
-.history-nav-button:hover:not(:disabled) {
+.history-nav-button:hover {
   border-color: rgba(255, 255, 255, 0.28);
   background: rgba(255, 255, 255, 0.16);
   box-shadow: 0 8px 22px rgba(0, 0, 0, 0.24);
@@ -37,13 +40,8 @@
   opacity: 1;
 }
 
-.history-nav-button:active:not(:disabled) {
+.history-nav-button:active {
   transform: translateY(0);
-}
-
-.history-nav-button:disabled {
-  cursor: default;
-  opacity: 0.2;
 }
 
 @media (max-width: 768px) {
@@ -60,7 +58,7 @@
   }
 
   .history-nav-button:focus-visible,
-  .history-nav-button:hover:not(:disabled) {
+  .history-nav-button:hover {
     transform: none;
   }
 }

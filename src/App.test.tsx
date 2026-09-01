@@ -143,18 +143,16 @@ vi.mock("./components/HistoryNav/HistoryNav", () => ({
     onForward: () => void;
   }) => (
     <div data-testid="history-nav">
-      <button
-        type="button"
-        data-testid="history-back"
-        disabled={!canGoBack}
-        onClick={onBack}
-      />
-      <button
-        type="button"
-        data-testid="history-forward"
-        disabled={!canGoForward}
-        onClick={onForward}
-      />
+      {canGoBack ? (
+        <button type="button" data-testid="history-back" onClick={onBack} />
+      ) : null}
+      {canGoForward ? (
+        <button
+          type="button"
+          data-testid="history-forward"
+          onClick={onForward}
+        />
+      ) : null}
     </div>
   ),
 }));
@@ -296,23 +294,22 @@ describe("App wallpaper history", () => {
     expect(mocks.showImage).not.toHaveBeenCalled();
   });
 
-  it("disables each direction until there is somewhere to go", () => {
+  it("shows each arrow only once it leads somewhere", () => {
     render(<App />);
 
-    const back = screen.getByTestId("history-back") as HTMLButtonElement;
-    const forward = screen.getByTestId("history-forward") as HTMLButtonElement;
-    expect(back.disabled).toBe(true);
-    expect(forward.disabled).toBe(true);
+    // Nothing has been shown yet, so the dock carries no history controls.
+    expect(screen.queryByTestId("history-back")).toBeNull();
+    expect(screen.queryByTestId("history-forward")).toBeNull();
 
     loadImages(2);
-    expect(back.disabled).toBe(false);
-    expect(forward.disabled).toBe(true);
+    expect(screen.queryByTestId("history-back")).not.toBeNull();
+    expect(screen.queryByTestId("history-forward")).toBeNull();
 
-    fireEvent.click(back);
+    fireEvent.click(screen.getByTestId("history-back"));
     expect(mocks.showImage).toHaveBeenLastCalledWith({
       url: "https://example.test/1.webp",
     });
-    expect(forward.disabled).toBe(false);
+    expect(screen.queryByTestId("history-forward")).not.toBeNull();
   });
 
   it("keeps the history cursor when the same image is reported again", () => {
