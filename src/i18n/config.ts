@@ -1,5 +1,6 @@
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
+import { detectInitialLanguage, FALLBACK_LANGUAGE } from "./languages.ts";
 
 import enTranslation from "../locales/en/translation.json" with {
   type: "json",
@@ -23,26 +24,12 @@ const resources = {
   },
 };
 
-// Get saved language from localStorage or detect browser language
-let savedLanguage: string | null = null;
-try {
-  savedLanguage = localStorage.getItem("moemoe-language");
-} catch {
-  // Storage can be unavailable in private or restricted browsing contexts.
-}
-const [browserLanguage] = navigator.language.split("-");
-const defaultLanguage =
-  savedLanguage ||
-  (browserLanguage === "ko" || browserLanguage === "ja"
-    ? browserLanguage
-    : "en");
-
 i18n
   .use(initReactI18next)
   .init({
     resources,
-    lng: defaultLanguage,
-    fallbackLng: "en",
+    lng: detectInitialLanguage(),
+    fallbackLng: FALLBACK_LANGUAGE,
     interpolation: {
       escapeValue: false,
     },

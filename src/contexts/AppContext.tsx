@@ -7,6 +7,10 @@ import {
 } from "../types/settings.ts";
 import { sanitizeSettings } from "../utils/settingsValidation.ts";
 import { resolveTheme, THEME_COLORS } from "../utils/theme.ts";
+import {
+  detectInitialLanguage,
+  writeStoredLanguage,
+} from "../i18n/languages.ts";
 import { AppContext } from "./appContextValue.ts";
 
 const STORAGE_KEY = "moemoe-settings";
@@ -14,18 +18,10 @@ const STORAGE_KEY = "moemoe-settings";
 export function AppProvider({ children }: { children: ReactNode }) {
   const { i18n } = useTranslation();
   const [settings, setSettings] = useState<AppSettings>(() => {
-    let language: AppSettings["language"] = "en";
-    try {
-      const navLang = (navigator.language || "").toLowerCase();
-      if (navLang.startsWith("ko")) {
-        language = "ko";
-      } else if (navLang.startsWith("ja")) {
-        language = "ja";
-      }
-    } catch {
-      // Browser language detection is optional.
-    }
-    const fallback = { ...defaultSettings, language };
+    const fallback = {
+      ...defaultSettings,
+      language: detectInitialLanguage(),
+    };
 
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -71,11 +67,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       i18n.changeLanguage(settings.language).catch(() => undefined);
     }
     document.documentElement.lang = settings.language;
-    try {
-      localStorage.setItem("moemoe-language", settings.language);
-    } catch {
-      // Language persistence is optional in restricted browsing modes.
-    }
+    writeStoredLanguage(settings.language);
   }, [i18n, settings.language]);
 
   // Apply font size
