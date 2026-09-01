@@ -1,5 +1,9 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import {
+  FULLSCREEN_CHANGE_EVENTS,
+  getFullscreenElement,
+} from "../../utils/fullscreen.ts";
 import "./FullscreenButton.css";
 
 interface FullscreenButtonProps {
@@ -13,20 +17,22 @@ export const FullscreenButton: React.FC<FullscreenButtonProps> = ({
 }) => {
   const { t } = useTranslation();
   const [isFullscreen, setIsFullscreen] = useState(
-    typeof document === "undefined"
-      ? false
-      : Boolean(document.fullscreenElement),
+    typeof document === "undefined" ? false : Boolean(getFullscreenElement()),
   );
 
   useEffect(() => {
     const handleFullscreenChange = () => {
-      setIsFullscreen(Boolean(document.fullscreenElement));
+      setIsFullscreen(Boolean(getFullscreenElement()));
     };
 
-    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    for (const eventName of FULLSCREEN_CHANGE_EVENTS) {
+      document.addEventListener(eventName, handleFullscreenChange);
+    }
 
     return () => {
-      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+      for (const eventName of FULLSCREEN_CHANGE_EVENTS) {
+        document.removeEventListener(eventName, handleFullscreenChange);
+      }
     };
   }, []);
 

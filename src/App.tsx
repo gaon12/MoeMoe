@@ -23,6 +23,12 @@ import { WidgetDock } from "./components/WidgetDock/WidgetDock.tsx";
 import { SpotlightActions } from "./components/SpotlightActions/SpotlightActions.tsx";
 import { useWallpaperLibrary } from "./hooks/useWallpaperLibrary.ts";
 import { useWallpaperHistory } from "./hooks/useWallpaperHistory.ts";
+import {
+  exitFullscreen,
+  getFullscreenElement,
+  isNativeFullscreenAvailable,
+  requestFullscreen,
+} from "./utils/fullscreen.ts";
 import { HistoryNav } from "./components/HistoryNav/HistoryNav.tsx";
 import { UpdateNotice } from "./components/UpdateNotice/UpdateNotice.tsx";
 import { useAppUpdate } from "./hooks/useAppUpdate.ts";
@@ -243,13 +249,26 @@ export function App() {
       setIsPseudoFullscreen(false);
       return;
     }
-    if (document.fullscreenElement) {
-      document.exitFullscreen().catch(() => setIsPseudoFullscreen(false));
+    if (getFullscreenElement()) {
+      exitFullscreen().catch(() => setIsPseudoFullscreen(false));
       return;
     }
-    document.documentElement
-      .requestFullscreen()
-      .catch(() => setIsPseudoFullscreen(true));
+
+    const target = document.documentElement;
+    // iPhone Safari reports fullscreen as unavailable rather than failing the
+    // request, so the fallback is chosen before asking rather than after.
+    if (!isNativeFullscreenAvailable(target)) {
+      setIsPseudoFullscreen(true);
+      return;
+    }
+    requestFullscreen(target).then(
+      (granted) => {
+        if (!granted) {
+          setIsPseudoFullscreen(true);
+        }
+      },
+      () => setIsPseudoFullscreen(true),
+    );
   }, [isPseudoFullscreen]);
 
   useEffect(() => {
