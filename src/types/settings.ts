@@ -1,4 +1,5 @@
 import type { ImageSource } from "./image.ts";
+import type { TemperatureUnit } from "../utils/temperature.ts";
 
 /**
  * Theme mode options
@@ -101,6 +102,7 @@ export interface AppSettings {
   // Widgets
   widgets: Widget[];
   weatherApiKey: string;
+  temperatureUnit: TemperatureUnit;
 
   // Interface visibility
   uiVisibility: UiVisibilitySettings;
@@ -132,6 +134,7 @@ export const defaultSettings: AppSettings = {
   serverTimeUpdateIntervalSec: 60,
   widgets: [],
   weatherApiKey: "",
+  temperatureUnit: "celsius",
   uiVisibility: {
     clock: true,
     widgets: true,

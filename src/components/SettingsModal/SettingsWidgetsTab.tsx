@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { useCallback, useId, type Dispatch, type SetStateAction } from "react";
 import type { AppSettings, Widget, WidgetType } from "../../types/settings.ts";
+import type { TemperatureUnit } from "../../utils/temperature.ts";
 
 interface SettingsWidgetsTabProps {
   localSettings: AppSettings;
@@ -143,6 +144,14 @@ export const SettingsWidgetsTab = ({
     },
     [setLocalSettings],
   );
+
+  const handleTemperatureUnitChange = useCallback(
+    (event: React.ChangeEvent<HTMLSelectElement>) => {
+      const temperatureUnit = event.currentTarget.value as TemperatureUnit;
+      setLocalSettings((current) => ({ ...current, temperatureUnit }));
+    },
+    [setLocalSettings],
+  );
   const handleWidgetMoveClick = useCallback(
     (event: React.MouseEvent<HTMLButtonElement>) => {
       handleWidgetMove(
@@ -233,6 +242,28 @@ export const SettingsWidgetsTab = ({
             placeholder={t("settings.widgets.weatherApiKeyPlaceholder")}
             autoComplete="off"
           />
+        </div>
+
+        <div className="settings-option">
+          <label
+            className="settings-label"
+            htmlFor={`${idPrefix}-temperature-unit`}
+          >
+            {t("settings.widgets.temperatureUnit.label")}
+          </label>
+          <select
+            id={`${idPrefix}-temperature-unit`}
+            className="settings-select"
+            value={localSettings.temperatureUnit}
+            onChange={handleTemperatureUnitChange}
+          >
+            <option value="celsius">
+              {t("settings.widgets.temperatureUnit.celsius")}
+            </option>
+            <option value="fahrenheit">
+              {t("settings.widgets.temperatureUnit.fahrenheit")}
+            </option>
+          </select>
         </div>
 
         <div className="widget-controls">

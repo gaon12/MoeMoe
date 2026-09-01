@@ -158,7 +158,12 @@
       "weather": "날씨",
       "location": "위치 정보",
       "animeQuote": "애니 명대사",
-      "customText": "사용자 텍스트"
+      "customText": "사용자 텍스트",
+      "temperatureUnit": {
+        "label": "온도 단위",
+        "celsius": "섭씨 (°C)",
+        "fahrenheit": "화씨 (°F)"
+      }
     },
     "appearance": {
       "title": "외관",

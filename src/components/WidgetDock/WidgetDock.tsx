@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useApp } from "../../contexts/useApp.ts";
+import { formatTemperature } from "../../utils/temperature.ts";
 import type { AppSettings, Widget } from "../../types/settings.ts";
 import { getFormattedTimeParts, getFullDateString } from "../../utils/time.ts";
 import { useAnimeQuoteData } from "./animeQuoteData.ts";
@@ -358,6 +359,11 @@ const WidgetCard = ({
       return null;
     }
 
+    const temperature = formatTemperature(
+      data.temperature,
+      settings.temperatureUnit,
+    );
+
     return (
       <article className="widget-card widget-card-weather">
         <header className="widget-card-header">
@@ -368,8 +374,8 @@ const WidgetCard = ({
         </header>
         <div className="widget-card-body">
           <div className="widget-weather-temp">
-            {Math.round(data.temperature)}
-            <span className="widget-weather-unit">°C</span>
+            {temperature.value}
+            <span className="widget-weather-unit">{temperature.symbol}</span>
           </div>
           <p className="widget-card-subtext">
             {t(`widgets.weather.conditions.${data.conditionKey}`)}

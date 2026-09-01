@@ -158,7 +158,12 @@
       "weather": "Weather",
       "location": "Location",
       "animeQuote": "Anime Quote",
-      "customText": "Custom Text"
+      "customText": "Custom Text",
+      "temperatureUnit": {
+        "label": "Temperature unit",
+        "celsius": "Celsius (°C)",
+        "fahrenheit": "Fahrenheit (°F)"
+      }
     },
     "appearance": {
       "title": "Appearance",

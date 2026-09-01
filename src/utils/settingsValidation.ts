@@ -1,4 +1,5 @@
 import { ALL_IMAGE_SOURCES, type ImageSource } from "../types/image.ts";
+import { TEMPERATURE_UNITS } from "./temperature.ts";
 import {
   defaultSettings,
   type AppSettings,
@@ -49,6 +50,7 @@ const SETTINGS_KEYS = new Set<keyof AppSettings>([
   "serverTimeUpdateIntervalSec",
   "widgets",
   "weatherApiKey",
+  "temperatureUnit",
   "uiVisibility",
   "customText",
 ]);
@@ -253,6 +255,11 @@ function sanitizeSettings(
       typeof candidate.weatherApiKey === "string"
         ? candidate.weatherApiKey.trim().slice(0, 500)
         : fallback.weatherApiKey,
+    temperatureUnit: enumValue(
+      candidate.temperatureUnit,
+      TEMPERATURE_UNITS,
+      fallback.temperatureUnit,
+    ),
     uiVisibility: sanitizeUiVisibility(
       candidate.uiVisibility,
       fallback.uiVisibility,

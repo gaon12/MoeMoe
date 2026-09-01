@@ -158,7 +158,12 @@
       "weather": "天気",
       "location": "現在地",
       "animeQuote": "アニメ名言",
-      "customText": "カスタムテキスト"
+      "customText": "カスタムテキスト",
+      "temperatureUnit": {
+        "label": "温度の単位",
+        "celsius": "摂氏 (°C)",
+        "fahrenheit": "華氏 (°F)"
+      }
     },
     "appearance": {
       "title": "外観",
