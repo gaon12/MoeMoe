@@ -1,0 +1,130 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "List what would be transferred without changing the server"
+        type: boolean
+        default: true
+
+# Never let two deployments interleave their transfers. In-progress runs are
+# allowed to finish rather than being cancelled half-uploaded.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Build and upload
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://moemoe.uiharu.dev
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v5
+
+      - name: Set up Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: "24.15.0"
+          cache: npm
+
+      - name: Install the npm release required by the engines field
+        run: npm install --global npm@^12.0.2
+
+      - name: Install dependencies
+        run: npm ci
+
+      # The same gate as the Quality workflow, repeated here on purpose: this
+      # is the last thing standing between a commit and production, and it
+      # should not depend on another workflow's configuration staying correct.
+      - name: Lint
+        run: npm run lint
+
+      - name: Check formatting
+        run: npm run format:check
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        env:
+          # Stamped explicitly rather than left to `git rev-parse`, so the
+          # commit the running app compares itself against is exactly the one
+          # being deployed. This is what keeps the in-app update check honest.
+          VITE_APP_COMMIT: ${{ github.sha }}
+        run: npm run build
+
+      - name: Verify the deployment secrets are present
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          missing=""
+          for name in DEPLOY_HOST DEPLOY_USER DEPLOY_PATH DEPLOY_SSH_KEY DEPLOY_KNOWN_HOSTS; do
+            if [ -z "${!name}" ]; then
+              missing="$missing $name"
+            fi
+          done
+          if [ -n "$missing" ]; then
+            echo "Missing repository secrets:$missing" >&2
+            echo "See the deployment section of README.md." >&2
+            exit 1
+          fi
+
+      - name: Configure SSH
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          # Pinned rather than disabled. `StrictHostKeyChecking=no` would hand
+          # the release to whatever answers on that address.
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Upload dist
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          set -euo pipefail
+          port="${DEPLOY_PORT:-22}"
+          rsync_flags="--recursive --links --perms --times --compress --human-readable --stats"
+          # --delay-updates stages the new files and swaps them in at the end,
+          # and --delete-after removes what the build no longer contains only
+          # once the replacements are in place. Together they keep the window
+          # where a visitor could fetch an index.html whose chunks are missing
+          # as small as rsync allows.
+          rsync_flags="$rsync_flags --delay-updates --delete-after"
+          if [ "${DRY_RUN:-false}" = "true" ]; then
+            echo "Dry run: no files will be written to the server."
+            rsync_flags="$rsync_flags --dry-run --verbose"
+          fi
+
+          # The trailing slash on dist/ copies the contents, not the directory.
+          rsync $rsync_flags \
+            -e "ssh -i ~/.ssh/deploy_key -p $port -o UserKnownHostsFile=$HOME/.ssh/known_hosts -o StrictHostKeyChecking=yes" \
+            dist/ "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH"
+
+      - name: Remove the deployment key
+        if: always()
+        run: rm -f ~/.ssh/deploy_key
