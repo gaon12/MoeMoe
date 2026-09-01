@@ -176,6 +176,17 @@
       }
     },
     {
+      "includes": ["public/sw.js"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noDefaultExport": "off",
+            "useGlobalThis": "off"
+          }
+        }
+      }
+    },
+    {
       "includes": ["vite.config.ts", "scripts/**/*.mjs"],
       "linter": {
         "rules": {

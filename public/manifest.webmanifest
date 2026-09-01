@@ -1,0 +1,21 @@
+{
+  "name": "MoeMoe",
+  "short_name": "MoeMoe",
+  "description": "An animated wallpaper clock inspired by the Windows lock screen.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#1a1a1a",
+  "theme_color": "#1a1a1a",
+  "categories": ["entertainment", "personalization", "utilities"],
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "64x64",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

@@ -4,6 +4,7 @@ import "./index.css";
 import "./i18n/config.ts";
 import { App } from "./App.tsx";
 import { AppProvider } from "./contexts/AppContext.tsx";
+import { registerServiceWorker } from "./utils/serviceWorker.ts";
 
 const rootElement = document.getElementById("root");
 if (!rootElement) {
@@ -17,3 +18,5 @@ createRoot(rootElement).render(
     </AppProvider>
   </StrictMode>,
 );
+
+registerServiceWorker();
