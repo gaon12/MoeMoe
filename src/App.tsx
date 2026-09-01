@@ -83,6 +83,7 @@ export function App() {
     toggleFavorite,
     removeFavorite,
     blockWallpaper,
+    resolveFavoriteUrl,
   } = useWallpaperLibrary();
   const {
     canGoBack,
@@ -390,6 +391,7 @@ export function App() {
             onRemoveFavorite={removeFavorite}
             onDismiss={handleDismissWallpaper}
             isChangePending={isImageChangePending}
+            resolveFavoriteUrl={resolveFavoriteUrl}
           />
         ) : null}
       </div>

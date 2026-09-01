@@ -160,6 +160,7 @@
         "src/components/SettingsModal/SettingsInfoTab.tsx",
         "src/hooks/useModalAccessibility.ts",
         "src/utils/keyboardShortcuts.ts",
+        "src/utils/widgetPosition.test.ts",
         "src/utils/serverTime.test.ts"
       ],
       "linter": {

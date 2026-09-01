@@ -11,11 +11,20 @@ import {
   type WallpaperSentiment,
 } from "../utils/wallpaperPreferences.ts";
 import { isSafeHttpsUrl } from "../utils/safeUrl.ts";
+import {
+  archiveFavorite,
+  pruneArchivedFavorites,
+  readArchivedFavoriteUrl,
+  removeArchivedFavorite,
+} from "../services/favoriteImageStore.ts";
 
 const STORAGE_KEY = "moemoe-wallpaper-library";
 const MAX_FAVORITES = 50;
 const MAX_BLOCKED_URLS = 200;
 const MAX_FEEDBACK = 300;
+
+/** Ceiling on a single background archive download. */
+const ARCHIVE_TIMEOUT_MS = 30_000;
 
 interface WallpaperLibraryData {
   favorites: AnimeImage[];
@@ -184,6 +193,16 @@ function useWallpaperLibrary() {
   const toggleFavorite = useCallback((image: AnimeImage) => {
     setLibrary((current) => {
       const exists = current.favorites.some((item) => item.url === image.url);
+      if (exists) {
+        removeArchivedFavorite(image.url).catch(() => undefined);
+      } else {
+        // Archiving runs alongside the state update rather than gating it, so
+        // marking a favourite stays instant even on a slow connection. A
+        // failure just leaves the favourite loading from the network.
+        archiveFavorite(image, AbortSignal.timeout(ARCHIVE_TIMEOUT_MS)).catch(
+          () => undefined,
+        );
+      }
       return {
         ...current,
         favorites: exists
@@ -205,6 +224,7 @@ function useWallpaperLibrary() {
   }, []);
 
   const removeFavorite = useCallback((url: string) => {
+    removeArchivedFavorite(url).catch(() => undefined);
     setLibrary((current) => ({
       ...current,
       favorites: current.favorites.filter((image) => image.url !== url),
@@ -215,6 +235,7 @@ function useWallpaperLibrary() {
   }, []);
 
   const blockWallpaper = useCallback((image: AnimeImage) => {
+    removeArchivedFavorite(image.url).catch(() => undefined);
     setLibrary((current) => ({
       favorites: current.favorites.filter((item) => item.url !== image.url),
       blockedUrls: [image.url, ...current.blockedUrls]
@@ -232,7 +253,54 @@ function useWallpaperLibrary() {
     [favoriteUrls],
   );
 
+  // Blob URLs for favourites whose bytes are archived, so the gallery keeps
+  // working after a provider rotates or deletes the original path.
+  const [archivedUrls, setArchivedUrls] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    let cancelled = false;
+    const urls = library.favorites.map((image) => image.url);
+
+    const loadArchivedUrls = async () => {
+      const resolved = await Promise.all(
+        urls.map(
+          async (url) => [url, await readArchivedFavoriteUrl(url)] as const,
+        ),
+      );
+      if (cancelled) {
+        return;
+      }
+      setArchivedUrls(
+        Object.fromEntries(
+          resolved.filter((entry): entry is [string, string] =>
+            Boolean(entry[1]),
+          ),
+        ),
+      );
+    };
+
+    loadArchivedUrls().catch(() => undefined);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [library.favorites]);
+
+  // Drop archived blobs for anything no longer favourited, which covers
+  // unfavouriting in another tab and settings imports.
+  useEffect(() => {
+    pruneArchivedFavorites(library.favorites.map((image) => image.url)).catch(
+      () => undefined,
+    );
+  }, [library.favorites]);
+
+  const resolveFavoriteUrl = useCallback(
+    (url: string) => archivedUrls[url] ?? url,
+    [archivedUrls],
+  );
+
   return {
+    resolveFavoriteUrl,
     favorites: library.favorites,
     blockedUrls: library.blockedUrls,
     feedback: library.feedback,

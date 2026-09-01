@@ -13,6 +13,8 @@ interface SpotlightActionsProps {
   onRemoveFavorite: (url: string) => void;
   onDismiss: (image: AnimeImage) => void;
   isChangePending?: boolean;
+  /** Maps a favourite's original URL to its archived copy, when one exists. */
+  resolveFavoriteUrl?: (url: string) => string;
 }
 
 export function SpotlightActions({
@@ -23,6 +25,7 @@ export function SpotlightActions({
   onRemoveFavorite,
   onDismiss,
   isChangePending = false,
+  resolveFavoriteUrl = (url) => url,
 }: SpotlightActionsProps) {
   const { t } = useTranslation();
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
@@ -123,7 +126,10 @@ export function SpotlightActions({
                           target="_blank"
                           rel="noopener noreferrer"
                         >
-                          <img src={image.url} alt={image.animeName || ""} />
+                          <img
+                            src={resolveFavoriteUrl(image.url)}
+                            alt={image.animeName || ""}
+                          />
                         </a>
                         <button
                           type="button"
