@@ -11,7 +11,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "typecheck": "node node_modules/@typescript/native/bin/tsc -b",
+    "typecheck": "tsc -b",
     "build": "npm run typecheck && vite build",
     "postbuild": "node scripts/write-dist-env.mjs production",
     "lint": "biome lint --max-diagnostics=none --diagnostic-level=info",
@@ -33,10 +33,9 @@
     "@types/node": "^26.2.0",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
-    "@typescript/native": "npm:typescript@^7.0.2",
     "@vitejs/plugin-react": "^6.0.5",
     "jsdom": "^30.0.1",
-    "typescript": "npm:@typescript/typescript6@^6.0.2",
+    "typescript": "^7.0.2",
     "vite": "^8.2.1",
     "vitest": "^4.1.10"
   }
