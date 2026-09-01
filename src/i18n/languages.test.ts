@@ -1,5 +1,4 @@
-// @vitest-environment jsdom
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   detectBrowserLanguage,
   detectInitialLanguage,
@@ -10,9 +9,57 @@ import {
   writeStoredLanguage,
 } from "./languages.ts";
 
+/**
+ * An in-memory `Storage`.
+ *
+ * The globals are stubbed rather than taken from a DOM environment on
+ * purpose. This suite previously relied on jsdom supplying `localStorage`,
+ * which held on Node 24 and broke on Node 26, where the ambient
+ * `localStorage` is not jsdom's. What these functions do with storage is the
+ * subject of the tests, so the storage should be supplied by them.
+ */
+function createStorage(initial: Record<string, string> = {}): Storage {
+  const entries = new Map(Object.entries(initial));
+  return {
+    get length() {
+      return entries.size;
+    },
+    clear: () => entries.clear(),
+    getItem: (key: string) => entries.get(key) ?? null,
+    key: (index: number) => [...entries.keys()][index] ?? null,
+    removeItem: (key: string) => {
+      entries.delete(key);
+    },
+    setItem: (key: string, value: string) => {
+      entries.set(key, value);
+    },
+  };
+}
+
+/** Storage that refuses every operation, as it does in private browsing. */
+function createBlockedStorage(): Storage {
+  const blocked = () => {
+    throw new Error("storage blocked");
+  };
+  return {
+    get length(): number {
+      return blocked();
+    },
+    clear: blocked,
+    getItem: blocked,
+    key: blocked,
+    removeItem: blocked,
+    setItem: blocked,
+  };
+}
+
+beforeEach(() => {
+  vi.stubGlobal("localStorage", createStorage());
+  vi.stubGlobal("navigator", { language: "en-US" });
+});
+
 afterEach(() => {
-  localStorage.clear();
-  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
 });
 
 describe("isSupportedLanguage", () => {
@@ -43,7 +90,7 @@ describe("detectBrowserLanguage", () => {
   });
 
   it("reads the ambient navigator when no tag is passed", () => {
-    vi.spyOn(navigator, "language", "get").mockReturnValue("ko-KR");
+    vi.stubGlobal("navigator", { language: "ko-KR" });
     expect(detectBrowserLanguage()).toBe("ko");
   });
 
@@ -65,30 +112,27 @@ describe("readStoredLanguage", () => {
   });
 
   it("returns null when storage is unavailable", () => {
-    vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
-      throw new Error("storage blocked");
-    });
+    vi.stubGlobal("localStorage", createBlockedStorage());
     expect(readStoredLanguage()).toBeNull();
   });
 });
 
 describe("writeStoredLanguage", () => {
   it("swallows storage failures", () => {
-    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
-      throw new Error("storage blocked");
-    });
+    vi.stubGlobal("localStorage", createBlockedStorage());
     expect(() => writeStoredLanguage("ko")).not.toThrow();
   });
 });
 
 describe("detectInitialLanguage", () => {
   it("prefers an explicit earlier choice over the browser preference", () => {
+    vi.stubGlobal("navigator", { language: "ja-JP" });
     writeStoredLanguage("ko");
     expect(detectInitialLanguage()).toBe("ko");
   });
 
   it("falls back to the browser preference when nothing is stored", () => {
-    vi.spyOn(navigator, "language", "get").mockReturnValue("ja-JP");
+    vi.stubGlobal("navigator", { language: "ja-JP" });
     expect(detectInitialLanguage()).toBe("ja");
   });
 });

@@ -24,7 +24,7 @@ Windows 잠금 화면에서 영감을 받은 애니메이션 배경화면 시계
 
 ## 시작하기
 
-잠긴 개발 도구 전체의 지원 범위에 따라 Node.js `22.22.2+`, `24.15+` 또는 `26+`와 npm `12.0.2+`가 필요합니다.
+Node.js `22.22.2+`, `24.15+` 또는 `26+`가 필요합니다. npm은 각 Node에 기본 포함된 버전(`10.9+`)이면 충분합니다.
 
 ```bash
 git clone https://github.com/gaon12/MoeMoe.git
@@ -148,7 +148,7 @@ npm audit
 
 린트와 포맷은 모두 [Biome](https://biomejs.dev)이 담당합니다. 전체 규칙 프리셋(`preset: all`)을 켜고 필요한 곳만 `biome.json`에서 조정했습니다. ESLint와 Prettier는 제거했습니다.
 
-`npm run format`으로 포맷을 적용할 수 있습니다. GitHub Actions(`.github/workflows/quality.yml`)가 `engines`가 허용하는 Node 22·24·26 각 라인의 최저 버전에서 위 검사를 모두 실행합니다.
+`npm run format`으로 포맷을 적용할 수 있습니다. GitHub Actions(`.github/workflows/quality.yml`)가 `engines`가 허용하는 Node 22·24·26 각 라인의 최저 버전에서, 각 Node에 기본 포함된 npm으로 위 검사를 모두 실행합니다.
 
 네트워크 요청에는 취소와 타임아웃이 적용되며, 설정 파일을 가져올 때 타입·범위·중복 위젯 ID를 검증합니다.
 
