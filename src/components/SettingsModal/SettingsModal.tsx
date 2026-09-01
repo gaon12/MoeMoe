@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useTranslation } from "react-i18next";
 import { useApp } from "../../contexts/useApp.ts";
 import {
@@ -14,6 +21,8 @@ import {
   parseSettingsExport,
 } from "../../utils/settingsExport.ts";
 import { useModalAccessibility } from "../../hooks/useModalAccessibility.ts";
+import { SettingsTabBar, SettingsVisibilityGrid } from "./SettingsControls.tsx";
+import type { SettingsTab } from "./settingsOptions.ts";
 import { SettingsImageTab } from "./SettingsImageTab.tsx";
 import { SettingsInfoTab } from "./SettingsInfoTab.tsx";
 import { SettingsWidgetsTab } from "./SettingsWidgetsTab.tsx";
@@ -32,16 +41,6 @@ const getSecondsSuffix = (language: string) => {
   return "s";
 };
 
-const UI_VISIBILITY_KEYS = [
-  "clock",
-  "widgets",
-  "autoRefreshIndicator",
-  "fullscreenButton",
-  "downloadButton",
-  "refreshButton",
-  "wallpaperActions",
-] as const satisfies readonly (keyof UiVisibilitySettings)[];
-
 export const SettingsModal = () => {
   const { t, i18n } = useTranslation();
   const {
@@ -52,9 +51,7 @@ export const SettingsModal = () => {
     setIsSettingsOpen,
   } = useApp();
   const [localSettings, setLocalSettings] = useState(settings);
-  const [activeTab, setActiveTab] = useState<
-    "general" | "image" | "clock" | "widgets" | "info"
-  >("general");
+  const [activeTab, setActiveTab] = useState<SettingsTab>("general");
   const [settingsTransferStatus, setSettingsTransferStatus] = useState<
     "idle" | "imported" | "failed"
   >("idle");
@@ -95,6 +92,71 @@ export const SettingsModal = () => {
     setActiveTab("general");
     setSettingsTransferStatus("idle");
   }, [setIsSettingsOpen, settings]);
+
+  const handleUiVisibilityChange = useCallback(
+    (key: keyof UiVisibilitySettings, visible: boolean) => {
+      setLocalSettings((previous) => ({
+        ...previous,
+        uiVisibility: {
+          ...previous.uiVisibility,
+          [key]: visible,
+        },
+      }));
+    },
+    [],
+  );
+
+  /**
+   * Stable change handlers for the plain settings fields. Building them once
+   * keeps every control out of the render path's allocation budget and lets
+   * the inputs receive an unchanging `onChange` identity.
+   */
+  const fieldHandlers = useMemo(
+    () => ({
+      language: (event: React.ChangeEvent<HTMLSelectElement>) => {
+        const language = event.target.value as Language;
+        setLocalSettings((previous) => ({ ...previous, language }));
+      },
+      theme: (event: React.ChangeEvent<HTMLSelectElement>) => {
+        const theme = event.target.value as ThemeMode;
+        setLocalSettings((previous) => ({ ...previous, theme }));
+      },
+      showSeconds: (event: React.ChangeEvent<HTMLInputElement>) => {
+        const showSeconds = event.target.checked;
+        setLocalSettings((previous) => ({ ...previous, showSeconds }));
+      },
+      use24Hour: (event: React.ChangeEvent<HTMLInputElement>) => {
+        const use24Hour = event.target.checked;
+        setLocalSettings((previous) => ({ ...previous, use24Hour }));
+      },
+      showAmPm: (event: React.ChangeEvent<HTMLInputElement>) => {
+        const showAmPm = event.target.checked;
+        setLocalSettings((previous) => ({ ...previous, showAmPm }));
+      },
+      amPmStyle: (event: React.ChangeEvent<HTMLSelectElement>) => {
+        const amPmStyle = event.target.value as AppSettings["amPmStyle"];
+        setLocalSettings((previous) => ({ ...previous, amPmStyle }));
+      },
+      amPmPosition: (event: React.ChangeEvent<HTMLSelectElement>) => {
+        const amPmPosition = event.target.value as AppSettings["amPmPosition"];
+        setLocalSettings((previous) => ({ ...previous, amPmPosition }));
+      },
+      useServerTime: (event: React.ChangeEvent<HTMLInputElement>) => {
+        const useServerTime = event.target.checked;
+        setLocalSettings((previous) => ({ ...previous, useServerTime }));
+      },
+      serverTimeUpdateIntervalSec: (
+        event: React.ChangeEvent<HTMLSelectElement>,
+      ) => {
+        const serverTimeUpdateIntervalSec = Number(event.target.value);
+        setLocalSettings((previous) => ({
+          ...previous,
+          serverTimeUpdateIntervalSec,
+        }));
+      },
+    }),
+    [],
+  );
 
   useModalAccessibility(isSettingsOpen, modalRef, handleClose);
 
@@ -167,19 +229,6 @@ export const SettingsModal = () => {
     setSettingsTransferStatus("idle");
   };
 
-  const handleUiVisibilityChange = (
-    key: keyof UiVisibilitySettings,
-    visible: boolean,
-  ) => {
-    setLocalSettings((previous) => ({
-      ...previous,
-      uiVisibility: {
-        ...previous.uiVisibility,
-        [key]: visible,
-      },
-    }));
-  };
-
   return (
     <div className="settings-modal-overlay">
       <button
@@ -212,57 +261,7 @@ export const SettingsModal = () => {
         </div>
 
         <div className="settings-content">
-          <div
-            className="settings-tabs"
-            role="tablist"
-            aria-label={t("settings.title")}
-          >
-            <button
-              type="button"
-              className={`settings-tab${activeTab === "general" ? " settings-tab-active" : ""}`}
-              onClick={() => setActiveTab("general")}
-              role="tab"
-              aria-selected={activeTab === "general"}
-            >
-              {t("settings.tabs.general")}
-            </button>
-            <button
-              type="button"
-              className={`settings-tab${activeTab === "image" ? " settings-tab-active" : ""}`}
-              onClick={() => setActiveTab("image")}
-              role="tab"
-              aria-selected={activeTab === "image"}
-            >
-              {t("settings.tabs.image")}
-            </button>
-            <button
-              type="button"
-              className={`settings-tab${activeTab === "clock" ? " settings-tab-active" : ""}`}
-              onClick={() => setActiveTab("clock")}
-              role="tab"
-              aria-selected={activeTab === "clock"}
-            >
-              {t("settings.tabs.clock")}
-            </button>
-            <button
-              type="button"
-              className={`settings-tab${activeTab === "widgets" ? " settings-tab-active" : ""}`}
-              onClick={() => setActiveTab("widgets")}
-              role="tab"
-              aria-selected={activeTab === "widgets"}
-            >
-              {t("settings.tabs.widgets")}
-            </button>
-            <button
-              type="button"
-              className={`settings-tab${activeTab === "info" ? " settings-tab-active" : ""}`}
-              onClick={() => setActiveTab("info")}
-              role="tab"
-              aria-selected={activeTab === "info"}
-            >
-              {t("settings.tabs.info")}
-            </button>
-          </div>
+          <SettingsTabBar activeTab={activeTab} onSelect={setActiveTab} />
 
           {activeTab === "general" && (
             <>
@@ -282,12 +281,7 @@ export const SettingsModal = () => {
                     id={`${idPrefix}-language`}
                     className="settings-select"
                     value={localSettings.language}
-                    onChange={(e) =>
-                      setLocalSettings({
-                        ...localSettings,
-                        language: e.target.value as Language,
-                      })
-                    }
+                    onChange={fieldHandlers.language}
                   >
                     <option value="ko">{t("settings.language.korean")}</option>
                     <option value="en">{t("settings.language.english")}</option>
@@ -314,12 +308,7 @@ export const SettingsModal = () => {
                     id={`${idPrefix}-theme`}
                     className="settings-select"
                     value={localSettings.theme}
-                    onChange={(e) =>
-                      setLocalSettings({
-                        ...localSettings,
-                        theme: e.target.value as ThemeMode,
-                      })
-                    }
+                    onChange={fieldHandlers.theme}
                   >
                     <option value="dark">{t("settings.theme.dark")}</option>
                     <option value="light">{t("settings.theme.light")}</option>
@@ -335,21 +324,10 @@ export const SettingsModal = () => {
                 <p className="settings-description">
                   {t("settings.visibility.description")}
                 </p>
-                <div className="settings-visibility-grid">
-                  {UI_VISIBILITY_KEYS.map((key) => (
-                    <label className="settings-visibility-item" key={key}>
-                      <input
-                        type="checkbox"
-                        className="settings-checkbox"
-                        checked={localSettings.uiVisibility[key]}
-                        onChange={(event) =>
-                          handleUiVisibilityChange(key, event.target.checked)
-                        }
-                      />
-                      <span>{t(`settings.visibility.items.${key}`)}</span>
-                    </label>
-                  ))}
-                </div>
+                <SettingsVisibilityGrid
+                  visibility={localSettings.uiVisibility}
+                  onChange={handleUiVisibilityChange}
+                />
               </fieldset>
 
               <div className="settings-section">
@@ -427,12 +405,7 @@ export const SettingsModal = () => {
                       id={`${idPrefix}-show-seconds`}
                       className="settings-checkbox"
                       checked={localSettings.showSeconds}
-                      onChange={(e) =>
-                        setLocalSettings({
-                          ...localSettings,
-                          showSeconds: e.target.checked,
-                        })
-                      }
+                      onChange={fieldHandlers.showSeconds}
                     />
                     <label
                       htmlFor={`${idPrefix}-show-seconds`}
@@ -450,12 +423,7 @@ export const SettingsModal = () => {
                       id={`${idPrefix}-use-24-hour`}
                       className="settings-checkbox"
                       checked={localSettings.use24Hour}
-                      onChange={(e) =>
-                        setLocalSettings({
-                          ...localSettings,
-                          use24Hour: e.target.checked,
-                        })
-                      }
+                      onChange={fieldHandlers.use24Hour}
                     />
                     <label
                       htmlFor={`${idPrefix}-use-24-hour`}
@@ -475,12 +443,7 @@ export const SettingsModal = () => {
                         id={`${idPrefix}-show-am-pm`}
                         className="settings-checkbox"
                         checked={localSettings.showAmPm}
-                        onChange={(e) =>
-                          setLocalSettings({
-                            ...localSettings,
-                            showAmPm: e.target.checked,
-                          })
-                        }
+                        onChange={fieldHandlers.showAmPm}
                       />
                       <label
                         htmlFor={`${idPrefix}-show-am-pm`}
@@ -506,13 +469,7 @@ export const SettingsModal = () => {
                           id={`${idPrefix}-am-pm-style`}
                           className="settings-select"
                           value={localSettings.amPmStyle}
-                          onChange={(e) =>
-                            setLocalSettings({
-                              ...localSettings,
-                              amPmStyle: e.target
-                                .value as AppSettings["amPmStyle"],
-                            })
-                          }
+                          onChange={fieldHandlers.amPmStyle}
                         >
                           <option value="locale">
                             {t("settings.appearance.amPmStyle.locale")}
@@ -538,13 +495,7 @@ export const SettingsModal = () => {
                         id={`${idPrefix}-am-pm-position`}
                         className="settings-select"
                         value={localSettings.amPmPosition}
-                        onChange={(e) =>
-                          setLocalSettings({
-                            ...localSettings,
-                            amPmPosition: e.target
-                              .value as AppSettings["amPmPosition"],
-                          })
-                        }
+                        onChange={fieldHandlers.amPmPosition}
                       >
                         <option value="before">
                           {t("settings.appearance.before")}
@@ -570,12 +521,7 @@ export const SettingsModal = () => {
                       id={`${idPrefix}-use-server-time`}
                       className="settings-checkbox"
                       checked={localSettings.useServerTime}
-                      onChange={(e) =>
-                        setLocalSettings({
-                          ...localSettings,
-                          useServerTime: e.target.checked,
-                        })
-                      }
+                      onChange={fieldHandlers.useServerTime}
                     />
                     <label
                       htmlFor={`${idPrefix}-use-server-time`}
@@ -601,12 +547,7 @@ export const SettingsModal = () => {
                       id={`${idPrefix}-server-time-interval`}
                       className="settings-select"
                       value={localSettings.serverTimeUpdateIntervalSec}
-                      onChange={(e) =>
-                        setLocalSettings({
-                          ...localSettings,
-                          serverTimeUpdateIntervalSec: Number(e.target.value),
-                        })
-                      }
+                      onChange={fieldHandlers.serverTimeUpdateIntervalSec}
                     >
                       {SERVER_TIME_UPDATE_INTERVAL_OPTIONS.map((interval) => (
                         <option key={interval} value={interval}>
