@@ -66,6 +66,7 @@ export interface UiVisibilitySettings {
   downloadButton: boolean;
   refreshButton: boolean;
   wallpaperActions: boolean;
+  historyNav: boolean;
 }
 
 /**
@@ -139,5 +140,6 @@ export const defaultSettings: AppSettings = {
     downloadButton: true,
     refreshButton: true,
     wallpaperActions: true,
+    historyNav: true,
   },
 };

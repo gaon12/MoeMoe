@@ -54,7 +54,8 @@
         "fullscreenButton": "フルスクリーンボタン",
         "downloadButton": "ダウンロードボタン",
         "refreshButton": "更新ボタン",
-        "wallpaperActions": "壁紙アクション"
+        "wallpaperActions": "壁紙アクション",
+        "historyNav": "履歴の矢印"
       }
     },
     "management": {
@@ -301,5 +302,9 @@
       "placeholder": "ここにテキストを入力...",
       "edit": "編集"
     }
+  },
+  "history": {
+    "previous": "前の壁紙",
+    "next": "次の壁紙"
   }
 }

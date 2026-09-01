@@ -23,4 +23,5 @@ export const UI_VISIBILITY_KEYS = [
   "downloadButton",
   "refreshButton",
   "wallpaperActions",
+  "historyNav",
 ] as const satisfies readonly (keyof UiVisibilitySettings)[];

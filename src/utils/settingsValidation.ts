@@ -105,6 +105,7 @@ function sanitizeUiVisibility(
       candidate.wallpaperActions,
       fallback.wallpaperActions,
     ),
+    historyNav: booleanValue(candidate.historyNav, fallback.historyNav),
   };
 }
 

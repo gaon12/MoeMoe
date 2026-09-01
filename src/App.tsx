@@ -22,6 +22,8 @@ import { useSyncedTime } from "./hooks/useSyncedTime.ts";
 import { WidgetDock } from "./components/WidgetDock/WidgetDock.tsx";
 import { SpotlightActions } from "./components/SpotlightActions/SpotlightActions.tsx";
 import { useWallpaperLibrary } from "./hooks/useWallpaperLibrary.ts";
+import { useWallpaperHistory } from "./hooks/useWallpaperHistory.ts";
+import { HistoryNav } from "./components/HistoryNav/HistoryNav.tsx";
 import { shouldIgnoreGlobalShortcut } from "./utils/keyboardShortcuts.ts";
 import "./App.css";
 
@@ -79,6 +81,13 @@ export function App() {
     removeFavorite,
     blockWallpaper,
   } = useWallpaperLibrary();
+  const {
+    canGoBack,
+    canGoForward,
+    push: recordWallpaper,
+    goBack,
+    goForward,
+  } = useWallpaperHistory();
 
   const performImageChange = useCallback(() => {
     clearTimer(pendingImageChangeTimerRef);
@@ -135,12 +144,18 @@ export function App() {
     }
   }, [settings.imageChangeInterval, isAutoRefreshPaused, handleRefresh]);
 
-  const handleImageLoad = useCallback((image: AnimeImage) => {
-    setCurrentImage(image);
-    setIsLoadingImage(false);
-    setIsImageChangePending(false);
-    setLastImageAttemptTime(Date.now());
-  }, []);
+  const handleImageLoad = useCallback(
+    (image: AnimeImage) => {
+      setCurrentImage(image);
+      setIsLoadingImage(false);
+      setIsImageChangePending(false);
+      setLastImageAttemptTime(Date.now());
+      // Re-recording the entry the user just navigated to is a no-op, so this
+      // one callback serves both fresh loads and history navigation.
+      recordWallpaper(image);
+    },
+    [recordWallpaper],
+  );
 
   const handleImageError = useCallback(() => {
     setIsLoadingImage(false);
@@ -149,6 +164,26 @@ export function App() {
     // fails, so an enabled refresh interval can recover without user input.
     setLastImageAttemptTime(Date.now());
   }, []);
+
+  const navigateHistory = useCallback((target: AnimeImage | null) => {
+    if (!target) {
+      return;
+    }
+    // A deliberate navigation supersedes any pending or scheduled change.
+    clearTimer(pendingImageChangeTimerRef);
+    clearTimer(autoRefreshTimerRef);
+    setIsImageChangePending(false);
+    setIsLoadingImage(false);
+    imageBackgroundRef.current?.showImage(target);
+  }, []);
+
+  const handleHistoryBack = useCallback(() => {
+    navigateHistory(goBack());
+  }, [goBack, navigateHistory]);
+
+  const handleHistoryForward = useCallback(() => {
+    navigateHistory(goForward());
+  }, [goForward, navigateHistory]);
 
   const handleDismissWallpaper = useCallback(
     (image: AnimeImage) => {
@@ -263,6 +298,17 @@ export function App() {
         event.preventDefault();
         setIsSettingsOpen(true);
       }
+
+      // Arrow keys to walk back and forward through recently shown wallpapers
+      if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        handleHistoryBack();
+      }
+
+      if (event.key === "ArrowRight") {
+        event.preventDefault();
+        handleHistoryForward();
+      }
     };
 
     globalThis.addEventListener("keydown", handleKeyDown);
@@ -277,6 +323,8 @@ export function App() {
     settings.imageChangeInterval,
     toggleAutoRefreshPause,
     isSettingsOpen,
+    handleHistoryBack,
+    handleHistoryForward,
   ]);
 
   return (
@@ -317,6 +365,14 @@ export function App() {
             imageUrl={currentImage?.url || null}
             fallbackImageUrl={currentImage?.proxiedUrl || null}
             imageName={currentImage?.animeName || "anime-image"}
+          />
+        ) : null}
+        {settings.uiVisibility.historyNav ? (
+          <HistoryNav
+            canGoBack={canGoBack}
+            canGoForward={canGoForward}
+            onBack={handleHistoryBack}
+            onForward={handleHistoryForward}
           />
         ) : null}
         {settings.uiVisibility.refreshButton ? (

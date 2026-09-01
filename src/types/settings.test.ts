@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { defaultSettings } from "./settings.ts";
 
-const OPTIONAL_UI_ELEMENT_COUNT = 7;
+const OPTIONAL_UI_ELEMENT_COUNT = 8;
 
 describe("defaultSettings", () => {
   it("starts with an uncluttered clock-only surface", () => {

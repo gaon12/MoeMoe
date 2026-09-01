@@ -53,6 +53,8 @@ interface ImageBackgroundProps {
 
 export interface ImageBackgroundHandle {
   refresh: () => void;
+  /** Re-display an already seen wallpaper without contacting a provider. */
+  showImage: (image: AnimeImage) => void;
 }
 
 export const ImageBackground = ({
@@ -423,12 +425,43 @@ export const ImageBackground = ({
     return () => abortControllerRef.current?.abort();
   }, [loadNewImage]);
 
+  /**
+   * Shows a wallpaper the user has already seen, for history navigation.
+   *
+   * No provider request and no preload: the image was displayed moments ago,
+   * so the browser still holds it, and going back should feel instant rather
+   * than replay a three-attempt fetch. If the cache has dropped it, the
+   * element's own error handler surfaces the usual failure dialog.
+   */
+  const showImage = useCallback(
+    (image: AnimeImage) => {
+      // Cancel any in-flight random load so its result cannot land on top of
+      // the entry the user just navigated to.
+      abortControllerRef.current?.abort();
+      requestSequenceRef.current += 1;
+
+      setHasError(false);
+      setErrorMessage(null);
+      setCopyState("idle");
+      setIsMetadataOpen(false);
+      setMetadataCopyState("idle");
+      // The preloaded element belongs to the outgoing image; edge-colour
+      // extraction re-reads the incoming one on demand.
+      preloadedImageRef.current = null;
+      setIsTransitioning(false);
+      setCurrentImage(image);
+      onImageLoad?.(image);
+    },
+    [onImageLoad],
+  );
+
   useImperativeHandle(
     ref,
     () => ({
       refresh: loadNewImage,
+      showImage,
     }),
-    [loadNewImage],
+    [loadNewImage, showImage],
   );
 
   const handleImageLoad = () => {

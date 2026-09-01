@@ -54,7 +54,8 @@
         "fullscreenButton": "Fullscreen button",
         "downloadButton": "Download button",
         "refreshButton": "Refresh button",
-        "wallpaperActions": "Wallpaper actions"
+        "wallpaperActions": "Wallpaper actions",
+        "historyNav": "History arrows"
       }
     },
     "management": {
@@ -301,5 +302,9 @@
       "placeholder": "Enter your text here...",
       "edit": "Edit"
     }
+  },
+  "history": {
+    "previous": "Previous wallpaper",
+    "next": "Next wallpaper"
   }
 }
