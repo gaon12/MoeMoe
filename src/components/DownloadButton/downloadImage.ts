@@ -3,8 +3,11 @@ export async function fetchImageBlobWithFallback(
   fallbackUrl: string | null | undefined,
   signal: AbortSignal,
 ): Promise<Blob> {
-  const candidates = [...new Set([primaryUrl, fallbackUrl].filter(Boolean))] as
-    [string] | [string, string];
+  const candidates: string[] = [
+    ...new Set(
+      [primaryUrl, fallbackUrl].filter((url): url is string => Boolean(url)),
+    ),
+  ];
   const failures: Error[] = [];
 
   const fetchCandidate = async (index: number): Promise<Blob> => {
@@ -41,5 +44,7 @@ export async function fetchImageBlobWithFallback(
     }
   };
 
-  return fetchCandidate(0);
+  // Awaited rather than returned directly so this frame stays on the stack
+  // when a candidate rejects, which keeps the AggregateError traceable.
+  return await fetchCandidate(0);
 }
