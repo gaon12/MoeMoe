@@ -163,6 +163,15 @@ export const SettingsImageTab = ({
     [setLocalSettings],
   );
 
+  const handleFavoriteClickActionChange = useCallback(
+    (event: React.ChangeEvent<HTMLSelectElement>) => {
+      const favoriteClickAction = event.currentTarget
+        .value as AppSettings["favoriteClickAction"];
+      setLocalSettings((current) => ({ ...current, favoriteClickAction }));
+    },
+    [setLocalSettings],
+  );
+
   const handleRefreshIntervalChange = useCallback(
     (event: React.ChangeEvent<HTMLSelectElement>) => {
       const imageChangeInterval = Number(event.currentTarget.value);
@@ -269,6 +278,28 @@ export const SettingsImageTab = ({
               </span>
             </label>
           </div>
+        </div>
+
+        <div className="settings-option">
+          <label
+            className="settings-label"
+            htmlFor={`${idPrefix}-favorite-click-action`}
+          >
+            {t("settings.favoriteClickAction.label")}
+          </label>
+          <select
+            id={`${idPrefix}-favorite-click-action`}
+            className="settings-select"
+            value={localSettings.favoriteClickAction}
+            onChange={handleFavoriteClickActionChange}
+          >
+            <option value="apply">
+              {t("settings.favoriteClickAction.apply")}
+            </option>
+            <option value="openSource">
+              {t("settings.favoriteClickAction.openSource")}
+            </option>
+          </select>
         </div>
 
         {/* Image Fit Mode */}

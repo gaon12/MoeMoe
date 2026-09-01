@@ -189,6 +189,16 @@ export function App() {
     navigateHistory(goForward());
   }, [goForward, navigateHistory]);
 
+  const handleApplyFavorite = useCallback((image: AnimeImage) => {
+    // Applying a favourite is a navigation like any other, so it cancels
+    // pending work and is recorded in history via the load callback.
+    clearTimer(pendingImageChangeTimerRef);
+    clearTimer(autoRefreshTimerRef);
+    setIsImageChangePending(false);
+    setIsLoadingImage(false);
+    imageBackgroundRef.current?.showImage(image);
+  }, []);
+
   const handleDismissWallpaper = useCallback(
     (image: AnimeImage) => {
       if (image.isLocal) {
@@ -392,6 +402,8 @@ export function App() {
             onDismiss={handleDismissWallpaper}
             isChangePending={isImageChangePending}
             resolveFavoriteUrl={resolveFavoriteUrl}
+            onApplyFavorite={handleApplyFavorite}
+            favoriteClickAction={settings.favoriteClickAction}
           />
         ) : null}
       </div>

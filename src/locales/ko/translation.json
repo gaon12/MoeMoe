@@ -5,7 +5,9 @@
     "notForMe": "내 취향 아님",
     "empty": "저장한 배경화면이 없습니다.",
     "remove": "삭제",
-    "close": "닫기"
+    "close": "닫기",
+    "openOriginal": "원본",
+    "apply": "배경화면으로 적용"
   },
   "app": {
     "title": "모에모에 - 애니메이션 배경화면 시계"
@@ -193,6 +195,11 @@
       "projectName": "프로젝트 이름",
       "version": "버전",
       "github": "GitHub"
+    },
+    "favoriteClickAction": {
+      "label": "저장한 배경화면을 눌렀을 때",
+      "apply": "배경화면으로 적용",
+      "openSource": "원본을 새 탭에서 열기"
     }
   },
   "buttons": {

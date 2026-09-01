@@ -116,3 +116,38 @@
   border-radius: 0.65rem;
   object-fit: cover;
 }
+
+.spotlight-gallery-preview {
+  display: block;
+  padding: 0;
+  border: 0;
+  border-radius: 0.65rem;
+  background: none;
+  cursor: pointer;
+  line-height: 0;
+}
+
+.spotlight-gallery-preview:focus-visible,
+.spotlight-gallery-preview:hover img {
+  outline: 2px solid rgb(255 255 255 / 70%);
+  outline-offset: 2px;
+}
+
+.spotlight-gallery-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.spotlight-gallery-source {
+  color: inherit;
+  font-size: 0.85rem;
+  opacity: 0.75;
+  text-decoration: underline;
+}
+
+.spotlight-gallery-source:hover,
+.spotlight-gallery-source:focus-visible {
+  opacity: 1;
+}

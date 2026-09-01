@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { useModalAccessibility } from "../../hooks/useModalAccessibility.ts";
 import type { AnimeImage } from "../../types/image.ts";
+import type { FavoriteClickAction } from "../../types/settings.ts";
 import "./SpotlightActions.css";
 
 interface SpotlightActionsProps {
@@ -15,6 +16,8 @@ interface SpotlightActionsProps {
   isChangePending?: boolean;
   /** Maps a favourite's original URL to its archived copy, when one exists. */
   resolveFavoriteUrl?: (url: string) => string;
+  onApplyFavorite?: (image: AnimeImage) => void;
+  favoriteClickAction?: FavoriteClickAction;
 }
 
 export function SpotlightActions({
@@ -26,6 +29,8 @@ export function SpotlightActions({
   onDismiss,
   isChangePending = false,
   resolveFavoriteUrl = (url) => url,
+  onApplyFavorite,
+  favoriteClickAction = "apply",
 }: SpotlightActionsProps) {
   const { t } = useTranslation();
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
@@ -43,6 +48,26 @@ export function SpotlightActions({
       onDismiss(currentImage);
     }
   }, [currentImage, onDismiss]);
+  const handleApplyFavorite = useCallback(
+    (event: React.MouseEvent<HTMLButtonElement>) => {
+      const { imageUrl } = event.currentTarget.dataset;
+      const image = favorites.find((item) => item.url === imageUrl);
+      if (!image) {
+        return;
+      }
+      // The archived copy, when there is one, is what keeps a favourite
+      // usable after its provider has dropped the original path.
+      const archivedUrl = resolveFavoriteUrl(image.url);
+      onApplyFavorite?.(
+        archivedUrl === image.url
+          ? image
+          : { ...image, proxiedUrl: archivedUrl },
+      );
+      setIsGalleryOpen(false);
+    },
+    [favorites, onApplyFavorite, resolveFavoriteUrl],
+  );
+
   const handleRemoveFavorite = useCallback(
     (event: React.MouseEvent<HTMLButtonElement>) => {
       const { imageUrl } = event.currentTarget.dataset;
@@ -121,23 +146,50 @@ export function SpotlightActions({
                         key={image.url}
                         className="spotlight-gallery-item"
                       >
-                        <a
-                          href={image.sourceUrl || image.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          <img
-                            src={resolveFavoriteUrl(image.url)}
-                            alt={image.animeName || ""}
-                          />
-                        </a>
-                        <button
-                          type="button"
-                          data-image-url={image.url}
-                          onClick={handleRemoveFavorite}
-                        >
-                          {t("spotlight.remove")}
-                        </button>
+                        {favoriteClickAction === "apply" ? (
+                          <button
+                            type="button"
+                            className="spotlight-gallery-preview"
+                            data-image-url={image.url}
+                            onClick={handleApplyFavorite}
+                            title={t("spotlight.apply")}
+                          >
+                            <img
+                              src={resolveFavoriteUrl(image.url)}
+                              alt={image.animeName || ""}
+                            />
+                          </button>
+                        ) : (
+                          <a
+                            className="spotlight-gallery-preview"
+                            href={image.sourceUrl || image.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title={t("spotlight.openOriginal")}
+                          >
+                            <img
+                              src={resolveFavoriteUrl(image.url)}
+                              alt={image.animeName || ""}
+                            />
+                          </a>
+                        )}
+                        <div className="spotlight-gallery-actions">
+                          <a
+                            className="spotlight-gallery-source"
+                            href={image.sourceUrl || image.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            {t("spotlight.openOriginal")}
+                          </a>
+                          <button
+                            type="button"
+                            data-image-url={image.url}
+                            onClick={handleRemoveFavorite}
+                          >
+                            {t("spotlight.remove")}
+                          </button>
+                        </div>
                       </article>
                     ))}
                   </div>

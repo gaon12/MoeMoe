@@ -5,7 +5,9 @@
     "notForMe": "Not for me",
     "empty": "No saved wallpapers yet.",
     "remove": "Remove",
-    "close": "Close"
+    "close": "Close",
+    "openOriginal": "Source",
+    "apply": "Set it as the wallpaper"
   },
   "app": {
     "title": "MoeMoe - Anime Wallpaper Clock"
@@ -193,6 +195,11 @@
       "projectName": "Project Name",
       "version": "Version",
       "github": "GitHub"
+    },
+    "favoriteClickAction": {
+      "label": "Clicking a saved wallpaper",
+      "apply": "Set it as the wallpaper",
+      "openSource": "Open the source in a new tab"
     }
   },
   "buttons": {

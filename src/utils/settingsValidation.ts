@@ -24,6 +24,7 @@ const ASPECT_PREFERENCES = [
   "square",
 ] as const;
 const LETTERBOX_MODES = ["blur", "edge-color", "custom", "solid"] as const;
+const FAVORITE_CLICK_ACTIONS = ["apply", "openSource"] as const;
 const AM_PM_POSITIONS = ["before", "after"] as const;
 const AM_PM_STYLES = ["locale", "latin"] as const;
 const SIX_DIGIT_HEX_COLOR_PATTERN = /^#[\da-f]{6}$/i;
@@ -46,6 +47,7 @@ const SETTINGS_KEYS = new Set<keyof AppSettings>([
   "letterboxFillMode",
   "letterboxCustomColor",
   "imageChangeInterval",
+  "favoriteClickAction",
   "showSeconds",
   "use24Hour",
   "showAmPm",
@@ -250,6 +252,11 @@ function sanitizeSettings(
       fallback.imageChangeInterval,
       0,
       86_400,
+    ),
+    favoriteClickAction: enumValue(
+      candidate.favoriteClickAction,
+      FAVORITE_CLICK_ACTIONS,
+      fallback.favoriteClickAction,
     ),
     showSeconds: booleanValue(candidate.showSeconds, fallback.showSeconds),
     use24Hour: booleanValue(candidate.use24Hour, fallback.use24Hour),

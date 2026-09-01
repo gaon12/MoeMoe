@@ -5,7 +5,9 @@
     "notForMe": "好みではない",
     "empty": "保存した壁紙はありません。",
     "remove": "削除",
-    "close": "閉じる"
+    "close": "閉じる",
+    "openOriginal": "提供元",
+    "apply": "壁紙として適用"
   },
   "app": {
     "title": "モエモエ - アニメ壁紙時計"
@@ -193,6 +195,11 @@
       "projectName": "プロジェクト名",
       "version": "バージョン",
       "github": "GitHub"
+    },
+    "favoriteClickAction": {
+      "label": "保存した壁紙をクリックしたとき",
+      "apply": "壁紙として適用",
+      "openSource": "提供元を新しいタブで開く"
     }
   },
   "buttons": {

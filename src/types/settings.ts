@@ -31,6 +31,9 @@ export type ImageAspectPreference =
  */
 export type LetterboxFillMode = "blur" | "edge-color" | "custom" | "solid";
 
+/** What clicking a saved wallpaper in the favourites gallery does. */
+export type FavoriteClickAction = "apply" | "openSource";
+
 /**
  * Widget types
  */
@@ -96,7 +99,8 @@ export interface AppSettings {
   imageAspectPreference: ImageAspectPreference;
   letterboxFillMode: LetterboxFillMode;
   letterboxCustomColor: string;
-  imageChangeInterval: number; // Auto-refresh interval in seconds (0 = disabled)
+  imageChangeInterval: number;
+  favoriteClickAction: FavoriteClickAction; // Auto-refresh interval in seconds (0 = disabled)
 
   // Clock settings
   showSeconds: boolean;
@@ -135,6 +139,7 @@ export const defaultSettings: AppSettings = {
   letterboxFillMode: "blur",
   letterboxCustomColor: "#1a1a1a",
   imageChangeInterval: 0,
+  favoriteClickAction: "apply",
   showSeconds: false,
   use24Hour: false,
   showAmPm: true,

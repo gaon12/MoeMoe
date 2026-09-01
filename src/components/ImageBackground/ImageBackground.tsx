@@ -468,7 +468,19 @@ export const ImageBackground = ({
     setHasError(false);
   };
 
-  const handleImageError = () => {
+  const handleImageError = (event: React.SyntheticEvent<HTMLImageElement>) => {
+    // The preload path already walks direct URL then proxy, but an image put
+    // on screen without preloading -- history navigation, or applying a
+    // favourite whose provider has since dropped the original -- gets its one
+    // retry here.
+    const element = event.currentTarget;
+    const fallbackUrl = currentImage?.proxiedUrl;
+    if (fallbackUrl && element.src !== fallbackUrl) {
+      element.crossOrigin = "anonymous";
+      element.src = fallbackUrl;
+      return;
+    }
+
     setHasError(true);
     const lines: string[] = ["Failed to display image element."];
     if (currentImage) {
