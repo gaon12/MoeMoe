@@ -148,7 +148,7 @@
       "position": "デスクトップ位置補正",
       "offsetX": "横 (px)",
       "offsetY": "縦 (px)",
-      "positionDescription": "モバイルのスタックには適用されません。-500pxから500pxまで移動できます。",
+      "positionDescription": "オフセットは画面サイズに対する割合なので、別の解像度でも配置の比率が保たれます。ウィジェットはドラッグ、またはフォーカス後に矢印キーで移動できます。",
       "customTextLabel": "カスタムテキスト",
       "customTextPlaceholder": "カードに表示するテキスト",
       "remove": "削除",
@@ -306,7 +306,8 @@
     "customText": {
       "placeholder": "ここにテキストを入力...",
       "edit": "編集"
-    }
+    },
+    "reposition": "{{widget}} ウィジェットの位置を調整。ドラッグまたは矢印キーで移動できます。"
   },
   "history": {
     "previous": "前の壁紙",

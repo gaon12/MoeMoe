@@ -29,6 +29,22 @@
   flex: 1;
   min-width: 180px;
   transition: transform 0.2s ease;
+  cursor: grab;
+  /* Claim pointer gestures so a drag never turns into a page scroll. */
+  touch-action: none;
+}
+
+.widget-card-positioner:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.7);
+  outline-offset: 4px;
+  border-radius: 12px;
+}
+
+.widget-card-positioner.dragging {
+  cursor: grabbing;
+  /* Follow the pointer exactly instead of easing behind it. */
+  transition: none;
+  z-index: 1;
 }
 
 .widget-card {
@@ -262,4 +278,14 @@
   box-sizing: border-box;
   width: 100%;
   height: 100%;
+}
+
+.widget-card-positioner.dragging > .widget-card {
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .widget-card-positioner {
+    transition: none;
+  }
 }

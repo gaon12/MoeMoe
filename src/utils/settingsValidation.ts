@@ -1,6 +1,11 @@
 import { ALL_IMAGE_SOURCES, type ImageSource } from "../types/image.ts";
 import { TEMPERATURE_UNITS } from "./temperature.ts";
 import {
+  clampWidgetPositionPercent,
+  convertLegacyPixelOffset,
+  LEGACY_POSITION_REFERENCE,
+} from "./widgetPosition.ts";
+import {
   defaultSettings,
   type AppSettings,
   type UiVisibilitySettings,
@@ -153,14 +158,29 @@ function sanitizeWidgets(value: unknown, fallback: Widget[]): Widget[] {
       ids.add(id);
 
       const position = isRecord(widget.position) ? widget.position : {};
+      // Offsets used to be stored in pixels. Anything without the marker is
+      // converted once, against a fixed reference viewport, and re-saved
+      // with it.
+      const isPercent = widget.positionUnit === "percent";
       return {
         id,
         type: normalizeWidgetType(widget.type),
         enabled: widget.enabled !== false,
         position: {
-          x: numberValue(position.x, 0, -500, 500),
-          y: numberValue(position.y, 0, -500, 500),
+          x: isPercent
+            ? clampWidgetPositionPercent(position.x)
+            : convertLegacyPixelOffset(
+                position.x,
+                LEGACY_POSITION_REFERENCE.width,
+              ),
+          y: isPercent
+            ? clampWidgetPositionPercent(position.y)
+            : convertLegacyPixelOffset(
+                position.y,
+                LEGACY_POSITION_REFERENCE.height,
+              ),
         },
+        positionUnit: "percent",
         data: isRecord(widget.data) ? widget.data : {},
       };
     });

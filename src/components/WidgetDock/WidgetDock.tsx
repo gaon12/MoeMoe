@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useApp } from "../../contexts/useApp.ts";
 import { formatTemperature } from "../../utils/temperature.ts";
+import { WidgetPositioner } from "./WidgetPositioner.tsx";
 import type { AppSettings, Widget } from "../../types/settings.ts";
 import { getFormattedTimeParts, getFullDateString } from "../../utils/time.ts";
 import { useAnimeQuoteData } from "./animeQuoteData.ts";
@@ -41,7 +42,7 @@ function getStackPositionClass(index: number, activeIndex: number): string {
  * - 모바일/데스크탑 레이아웃을 나누어 렌더링한다.
  */
 const WidgetDock = ({ currentTime }: WidgetDockProps) => {
-  const { settings } = useApp();
+  const { settings, updateSettings } = useApp();
   const { t } = useTranslation();
 
   // 설정에서 활성화된 위젯만 추려서 최대 MAX_WIDGETS개까지 사용한다.
@@ -162,6 +163,20 @@ const WidgetDock = ({ currentTime }: WidgetDockProps) => {
     startYRef.current = null;
   };
 
+  // 드래그/방향키로 옮긴 위젯 위치를 설정에 반영한다.
+  const handleWidgetMove = useCallback(
+    (id: string, position: { x: number; y: number }) => {
+      updateSettings({
+        widgets: settings.widgets.map((widget) =>
+          widget.id === id
+            ? { ...widget, position, positionUnit: "percent" as const }
+            : widget,
+        ),
+      });
+    },
+    [settings.widgets, updateSettings],
+  );
+
   // 활성화된 위젯이 없으면 아무것도 렌더링하지 않는다.
   if (activeWidgets.length === 0) {
     return null;
@@ -198,12 +213,10 @@ const WidgetDock = ({ currentTime }: WidgetDockProps) => {
         // 데스크탑 레이아웃: 카드들을 가로로 나란히 표시
         <div className="widget-cards">
           {activeWidgets.map((widget) => (
-            <div
+            <WidgetPositioner
               key={widget.id}
-              className="widget-card-positioner"
-              style={{
-                transform: `translate(${widget.position.x}px, ${widget.position.y}px)`,
-              }}
+              widget={widget}
+              onMove={handleWidgetMove}
             >
               <WidgetCard
                 widget={widget}
@@ -215,7 +228,7 @@ const WidgetDock = ({ currentTime }: WidgetDockProps) => {
                 onRefreshAnimeQuote={refreshAnimeQuote}
                 weatherApiKey={weatherApiKey}
               />
-            </div>
+            </WidgetPositioner>
           ))}
         </div>
       )}

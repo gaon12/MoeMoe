@@ -48,10 +48,20 @@ export interface Widget {
   id: string;
   type: WidgetType;
   enabled: boolean;
+  /**
+   * Offset from the widget's place in the dock, as a percentage of the
+   * viewport, so an arrangement made on one display keeps its proportions on
+   * another.
+   */
   position: {
     x: number;
     y: number;
   };
+  /**
+   * Absent on settings written while offsets were stored in pixels. Its
+   * absence is what triggers the one-time migration in the sanitiser.
+   */
+  positionUnit?: "percent";
   data?: Record<string, unknown>;
 }
 

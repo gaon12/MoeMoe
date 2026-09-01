@@ -2,6 +2,10 @@ import { useTranslation } from "react-i18next";
 import { useCallback, useId, type Dispatch, type SetStateAction } from "react";
 import type { AppSettings, Widget, WidgetType } from "../../types/settings.ts";
 import type { TemperatureUnit } from "../../utils/temperature.ts";
+import {
+  clampWidgetPositionPercent,
+  MAX_WIDGET_POSITION_PERCENT,
+} from "../../utils/widgetPosition.ts";
 
 interface SettingsWidgetsTabProps {
   localSettings: AppSettings;
@@ -9,7 +13,6 @@ interface SettingsWidgetsTabProps {
 }
 
 const MAX_WIDGETS = 4;
-const MAX_WIDGET_POSITION_OFFSET = 500;
 
 export const SettingsWidgetsTab = ({
   localSettings,
@@ -124,11 +127,9 @@ export const SettingsWidgetsTab = ({
                 ...widget,
                 position: {
                   ...widget.position,
-                  [axis]: Math.min(
-                    MAX_WIDGET_POSITION_OFFSET,
-                    Math.max(-MAX_WIDGET_POSITION_OFFSET, value),
-                  ),
+                  [axis]: clampWidgetPositionPercent(value),
                 },
+                positionUnit: "percent" as const,
               }
             : widget,
         ),
@@ -368,9 +369,9 @@ export const SettingsWidgetsTab = ({
                         type="number"
                         data-widget-id={widget.id}
                         data-axis="x"
-                        min={-500}
-                        max={500}
-                        step={10}
+                        min={-MAX_WIDGET_POSITION_PERCENT}
+                        max={MAX_WIDGET_POSITION_PERCENT}
+                        step={1}
                         value={widget.position.x}
                         onChange={handleWidgetPositionChange}
                       />
@@ -382,9 +383,9 @@ export const SettingsWidgetsTab = ({
                         type="number"
                         data-widget-id={widget.id}
                         data-axis="y"
-                        min={-500}
-                        max={500}
-                        step={10}
+                        min={-MAX_WIDGET_POSITION_PERCENT}
+                        max={MAX_WIDGET_POSITION_PERCENT}
+                        step={1}
                         value={widget.position.y}
                         onChange={handleWidgetPositionChange}
                       />

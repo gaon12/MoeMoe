@@ -148,7 +148,7 @@
       "position": "Desktop position offset",
       "offsetX": "Horizontal (px)",
       "offsetY": "Vertical (px)",
-      "positionDescription": "Does not affect the mobile stack. Move from -500px to 500px.",
+      "positionDescription": "Offsets are a percentage of the screen, so a layout keeps its proportions on other displays. Drag a widget to move it, or use the arrow keys once it has focus.",
       "customTextLabel": "Custom text",
       "customTextPlaceholder": "Text shown on the card",
       "remove": "Remove",
@@ -306,7 +306,8 @@
     "customText": {
       "placeholder": "Enter your text here...",
       "edit": "Edit"
-    }
+    },
+    "reposition": "Reposition the {{widget}} widget. Drag it, or use the arrow keys."
   },
   "history": {
     "previous": "Previous wallpaper",

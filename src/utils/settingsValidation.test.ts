@@ -66,12 +66,46 @@ describe("sanitizeSettings", () => {
         {
           id: "offset",
           type: "clock",
+          positionUnit: "percent",
           position: { x: 9999, y: -9999 },
         },
       ],
     }).widgets;
 
-    expect(widget.position).toEqual({ x: 500, y: -500 });
+    expect(widget.position).toEqual({ x: 45, y: -45 });
+  });
+
+  it("keeps widget offsets already stored as percentages", () => {
+    const [widget] = sanitizeSettings({
+      widgets: [
+        {
+          id: "kept",
+          type: "clock",
+          positionUnit: "percent",
+          position: { x: 12.5, y: -8 },
+        },
+      ],
+    }).widgets;
+
+    expect(widget.position).toEqual({ x: 12.5, y: -8 });
+    expect(widget.positionUnit).toBe("percent");
+  });
+
+  it("migrates pixel widget offsets saved before positions were relative", () => {
+    const [widget] = sanitizeSettings({
+      widgets: [
+        {
+          id: "legacy",
+          type: "clock",
+          position: { x: 480, y: -270 },
+        },
+      ],
+    }).widgets;
+
+    // 480px across a 1920px reference and 270px up a 1080px one are both a
+    // quarter of the way out, and stay there.
+    expect(widget.position).toEqual({ x: 25, y: -25 });
+    expect(widget.positionUnit).toBe("percent");
   });
 
   it("migrates settings saved before per-element visibility was added", () => {
