@@ -17,6 +17,7 @@ import {
   withCacheBust,
 } from "./imageApiUtils.ts";
 import { fetchRandomUserImage } from "./userImageStore.ts";
+import { formatDanbooruTag } from "./danbooruTags.ts";
 import { isSafeHttpsUrl, isSafeImageUrl } from "../utils/safeUrl.ts";
 
 /**
@@ -99,6 +100,8 @@ interface DanbooruPost {
   large_file_url?: string;
   preview_file_url?: string;
   tag_string_artist?: string;
+  tag_string_copyright?: string;
+  tag_string_character?: string;
   source?: string;
   rating?: string; // 's', 'q', 'e'
   image_width?: number;
@@ -404,7 +407,13 @@ async function fetchFromDanbooru(
   return {
     url,
     proxiedUrl: getProxiedImageUrl(url),
-    artistName: post?.tag_string_artist,
+    // Danbooru's copyright tag is the series the artwork is from, which is
+    // exactly the title this application wants; the character tag stands in
+    // when a piece is tagged with a character but no series.
+    animeName:
+      formatDanbooruTag(post?.tag_string_copyright) ??
+      formatDanbooruTag(post?.tag_string_character),
+    artistName: formatDanbooruTag(post?.tag_string_artist),
     sourceUrl: post?.source,
     dimensions:
       post?.image_width && post.image_height

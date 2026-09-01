@@ -220,7 +220,8 @@
       "unknown": "Unknown",
       "untitled": "Untitled work",
       "unknownArtist": "Unknown artist",
-      "openOriginal": "Open original image"
+      "openOriginal": "Open original image",
+      "userImage": "Your library"
     },
     "error": {
       "title": "Something went wrong while loading the image",

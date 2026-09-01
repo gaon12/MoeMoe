@@ -28,6 +28,7 @@ import {
   WALLPAPER_PROVIDER_BUDGET_MS,
 } from "../../utils/wallpaperLoadBudget.ts";
 import { getSafeHttpsUrl } from "../../utils/safeUrl.ts";
+import { getProviderDisplayName } from "../../services/providerNames.ts";
 import "./ImageBackground.css";
 
 const TRAILING_SLASH_PATTERN = /\/$/;
@@ -553,8 +554,17 @@ export const ImageBackground = ({
   const getOriginalUrl = (image: AnimeImage): string =>
     image.sourceUrl || image.artistHref || image.url;
 
+  /**
+   * Most providers return no series name at all, so the untitled placeholder
+   * was what the majority of wallpapers displayed. The provider is something
+   * the application always knows, and naming it is more useful than saying
+   * there is nothing to say.
+   */
   const getArtworkTitle = (image: AnimeImage): string =>
-    image.animeName?.trim() || t("image.attribution.untitled");
+    image.animeName?.trim() ||
+    (image.isLocal ? t("image.attribution.userImage") : undefined) ||
+    getProviderDisplayName(image.source) ||
+    t("image.attribution.untitled");
 
   const getArtistName = (image: AnimeImage): string =>
     image.artistName?.trim() || t("image.attribution.unknownArtist");
