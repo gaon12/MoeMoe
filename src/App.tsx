@@ -24,7 +24,10 @@ import { SpotlightActions } from "./components/SpotlightActions/SpotlightActions
 import { useWallpaperLibrary } from "./hooks/useWallpaperLibrary.ts";
 import { useWallpaperHistory } from "./hooks/useWallpaperHistory.ts";
 import { HistoryNav } from "./components/HistoryNav/HistoryNav.tsx";
-import { shouldIgnoreGlobalShortcut } from "./utils/keyboardShortcuts.ts";
+import {
+  resolveGlobalShortcut,
+  shouldIgnoreGlobalShortcut,
+} from "./utils/keyboardShortcuts.ts";
 import "./App.css";
 
 const IMAGE_CHANGE_COOLDOWN_MS = 5000;
@@ -272,42 +275,38 @@ export function App() {
         return;
       }
 
-      // R key or Space key to refresh
-      if (event.key === "r" || event.key === "R" || event.key === " ") {
-        event.preventDefault();
-        handleRefresh();
+      const shortcut = resolveGlobalShortcut(event);
+      if (!shortcut) {
+        return;
       }
 
-      // F key to toggle fullscreen
-      if (event.key === "f" || event.key === "F") {
-        event.preventDefault();
-        toggleFullscreen();
+      if (shortcut === "togglePause" && settings.imageChangeInterval <= 0) {
+        return;
       }
 
-      // P key to toggle auto-refresh pause
-      if (
-        (event.key === "p" || event.key === "P") &&
-        settings.imageChangeInterval > 0
-      ) {
-        event.preventDefault();
-        toggleAutoRefreshPause();
-      }
+      event.preventDefault();
 
-      // S key to open settings
-      if (event.key === "s" || event.key === "S") {
-        event.preventDefault();
-        setIsSettingsOpen(true);
-      }
-
-      // Arrow keys to walk back and forward through recently shown wallpapers
-      if (event.key === "ArrowLeft") {
-        event.preventDefault();
-        handleHistoryBack();
-      }
-
-      if (event.key === "ArrowRight") {
-        event.preventDefault();
-        handleHistoryForward();
+      switch (shortcut) {
+        case "refresh":
+          handleRefresh();
+          break;
+        case "fullscreen":
+          toggleFullscreen();
+          break;
+        case "togglePause":
+          toggleAutoRefreshPause();
+          break;
+        case "openSettings":
+          setIsSettingsOpen(true);
+          break;
+        case "historyBack":
+          handleHistoryBack();
+          break;
+        case "historyForward":
+          handleHistoryForward();
+          break;
+        default:
+          break;
       }
     };
 
